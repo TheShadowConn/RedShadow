@@ -1,5 +1,7 @@
 # RedShadow
 
+![RedShadow Social Preview](docs/brand/social-preview.png)
+
 **Offensive Security, under control.**
 
 RedShadow is a self-hosted penetration-test management platform. It takes an engagement from scoping to a **verified fix**: organisations, assets, engagements, findings, evidence, remediation, retests, scheduling, an append-only audit log and professional PDF and CSV reports. Everyone sees only the work they are meant to see.
