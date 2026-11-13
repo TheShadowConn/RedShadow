@@ -1,0 +1,786 @@
+[
+[
+15,
+"External Control of System or Configuration Setting"
+],
+[
+20,
+"Improper Input Validation"
+],
+[
+22,
+"Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')"
+],
+[
+23,
+"Relative Path Traversal"
+],
+[
+36,
+"Absolute Path Traversal"
+],
+[
+73,
+"External Control of File Name or Path"
+],
+[
+74,
+"Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')"
+],
+[
+77,
+"Improper Neutralization of Special Elements used in a Command ('Command Injection')"
+],
+[
+78,
+"Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+],
+[
+79,
+"Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')"
+],
+[
+80,
+"Improper Neutralization of Script-Related HTML Tags in a Web Page (Basic XSS)"
+],
+[
+89,
+"Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+],
+[
+90,
+"Improper Neutralization of Special Elements used in an LDAP Query ('LDAP Injection')"
+],
+[
+91,
+"XML Injection (aka Blind XPath Injection)"
+],
+[
+94,
+"Improper Control of Generation of Code ('Code Injection')"
+],
+[
+95,
+"Improper Neutralization of Directives in Dynamically Evaluated Code ('Eval Injection')"
+],
+[
+98,
+"Improper Control of Filename for Include/Require Statement in PHP Program ('PHP Remote File Inclusion')"
+],
+[
+113,
+"Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')"
+],
+[
+116,
+"Improper Encoding or Escaping of Output"
+],
+[
+117,
+"Improper Output Neutralization for Logs"
+],
+[
+119,
+"Improper Restriction of Operations within the Bounds of a Memory Buffer"
+],
+[
+125,
+"Out-of-bounds Read"
+],
+[
+129,
+"Improper Validation of Array Index"
+],
+[
+134,
+"Use of Externally-Controlled Format String"
+],
+[
+178,
+"Improper Handling of Case Sensitivity"
+],
+[
+184,
+"Incomplete List of Disallowed Inputs"
+],
+[
+190,
+"Integer Overflow or Wraparound"
+],
+[
+193,
+"Off-by-one Error"
+],
+[
+200,
+"Exposure of Sensitive Information to an Unauthorized Actor"
+],
+[
+201,
+"Insertion of Sensitive Information Into Sent Data"
+],
+[
+209,
+"Generation of Error Message Containing Sensitive Information"
+],
+[
+212,
+"Improper Removal of Sensitive Information Before Storage or Transfer"
+],
+[
+215,
+"Insertion of Sensitive Information Into Debugging Code"
+],
+[
+250,
+"Execution with Unnecessary Privileges"
+],
+[
+256,
+"Plaintext Storage of a Password"
+],
+[
+257,
+"Storing Passwords in a Recoverable Format"
+],
+[
+259,
+"Use of Hard-coded Password"
+],
+[
+261,
+"Weak Encoding for Password"
+],
+[
+262,
+"Not Using Password Aging"
+],
+[
+263,
+"Password Aging with Long Expiration"
+],
+[
+266,
+"Incorrect Privilege Assignment"
+],
+[
+269,
+"Improper Privilege Management"
+],
+[
+272,
+"Least Privilege Violation"
+],
+[
+276,
+"Incorrect Default Permissions"
+],
+[
+281,
+"Improper Preservation of Permissions"
+],
+[
+282,
+"Improper Ownership Management"
+],
+[
+284,
+"Improper Access Control"
+],
+[
+285,
+"Improper Authorization"
+],
+[
+287,
+"Improper Authentication"
+],
+[
+288,
+"Authentication Bypass Using an Alternate Path or Channel"
+],
+[
+290,
+"Authentication Bypass by Spoofing"
+],
+[
+294,
+"Authentication Bypass by Capture-replay"
+],
+[
+295,
+"Improper Certificate Validation"
+],
+[
+297,
+"Improper Validation of Certificate with Host Mismatch"
+],
+[
+299,
+"Improper Check for Certificate Revocation"
+],
+[
+300,
+"Channel Accessible by Non-Endpoint"
+],
+[
+303,
+"Incorrect Implementation of Authentication Algorithm"
+],
+[
+306,
+"Missing Authentication for Critical Function"
+],
+[
+307,
+"Improper Restriction of Excessive Authentication Attempts"
+],
+[
+308,
+"Use of Single-factor Authentication"
+],
+[
+309,
+"Use of Password System for Primary Authentication"
+],
+[
+311,
+"Missing Encryption of Sensitive Data"
+],
+[
+312,
+"Cleartext Storage of Sensitive Information"
+],
+[
+313,
+"Cleartext Storage in a File or on Disk"
+],
+[
+315,
+"Cleartext Storage of Sensitive Information in a Cookie"
+],
+[
+316,
+"Cleartext Storage of Sensitive Information in Memory"
+],
+[
+319,
+"Cleartext Transmission of Sensitive Information"
+],
+[
+321,
+"Use of Hard-coded Cryptographic Key"
+],
+[
+322,
+"Key Exchange without Entity Authentication"
+],
+[
+323,
+"Reusing a Nonce, Key Pair in Encryption"
+],
+[
+324,
+"Use of a Key Past its Expiration Date"
+],
+[
+325,
+"Missing Cryptographic Step"
+],
+[
+326,
+"Inadequate Encryption Strength"
+],
+[
+327,
+"Use of a Broken or Risky Cryptographic Algorithm"
+],
+[
+328,
+"Use of Weak Hash"
+],
+[
+329,
+"Generation of Predictable IV with CBC Mode"
+],
+[
+330,
+"Use of Insufficiently Random Values"
+],
+[
+331,
+"Insufficient Entropy"
+],
+[
+335,
+"Incorrect Usage of Seeds in Pseudo-Random Number Generator (PRNG)"
+],
+[
+338,
+"Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)"
+],
+[
+345,
+"Insufficient Verification of Data Authenticity"
+],
+[
+346,
+"Origin Validation Error"
+],
+[
+347,
+"Improper Verification of Cryptographic Signature"
+],
+[
+352,
+"Cross-Site Request Forgery (CSRF)"
+],
+[
+353,
+"Missing Support for Integrity Check"
+],
+[
+354,
+"Improper Validation of Integrity Check Value"
+],
+[
+359,
+"Exposure of Private Personal Information to an Unauthorized Actor"
+],
+[
+362,
+"Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition')"
+],
+[
+367,
+"Time-of-check Time-of-use (TOCTOU) Race Condition"
+],
+[
+384,
+"Session Fixation"
+],
+[
+390,
+"Detection of Error Condition Without Action"
+],
+[
+400,
+"Uncontrolled Resource Consumption"
+],
+[
+401,
+"Missing Release of Memory after Effective Lifetime"
+],
+[
+404,
+"Improper Resource Shutdown or Release"
+],
+[
+407,
+"Inefficient Algorithmic Complexity"
+],
+[
+409,
+"Improper Handling of Highly Compressed Data (Data Amplification)"
+],
+[
+412,
+"Unrestricted Externally Accessible Lock"
+],
+[
+413,
+"Improper Resource Locking"
+],
+[
+415,
+"Double Free"
+],
+[
+416,
+"Use After Free"
+],
+[
+419,
+"Unprotected Primary Channel"
+],
+[
+420,
+"Unprotected Alternate Channel"
+],
+[
+425,
+"Direct Request ('Forced Browsing')"
+],
+[
+426,
+"Untrusted Search Path"
+],
+[
+427,
+"Uncontrolled Search Path Element"
+],
+[
+428,
+"Unquoted Search Path or Element"
+],
+[
+434,
+"Unrestricted Upload of File with Dangerous Type"
+],
+[
+441,
+"Unintended Proxy or Intermediary ('Confused Deputy')"
+],
+[
+444,
+"Inconsistent Interpretation of HTTP Requests ('HTTP Request/Response Smuggling')"
+],
+[
+451,
+"User Interface (UI) Misrepresentation of Critical Information"
+],
+[
+472,
+"External Control of Assumed-Immutable Web Parameter"
+],
+[
+476,
+"NULL Pointer Dereference"
+],
+[
+489,
+"Active Debug Code"
+],
+[
+494,
+"Download of Code Without Integrity Check"
+],
+[
+497,
+"Exposure of Sensitive System Information to an Unauthorized Control Sphere"
+],
+[
+501,
+"Trust Boundary Violation"
+],
+[
+502,
+"Deserialization of Untrusted Data"
+],
+[
+521,
+"Weak Password Requirements"
+],
+[
+522,
+"Insufficiently Protected Credentials"
+],
+[
+523,
+"Unprotected Transport of Credentials"
+],
+[
+524,
+"Use of Cache Containing Sensitive Information"
+],
+[
+525,
+"Use of Web Browser Cache Containing Sensitive Information"
+],
+[
+532,
+"Insertion of Sensitive Information into Log File"
+],
+[
+538,
+"Insertion of Sensitive Information into Externally-Accessible File or Directory"
+],
+[
+539,
+"Use of Persistent Cookies Containing Sensitive Information"
+],
+[
+540,
+"Inclusion of Sensitive Information in Source Code"
+],
+[
+548,
+"Exposure of Information Through Directory Listing"
+],
+[
+551,
+"Incorrect Behavior Order: Authorization Before Parsing and Canonicalization"
+],
+[
+552,
+"Files or Directories Accessible to External Parties"
+],
+[
+565,
+"Reliance on Cookies without Validation and Integrity Checking"
+],
+[
+566,
+"Authorization Bypass Through User-Controlled SQL Primary Key"
+],
+[
+598,
+"Use of GET Request Method With Sensitive Query Strings"
+],
+[
+601,
+"URL Redirection to Untrusted Site ('Open Redirect')"
+],
+[
+602,
+"Client-Side Enforcement of Server-Side Security"
+],
+[
+603,
+"Use of Client-Side Authentication"
+],
+[
+611,
+"Improper Restriction of XML External Entity Reference"
+],
+[
+613,
+"Insufficient Session Expiration"
+],
+[
+614,
+"Sensitive Cookie in HTTPS Session Without 'Secure' Attribute"
+],
+[
+620,
+"Unverified Password Change"
+],
+[
+639,
+"Authorization Bypass Through User-Controlled Key"
+],
+[
+640,
+"Weak Password Recovery Mechanism for Forgotten Password"
+],
+[
+642,
+"External Control of Critical State Data"
+],
+[
+644,
+"Improper Neutralization of HTTP Headers for Scripting Syntax"
+],
+[
+645,
+"Overly Restrictive Account Lockout Mechanism"
+],
+[
+653,
+"Improper Isolation or Compartmentalization"
+],
+[
+668,
+"Exposure of Resource to Wrong Sphere"
+],
+[
+676,
+"Use of Potentially Dangerous Function"
+],
+[
+682,
+"Incorrect Calculation"
+],
+[
+693,
+"Protection Mechanism Failure"
+],
+[
+703,
+"Improper Check or Handling of Exceptional Conditions"
+],
+[
+732,
+"Incorrect Permission Assignment for Critical Resource"
+],
+[
+749,
+"Exposed Dangerous Method or Function"
+],
+[
+755,
+"Improper Handling of Exceptional Conditions"
+],
+[
+757,
+"Selection of Less-Secure Algorithm During Negotiation ('Algorithm Downgrade')"
+],
+[
+759,
+"Use of a One-Way Hash without a Salt"
+],
+[
+760,
+"Use of a One-Way Hash with a Predictable Salt"
+],
+[
+770,
+"Allocation of Resources Without Limits or Throttling"
+],
+[
+776,
+"Improper Restriction of Recursive Entity References in DTDs ('XML Entity Expansion')"
+],
+[
+778,
+"Insufficient Logging"
+],
+[
+779,
+"Logging of Excessive Data"
+],
+[
+787,
+"Out-of-bounds Write"
+],
+[
+798,
+"Use of Hard-coded Credentials"
+],
+[
+799,
+"Improper Control of Interaction Frequency"
+],
+[
+807,
+"Reliance on Untrusted Inputs in a Security Decision"
+],
+[
+829,
+"Inclusion of Functionality from Untrusted Control Sphere"
+],
+[
+830,
+"Inclusion of Web Functionality from an Untrusted Source"
+],
+[
+836,
+"Use of Password Hash Instead of Password for Authentication"
+],
+[
+841,
+"Improper Enforcement of Behavioral Workflow"
+],
+[
+863,
+"Incorrect Authorization"
+],
+[
+912,
+"Hidden Functionality"
+],
+[
+915,
+"Improperly Controlled Modification of Dynamically-Determined Object Attributes"
+],
+[
+916,
+"Use of Password Hash With Insufficient Computational Effort"
+],
+[
+917,
+"Improper Neutralization of Special Elements used in an Expression Language Statement ('Expression Language Injection')"
+],
+[
+918,
+"Server-Side Request Forgery (SSRF)"
+],
+[
+922,
+"Insecure Storage of Sensitive Information"
+],
+[
+923,
+"Improper Restriction of Communication Channel to Intended Endpoints"
+],
+[
+924,
+"Improper Enforcement of Message Integrity During Transmission in a Communication Channel"
+],
+[
+940,
+"Improper Verification of Source of a Communication Channel"
+],
+[
+942,
+"Permissive Cross-domain Policy with Untrusted Domains"
+],
+[
+943,
+"Improper Neutralization of Special Elements in Data Query Logic"
+],
+[
+1004,
+"Sensitive Cookie Without 'HttpOnly' Flag"
+],
+[
+1021,
+"Improper Restriction of Rendered UI Layers or Frames"
+],
+[
+1022,
+"Use of Web Link to Untrusted Target with window.opener Access"
+],
+[
+1104,
+"Use of Unmaintained Third Party Components"
+],
+[
+1188,
+"Initialization of a Resource with an Insecure Default"
+],
+[
+1236,
+"Improper Neutralization of Formula Elements in a CSV File"
+],
+[
+1275,
+"Sensitive Cookie with Improper SameSite Attribute"
+],
+[
+1284,
+"Improper Validation of Specified Quantity in Input"
+],
+[
+1321,
+"Improperly Controlled Modification of Object Prototype Attributes ('Prototype Pollution')"
+],
+[
+1327,
+"Binding to an Unrestricted IP Address"
+],
+[
+1333,
+"Inefficient Regular Expression Complexity"
+],
+[
+1336,
+"Improper Neutralization of Special Elements Used in a Template Engine"
+],
+[
+1385,
+"Missing Origin Validation in WebSockets"
+],
+[
+1390,
+"Weak Authentication"
+],
+[
+1391,
+"Use of Weak Credentials"
+],
+[
+1395,
+"Dependency on Vulnerable Third-Party Component"
+]
+]

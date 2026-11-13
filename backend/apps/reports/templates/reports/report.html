@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ title }} - {{ engagement.ref }}</title>
+<style>{{ css|safe }}</style>
+</head>
+<body>
+
+{# ---------------------------------------------------------------- cover #}
+<section class="cover">
+  <div class="cover-top">
+    {% if custom_logo %}<img class="cover-logo" src="{{ custom_logo }}" alt="">{% else %}<img class="cover-logo wordmark" src="{{ wordmark_light }}" alt="RedShadow">{% endif %}
+    <span class="classification">{{ job.classification }}</span>
+  </div>
+  <div class="cover-main">
+    <p class="eyebrow">Penetration test report</p>
+    <h1>{{ title }}</h1>
+    <p class="cover-sub">{{ engagement.name }}</p>
+    <div class="cover-rule"></div>
+    <dl class="cover-meta">
+      <div><dt>Prepared for</dt><dd>{{ organisation.name }}</dd></div>
+      <div><dt>Engagement</dt><dd>{{ engagement.ref }}</dd></div>
+      <div><dt>Testing period</dt><dd>{{ engagement.start_date|date:"j M Y" }} to {{ engagement.end_date|date:"j M Y" }}</dd></div>
+      <div><dt>Version</dt><dd>{{ job.version_label }}</dd></div>
+    </dl>
+  </div>
+  <div class="cover-bottom">
+    <div class="cover-risk risk-{{ risk_key }}">
+      <span>Overall risk posture</span>
+      <strong>{{ risk_label }}</strong>
+    </div>
+    <p class="cover-foot">{{ generated_at|date:"j F Y" }}{% if internal %} &middot; Internal edition, contains technical detail{% endif %}</p>
+  </div>
+</section>
+
+{# ---------------------------------------------------------------- contents #}
+<section class="page contents">
+  <h2 class="plain">Contents</h2>
+  <ol class="toc">
+  {% for key, name in toc %}
+    <li><a href="#sec-{{ key }}"><span class="toc-no">{{ forloop.counter|stringformat:"02d" }}</span><span class="toc-title">{{ name }}</span></a></li>
+  {% endfor %}
+  </ol>
+  <p class="note-small">Included in this report: {{ filter_text }}. Draft findings are never included.</p>
+</section>
+
+{% for key in sections %}
+{% if key == "document_control" %}
+{# ---------------------------------------------------------------- document control #}
+<section class="page" id="sec-document_control">
+  <h2>Document control</h2>
+  <table class="kv">
+    <tr><th>Document title</th><td>{{ title }}</td></tr>
+    <tr><th>Engagement</th><td>{{ engagement.ref }} &middot; {{ engagement.name }}</td></tr>
+    <tr><th>Client</th><td>{{ organisation.name }}</td></tr>
+    <tr><th>Version</th><td>{{ job.version_label }}</td></tr>
+    <tr><th>Classification</th><td>{{ job.classification }}</td></tr>
+    <tr><th>Edition</th><td>{% if internal %}Internal (includes technical details, proof of concept and technical notes){% else %}Client-facing{% endif %}</td></tr>
+    <tr><th>Prepared by</th><td>{{ prepared_by }}</td></tr>
+    <tr><th>Generated</th><td>{{ generated_at|date:"j F Y, H:i" }} UTC</td></tr>
+    <tr><th>Report template</th><td>{{ job.template_name|default:"Standard" }}</td></tr>
+  </table>
+  <h3>Distribution</h3>
+  <p>This report is confidential. It is intended only for {{ organisation.name }} and the team named in the engagement. Do not copy or forward it outside that group.</p>
+  <h3>Limitations</h3>
+  <p>The results describe the state of the systems during the testing period. New vulnerabilities, configuration changes and later releases can change the risk. Findings reflect the information and access available to the testers.</p>
+</section>
+
+{% elif key == "executive_summary" %}
+{# ---------------------------------------------------------------- executive summary #}
+<section class="page" id="sec-executive_summary">
+  <h2>Executive summary</h2>
+  <div class="exec-lead">
+    <div class="risk-card risk-{{ risk_key }}">
+      <span class="rc-label">Overall risk posture</span>
+      <span class="rc-value">{{ risk_label }}</span>
+      <span class="rc-note">{% if totals.open %}{{ totals.open }} finding{{ totals.open|pluralize }} still open{% else %}No open findings{% endif %}</span>
+    </div>
+    <p class="lead">
+      {{ organisation.name }} asked for a {{ engagement.get_type_display|lower }} assessment, <strong>{{ engagement.name }}</strong>, carried out from {{ engagement.start_date|date:"j F" }} to {{ engagement.end_date|date:"j F Y" }}.
+      The testers recorded <strong>{{ totals.all }} finding{{ totals.all|pluralize }}</strong>{% if totals.open %}; <strong>{{ totals.open }}</strong> {{ totals.open|pluralize:"is,are" }} open{% endif %}{% if totals.closed %} and <strong>{{ totals.closed }}</strong> {{ totals.closed|pluralize:"is,are" }} closed after verification{% endif %}.
+      {% if totals.overdue %}{{ totals.overdue }} open finding{{ totals.overdue|pluralize }} {{ totals.overdue|pluralize:"is,are" }} past the remediation date.{% endif %}
+    </p>
+  </div>
+  <div class="sev-tiles">
+    {% for key, label, total, open in severity_counts %}
+    <div class="tile sev-{{ key }}"><span class="tile-n">{{ total }}</span><span class="tile-l">{{ label }}</span><span class="tile-o">{{ open }} open</span></div>
+    {% endfor %}
+  </div>
+  {% if objectives_html %}<h3>Objectives</h3><div class="prose">{{ objectives_html|safe }}</div>{% endif %}
+  {% if key_findings %}
+  <h3>What needs attention first</h3>
+  <ol class="key-list">
+    {% for f in key_findings %}
+    <li><span class="badge sev-{{ f.severity }}">{{ f.severity_label }}</span><span class="kl-title"><span class="mono">{{ f.ref }}</span> {{ f.title }}</span>{% if f.asset %}<span class="kl-asset">{{ f.asset }}</span>{% endif %}</li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+</section>
+
+{% elif key == "engagement_info" %}
+{# ---------------------------------------------------------------- engagement #}
+<section class="page" id="sec-engagement_info">
+  <h2>Engagement overview</h2>
+  <table class="kv">
+    <tr><th>Reference</th><td class="mono">{{ engagement.ref }}</td></tr>
+    <tr><th>Type</th><td>{{ engagement.get_type_display }}</td></tr>
+    <tr><th>Status</th><td>{{ engagement.get_status_display }}</td></tr>
+    <tr><th>Start</th><td>{{ engagement.start_date|date:"j F Y" }}</td></tr>
+    <tr><th>End</th><td>{{ engagement.end_date|date:"j F Y" }}</td></tr>
+    {% if engagement.lead %}<tr><th>Engagement lead</th><td>{{ engagement.lead.display_name }}</td></tr>{% endif %}
+  </table>
+  {% if team %}
+  <h3>Team</h3>
+  <table class="grid"><thead><tr><th>Name</th><th>Role</th></tr></thead><tbody>
+    {% for m in team %}<tr><td>{{ m.name }}</td><td>{{ m.role }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% endif %}
+  {% if rules_html %}<h3>Rules of engagement</h3><div class="prose">{{ rules_html|safe }}</div>{% endif %}
+</section>
+
+{% elif key == "scope" %}
+{# ---------------------------------------------------------------- scope #}
+<section class="page" id="sec-scope">
+  <h2>Scope</h2>
+  {% if scope_html %}<div class="prose">{{ scope_html|safe }}</div>{% else %}<p class="muted">No scope description was recorded.</p>{% endif %}
+  {% if assets %}
+  <h3>Assets</h3>
+  <table class="grid"><thead><tr><th>Asset</th><th>Type</th><th>Identifier</th><th>Environment</th><th>Scope</th></tr></thead><tbody>
+    {% for a in assets %}<tr><td>{{ a.name }}</td><td>{{ a.type }}</td><td class="mono wrap">{{ a.identifier }}</td><td>{{ a.environment }}</td><td>{% if a.in_scope %}In scope{% else %}Out of scope{% endif %}</td></tr>{% endfor %}
+  </tbody></table>
+  {% endif %}
+  {% if out_of_scope_html %}<h3>Out of scope</h3><div class="prose">{{ out_of_scope_html|safe }}</div>{% endif %}
+</section>
+
+{% elif key == "methodology" %}
+{# ---------------------------------------------------------------- methodology #}
+<section class="page" id="sec-methodology">
+  <h2>Methodology and rating scale</h2>
+  {% if methodology_html %}<div class="prose">{{ methodology_html|safe }}</div>{% else %}<p class="muted">No methodology text was recorded for this engagement.</p>{% endif %}
+  <h3>How severity is rated</h3>
+  <p>Each finding has a severity and, where the testers scored it, a CVSS base score. Severity reflects the impact and ease of exploitation in the context of this environment, so it can differ from the raw score.</p>
+  <table class="grid scale"><thead><tr><th>Severity</th><th>CVSS range</th><th>Meaning</th><th>Fix within</th></tr></thead><tbody>
+    <tr><td><span class="badge sev-critical">Critical</span></td><td>9.0 to 10.0</td><td>Direct compromise of systems or data with little effort.</td><td>{{ sla_days.0.1 }} days</td></tr>
+    <tr><td><span class="badge sev-high">High</span></td><td>7.0 to 8.9</td><td>Serious weakness that is likely to be exploited.</td><td>{{ sla_days.1.1 }} days</td></tr>
+    <tr><td><span class="badge sev-medium">Medium</span></td><td>4.0 to 6.9</td><td>Weakness that needs other conditions to be exploited.</td><td>{{ sla_days.2.1 }} days</td></tr>
+    <tr><td><span class="badge sev-low">Low</span></td><td>0.1 to 3.9</td><td>Limited impact or hard to exploit.</td><td>{{ sla_days.3.1 }} days</td></tr>
+    <tr><td><span class="badge sev-info">Info</span></td><td>None</td><td>Observation or hardening advice, no direct risk.</td><td>No date</td></tr>
+  </tbody></table>
+</section>
+
+{% elif key == "summary_table" %}
+{# ---------------------------------------------------------------- findings table #}
+<section class="page" id="sec-summary_table">
+  <h2>Findings at a glance</h2>
+  {% if findings %}
+  <table class="grid findings-table"><thead><tr><th>Ref</th><th>Finding</th><th>Severity</th><th>CVSS</th><th>Asset</th><th>Status</th><th>Due</th></tr></thead><tbody>
+    {% for f in findings %}
+    <tr><td class="mono"><a href="#f-{{ f.ref }}">{{ f.ref }}</a></td><td>{{ f.title }}</td><td><span class="badge sev-{{ f.severity }}">{{ f.severity_label }}</span></td><td class="num">{{ f.cvss_score|default_if_none:"-" }}</td><td>{{ f.asset|default:"-" }}</td><td>{{ f.status_label }}</td><td class="num{% if f.overdue %} overdue{% endif %}">{% if f.due_date %}{{ f.due_date|date:"j M Y" }}{% else %}-{% endif %}</td></tr>
+    {% endfor %}
+  </tbody></table>
+  {% else %}<p class="muted">No findings match the filters of this report.</p>{% endif %}
+</section>
+
+{% elif key == "severity_distribution" %}
+{# ---------------------------------------------------------------- distribution #}
+<section class="page" id="sec-severity_distribution">
+  <h2>Severity and status distribution</h2>
+  <h3>Findings by severity</h3>
+  <div class="chart">{{ severity_chart }}</div>
+  <h3>Findings by status</h3>
+  <div class="chart">{{ status_chart }}</div>
+  {% if status_keys %}
+  <h3>Severity by status</h3>
+  <table class="grid matrix"><thead><tr><th>Severity</th>{% for h in status_headers %}<th class="num">{{ h }}</th>{% endfor %}<th class="num">Total</th></tr></thead><tbody>
+    {% for row in matrix %}<tr><td><span class="badge sev-{{ row.severity }}">{{ row.label }}</span></td>{% for c in row.cells %}<td class="num{% if not c %} zero{% endif %}">{{ c }}</td>{% endfor %}<td class="num strong">{{ row.total }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% endif %}
+</section>
+
+{% elif key == "findings" %}
+{# ---------------------------------------------------------------- findings #}
+<section class="findings-intro page" id="sec-findings">
+  <h2>Detailed findings</h2>
+  <p>Each finding starts on its own page and follows the same layout: where it is, how serious it is, what the testers saw, how to fix it, and where the fix stands.</p>
+  {% if not findings %}<p class="muted">No findings match the filters of this report.</p>{% endif %}
+</section>
+{% for f in findings %}
+<article class="finding sev-{{ f.severity }}" id="f-{{ f.ref }}">
+  <header class="f-head">
+    <div class="f-line"><span class="mono f-ref">{{ f.ref }}</span><span class="badge big sev-{{ f.severity }}">{{ f.severity_label }}</span>{% if f.cvss_score %}<span class="f-score">CVSS {{ f.cvss_score }}</span>{% endif %}</div>
+    <h3 class="f-title">{{ f.title }}</h3>
+  </header>
+  <table class="f-meta"><tr>
+    <td><span>Status</span><strong>{{ f.status_label }}</strong></td>
+    <td><span>Asset</span><strong>{{ f.asset|default:"-" }}</strong></td>
+    <td><span>Found</span><strong>{{ f.discovered_at|date:"j M Y" }}</strong></td>
+    <td><span>Fix by</span><strong class="{% if f.overdue %}overdue{% endif %}">{% if f.due_date %}{{ f.due_date|date:"j M Y" }}{% else %}-{% endif %}</strong></td>
+  </tr></table>
+  {% if f.endpoint or f.cwe or f.cvss_vector %}
+  <table class="kv small">
+    {% if f.endpoint %}<tr><th>Location</th><td class="mono wrap">{{ f.endpoint }}</td></tr>{% endif %}
+    {% if f.cwe %}<tr><th>Weakness</th><td>{{ f.cwe }}</td></tr>{% endif %}
+    {% if f.cvss_vector %}<tr><th>CVSS vector</th><td class="mono wrap">{{ f.cvss_vector }}</td></tr>{% endif %}
+  </table>
+  {% endif %}
+  <h4>Description</h4>
+  <div class="prose">{% if f.description_html %}{{ f.description_html|safe }}{% else %}<p class="muted">No description.</p>{% endif %}</div>
+  {% if f.internal and f.internal.technical_html %}<h4>Technical details <span class="tag">Internal</span></h4><div class="prose">{{ f.internal.technical_html|safe }}</div>{% endif %}
+  {% if f.internal and f.internal.poc_html %}<h4>Proof of concept <span class="tag">Internal</span></h4><div class="prose">{{ f.internal.poc_html|safe }}</div>{% endif %}
+  {% if f.evidence %}
+  <h4>Evidence</h4>
+  <div class="evidence">{% for e in f.evidence %}<figure><img src="{{ e.src }}" alt=""><figcaption>{{ e.name }}</figcaption></figure>{% endfor %}</div>
+  {% endif %}
+  <h4>Recommendation</h4>
+  <div class="prose reco">{% if f.recommendation_html %}{{ f.recommendation_html|safe }}{% else %}<p class="muted">No recommendation.</p>{% endif %}</div>
+  {% if f.references %}<h4>References</h4><ul class="refs">{% for r in f.references %}<li class="wrap">{% if r.label %}{{ r.label }} &middot; {% endif %}<span class="mono">{{ r.url }}</span></li>{% endfor %}</ul>{% endif %}
+  {% if f.risk_accept %}<h4>Risk acceptance</h4><div class="prose">{{ f.risk_accept.reason_html|safe }}<p class="muted">Accepted until {{ f.risk_accept.until|date:"j M Y" }}.</p></div>{% endif %}
+  {% if f.internal and f.internal.notes %}<h4>Technical notes <span class="tag">Internal</span></h4>{% for n in f.internal.notes %}<div class="note"><p class="note-h">{{ n.who }} &middot; {{ n.at|date:"j M Y" }}</p><div class="prose">{{ n.body_html|safe }}</div></div>{% endfor %}{% endif %}
+  {% if f.timeline|length > 1 %}
+  <h4>Remediation history</h4>
+  <ol class="timeline">
+    {% for t in f.timeline %}<li><span class="t-date">{{ t.at|date:"j M Y" }}</span><span class="t-label">{{ t.label }}</span><span class="t-who">{{ t.who }}</span>{% if t.note_html %}<div class="t-note prose">{{ t.note_html|safe }}</div>{% endif %}</li>{% endfor %}
+  </ol>
+  {% endif %}
+  {% if f.verified_at or f.closed_at %}
+  <p class="verify">{% if f.verified_at %}Verified {{ f.verified_at|date:"j M Y" }}{% endif %}{% if f.closed_at %}{% if f.verified_at %} &middot; {% endif %}Closed {{ f.closed_at|date:"j M Y" }}{% endif %}</p>
+  {% endif %}
+</article>
+{% endfor %}
+
+{% elif key == "remediation_roadmap" %}
+{# ---------------------------------------------------------------- roadmap #}
+<section class="page" id="sec-remediation_roadmap">
+  <h2>Remediation roadmap</h2>
+  <p>Open findings grouped by when the fix is due. Work from the top down.</p>
+  {% for g in roadmap %}
+  <h3>{{ g.title }} <span class="count">{{ g.rows|length }}</span></h3>
+  {% if g.hint %}<p class="muted">{{ g.hint }}</p>{% endif %}
+  <table class="grid"><thead><tr><th>Ref</th><th>Finding</th><th>Severity</th><th>Owner</th><th>Status</th><th>Due</th></tr></thead><tbody>
+    {% for f in g.rows %}<tr><td class="mono"><a href="#f-{{ f.ref }}">{{ f.ref }}</a></td><td>{{ f.title }}</td><td><span class="badge sev-{{ f.severity }}">{{ f.severity_label }}</span></td><td>{{ f.remediation_owner|default:"-" }}</td><td>{{ f.status_label }}</td><td class="num">{% if f.due_date %}{{ f.due_date|date:"j M Y" }}{% else %}-{% endif %}</td></tr>{% endfor %}
+  </tbody></table>
+  {% empty %}
+  <p class="muted">No open findings. Nothing to schedule.</p>
+  {% endfor %}
+</section>
+
+{% elif key == "retest_summary" %}
+{# ---------------------------------------------------------------- retests #}
+<section class="page" id="sec-retest_summary">
+  <h2>Retest results</h2>
+  {% for r in retests %}
+  <h3>{{ r.ref }} <span class="count">{{ r.status }}</span></h3>
+  <p class="muted">Assessor {{ r.assessor }} &middot; requested {{ r.created_at|date:"j M Y" }}{% if r.completed_at %} &middot; finished {{ r.completed_at|date:"j M Y" }}{% endif %} &middot; {{ r.passed }} passed, {{ r.failed }} failed, {{ r.pending }} not yet decided.</p>
+  <table class="grid"><thead><tr><th>Ref</th><th>Finding</th><th>Result</th></tr></thead><tbody>
+    {% for i in r.items %}<tr><td class="mono">{{ i.ref }}</td><td>{{ i.title }}</td><td>{{ i.result }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% empty %}
+  <p class="muted">No retest round covers the findings in this report.</p>
+  {% endfor %}
+</section>
+
+{% elif key == "appendix" %}
+{# ---------------------------------------------------------------- appendix #}
+<section class="page" id="sec-appendix">
+  <h2>Appendix</h2>
+  <h3>Finding statuses</h3>
+  <table class="grid"><tbody>
+    <tr><td>Open</td><td>Confirmed and waiting for the owner to act.</td></tr>
+    <tr><td>In progress</td><td>The owner has started the fix.</td></tr>
+    <tr><td>Pending verification</td><td>The owner says it is fixed. The testers have to confirm.</td></tr>
+    <tr><td>Reopened</td><td>A retest showed the fix did not work.</td></tr>
+    <tr><td>Closed</td><td>Fix verified by the testers.</td></tr>
+    <tr><td>Risk accepted</td><td>The business chose to live with the risk until a stated date.</td></tr>
+    <tr><td>False positive</td><td>Not a real issue.</td></tr>
+    <tr><td>Duplicate</td><td>Covered by another finding.</td></tr>
+  </tbody></table>
+  <h3>About this document</h3>
+  <p class="muted">Generated by RedShadow on {{ generated_at|date:"j F Y, H:i" }} UTC for engagement {{ engagement.ref }}. The generation is recorded in the audit log with the checksum of the file, so a copy can be checked against the original.</p>
+</section>
+{% endif %}
+{% endfor %}
+
+</body>
+</html>

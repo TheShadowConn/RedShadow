@@ -1,0 +1,125 @@
+/* RedShadow manual stylesheet: Racing Red, modern UI. Print only. Fonts are injected ahead of this file. */
+
+:root {
+  --red: #ef233c;
+  --red-deep: #b10f27;
+  --red-dark: #4d0510;
+  --ink: #1b2429;
+  --ink-soft: #35424a;
+  --muted: #5d6a72;
+  --line: #e3e7ea;
+  --paper: #ffffff;
+  --tint: #fdf1f2;
+  --surface: #f6f8f9;
+  --mono: "Geist Mono", "DejaVu Sans Mono", monospace;
+  --sans: "Geist", "DejaVu Sans", sans-serif;
+}
+
+@page {
+  size: A4;
+  margin: 24mm 18mm 22mm 18mm;
+  @top-left { content: string(chapter); font: 500 7.5pt var(--sans); color: #8a1a2b; letter-spacing: .1em; text-transform: uppercase; }
+  @top-right { content: "RedShadow User Manual"; font: 500 7.5pt var(--sans); color: #8b979e; letter-spacing: .06em; }
+  @bottom-left { content: "Built by Shadowconn  ·  Internal"; font: 400 7.5pt var(--sans); color: #8b979e; }
+  @bottom-right { content: "Page " counter(page) " of " counter(pages); font: 500 8pt var(--sans); color: #8b979e; }
+}
+@page cover { margin: 0; @top-left { content: none; } @top-right { content: none; } @bottom-left { content: none; } @bottom-right { content: none; } }
+@page front { @top-left { content: "Front matter"; } }
+
+* { box-sizing: border-box; }
+html { font-family: var(--sans); font-size: 9.6pt; line-height: 1.58; color: var(--ink-soft); }
+body { margin: 0; counter-reset: chapter fig appendix; }
+a { color: var(--red-deep); text-decoration: none; }
+p { margin: 0 0 3mm; orphans: 3; widows: 3; }
+strong { color: var(--ink); font-weight: 600; }
+.muted { color: var(--muted); } .small { font-size: 8.4pt; } .mono, code { font-family: var(--mono); font-size: .9em; }
+code { background: var(--surface); padding: .2mm 1.2mm; border-radius: 1mm; color: var(--red-dark); }
+pre { background: var(--ink); color: #f2f5f6; padding: 3mm 4mm; border-radius: 1.6mm; font: 400 8.4pt/1.5 var(--mono); white-space: pre-wrap; margin: 0 0 4mm; break-inside: avoid; }
+pre code { background: none; color: inherit; padding: 0; }
+
+/* ------------------------------------------------------------ cover */
+.cover {
+  page: cover; width: 210mm; height: 297mm; padding: 24mm 22mm 20mm; position: relative; overflow: hidden; break-after: page;
+  display: flex; flex-direction: column; justify-content: space-between; color: #fff;
+  background: linear-gradient(160deg, #ef233c 0%, #b10f27 58%, #4d0510 100%);
+}
+.cover-o { position: absolute; right: -28mm; top: 52mm; height: 215mm; width: auto; }
+.cover-top { position: relative; align-self: flex-start; }
+.tag-logo { margin: 4mm 0 0; font: 500 9.5pt var(--sans); letter-spacing: .06em; color: rgba(255,255,255,.9); }
+.tag-title { margin: 0 0 7mm; font: 600 17pt/1.2 var(--sans); letter-spacing: -.01em; color: #fff; }
+.cover-logo { height: 13mm; width: 92mm; align-self: flex-start; position: relative; }
+.cover-main { position: relative; margin-top: -10mm; }
+.eyebrow { font: 600 8.5pt var(--sans); letter-spacing: .24em; text-transform: uppercase; color: rgba(255,255,255,.78); margin: 0 0 6mm; }
+.cover h1:not(.appendix) { break-before: auto; counter-increment: none; string-set: none; border: 0; padding: 0; position: relative; font: 700 38pt/1.04 var(--sans); letter-spacing: -.025em; margin: 0 0 6mm; color: #fff; max-width: 150mm; }
+.cover-sub { font: 400 13pt/1.4 var(--sans); color: rgba(255,255,255,.86); margin: 0; max-width: 135mm; }
+.cover h1:not(.appendix)::before { content: none; display: none; }
+.cover-rule { width: 24mm; height: 1mm; background: #fff; margin: 12mm 0 9mm; }
+.cover-meta { margin: 0; display: flex; flex-wrap: wrap; max-width: 150mm; }
+.cover-meta div { width: 50%; margin-bottom: 6mm; }
+.cover-meta dt { font: 600 7pt var(--sans); letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.65); margin: 0 0 1mm; }
+.cover-meta dd { margin: 0; font: 500 11.5pt var(--sans); color: #fff; }
+.cover-credit { position: relative; margin: 0; font: 400 8.5pt var(--sans); color: rgba(255,255,255,.8); display: flex; align-items: center; gap: 2.4mm; white-space: nowrap; }
+.cover-credit .wolf { height: 6mm; width: auto; } .cover-credit .word { height: 3.2mm; width: auto; }
+
+/* ------------------------------------------------------------ front matter */
+.docctl, .contents { page: front; break-after: page; }
+h2.plain { font: 700 20pt/1.15 var(--sans); color: var(--ink); margin: 0 0 6mm; padding-bottom: 3mm; border-bottom: 0.8mm solid var(--red); letter-spacing: -.01em; }
+.kv { width: 100%; border-collapse: collapse; margin: 0 0 6mm; }
+.kv th { background: none; width: 34mm; text-align: left; font: 600 8pt var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 2mm 3mm 2mm 0; border-bottom: .2mm solid var(--line); vertical-align: top; }
+.kv td { padding: 2mm 0; border-bottom: .2mm solid var(--line); color: var(--ink); }
+.toc { list-style: none; margin: 0; padding: 0; }
+.toc li a { display: block; color: var(--ink-soft); }
+.toc li a::after { content: leader('.') target-counter(attr(href), page); color: var(--muted); }
+.toc .l1 { margin-top: 3.2mm; font-weight: 600; } .toc .l1 a { color: var(--ink); }
+.toc .l1 .n { display: inline-block; min-width: 20mm; color: var(--red-deep); font-family: var(--mono); font-size: .86em; }
+.toc .l2 { padding-left: 20mm; font-size: 8.8pt; line-height: 1.5; }
+
+/* ------------------------------------------------------------ headings */
+h1 {
+  break-before: page; string-set: chapter content(); margin: 0 0 7mm; padding: 14mm 0 5mm; font: 700 26pt/1.1 var(--sans); color: var(--ink); letter-spacing: -.02em;
+  border-bottom: 0.8mm solid var(--red); position: relative;
+}
+h1:not(.appendix) { counter-increment: chapter; }
+h1:not(.appendix)::before { content: "Chapter " counter(chapter); display: block; font: 600 8.5pt var(--sans); letter-spacing: .22em; text-transform: uppercase; color: var(--red); margin-bottom: 2.5mm; }
+h1.appendix { counter-increment: appendix; }
+h1.appendix::before { content: "Appendix " counter(appendix, upper-alpha); display: block; font: 600 8.5pt var(--sans); letter-spacing: .22em; text-transform: uppercase; color: var(--red); margin-bottom: 2.5mm; }
+h2 { font: 700 15pt/1.2 var(--sans); color: var(--ink); margin: 9mm 0 3mm; padding-left: 3.5mm; border-left: 1.2mm solid var(--red); break-after: avoid; letter-spacing: -.01em; }
+h3 { font: 600 11pt/1.3 var(--sans); color: var(--ink); margin: 6mm 0 2mm; break-after: avoid; }
+h4 { font: 600 9.6pt var(--sans); color: var(--red-deep); margin: 4mm 0 1.5mm; break-after: avoid; text-transform: uppercase; letter-spacing: .08em; }
+.lead { font-size: 11pt; color: var(--ink); }
+ul, ol { margin: 0 0 3.5mm; padding-left: 5.5mm; } li { margin-bottom: 1mm; } li > p { margin-bottom: 1mm; }
+ul li::marker { color: var(--red); } ol li::marker { color: var(--red-deep); font-weight: 600; }
+
+/* ------------------------------------------------------------ tables */
+table { width: 100%; border-collapse: collapse; margin: 0 0 5mm; font-size: 8.6pt; line-height: 1.42; }
+thead { display: table-header-group; }
+tr { break-inside: avoid; }
+th { background: var(--ink); color: #fff; font: 600 7.6pt var(--sans); letter-spacing: .07em; text-transform: uppercase; text-align: left; padding: 2mm 2.4mm; border-bottom: .8mm solid var(--red); }
+td { padding: 1.8mm 2.4mm; border-bottom: .2mm solid var(--line); vertical-align: top; }
+tbody tr:nth-child(even) td { background: var(--surface); }
+td.yes { color: #146c43; font-weight: 600; text-align: center; } td.no { color: #a3acb2; text-align: center; }
+.matrix th:not(:first-child), .perm th:nth-child(n+3):nth-child(-n+6) { text-align: center; }
+.perm { font-size: 7.6pt; table-layout: fixed; } .perm th:nth-child(1) { width: 36mm; } .perm th:nth-child(2) { width: 17mm; } .perm th:nth-child(n+3):nth-child(-n+6) { width: 15mm; } .perm td:first-child { font-family: var(--mono); font-size: 7.2pt; color: var(--red-dark); }
+.kv tr:nth-child(even) td { background: none; }
+
+/* ------------------------------------------------------------ chips */
+.chip { display: inline-block; font: 600 7.4pt var(--sans); letter-spacing: .05em; padding: .5mm 2.2mm; border-radius: 6mm; color: #fff; white-space: nowrap; vertical-align: baseline; }
+.chip-super_admin { background: var(--red); } .chip-pentester { background: #1f3038; } .chip-remediation { background: #a45a0a; } .chip-external_vendor { background: #0e6f67; }
+td .chip { margin: 0 .6mm .6mm 0; }
+
+/* ------------------------------------------------------------ figures and callouts */
+figure { margin: 4mm 0 6mm; break-inside: avoid; }
+figure img { width: 100%; display: block; border: .25mm solid #cfd6da; border-radius: 1.6mm; }
+figure.phone img { width: 62mm; margin: 0 auto; }
+figcaption { counter-increment: fig; margin-top: 1.8mm; font: 400 8pt var(--sans); color: var(--muted); text-align: center; }
+figcaption::before { content: "Figure " counter(fig) ".  "; font-weight: 600; color: var(--red-deep); }
+blockquote.callout { margin: 0 0 4.5mm; padding: 2.6mm 4mm; border-left: 1.2mm solid var(--red); background: var(--tint); border-radius: 0 1.6mm 1.6mm 0; break-inside: avoid; }
+blockquote.callout p:last-child { margin-bottom: 0; }
+blockquote.callout.tip { border-color: #146c43; background: #eef8f2; } blockquote.callout.tip strong:first-child { color: #146c43; }
+blockquote.callout.warning, blockquote.callout.important { border-color: var(--red-deep); background: #fdeaec; } blockquote.callout.warning strong:first-child, blockquote.callout.important strong:first-child { color: var(--red-deep); }
+blockquote.callout.example { border-color: #1f3038; background: var(--surface); } blockquote.callout.example strong:first-child { color: #1f3038; }
+blockquote.callout.note strong:first-child { color: var(--red-deep); }
+.steps { counter-reset: step; list-style: none; padding-left: 0; }
+.steps > li { counter-increment: step; position: relative; padding-left: 9mm; margin-bottom: 2.4mm; }
+.steps > li::before { content: counter(step); position: absolute; left: 0; top: .1mm; width: 6mm; height: 6mm; border-radius: 50%; background: var(--red); color: #fff; font: 600 8pt/6mm var(--sans); text-align: center; }
+hr { border: 0; border-top: .25mm solid var(--line); margin: 5mm 0; }

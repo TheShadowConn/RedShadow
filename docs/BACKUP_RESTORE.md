@@ -1,0 +1,36 @@
+# Backup and restore
+
+## Backup
+
+```bash
+scripts/backup.sh            # writes ./backups/<timestamp>/
+```
+
+Produces `db.dump` (pg_dump custom format), `media.tgz`, `secrets.tgz`, `SHA256SUMS`. Directory mode 0700.
+The stack keeps running. `secrets.tgz` contains the Django secret key, MFA encryption key, database passwords and TLS key: store the
+backup somewhere access-controlled. Copy backups off this Mac regularly.
+
+## Restore
+
+```bash
+scripts/restore.sh backups/<timestamp> --yes
+```
+
+Destructive: replaces the database and media. Steps: verify checksums; if no `secrets` volume exists (fresh install)
+restore secrets first, otherwise keep existing ones; stop app services; recreate the `redshadow` database with the
+standard role grants; `pg_restore`; re-apply audit privilege restrictions (`db/sql/post-restore.sql`); restore media; start the stack (migrations run before the backend); verify the audit chain.
+
+To restore on a new machine: clone/copy the project, run `scripts/restore.sh <backup> --yes` (do not start the stack first).
+
+## Drill
+
+```bash
+scripts/backup-drill.sh
+```
+
+Backs up the live stack, restores into an isolated project `redshadow_drill` (ports 18080/18443, separate volumes),
+verifies a database row, a media file and readiness, then removes only the drill project. Last run: passed (2026-11-12).
+
+## Later phases
+
+The drill also checks that the audit append-only protections survived. Phase 12 repeats the drill with real data and an upgrade.

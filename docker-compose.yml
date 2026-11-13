@@ -1,0 +1,260 @@
+name: redshadow
+
+x-backend: &backend
+  build:
+    context: ./backend
+    target: prod
+  image: redshadow-backend:local
+  restart: unless-stopped
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  mem_limit: 768m
+  pids_limit: 300
+  networks: [internal]
+  volumes:
+    - secrets:/run/secrets:ro
+  depends_on: &backend-deps
+    secrets-init: {condition: service_completed_successfully}
+    db: {condition: service_healthy}
+    redis: {condition: service_healthy}
+
+x-backend-env: &backend-env
+  DJANGO_SETTINGS_MODULE: config.settings.prod
+  SECRET_KEY_FILE: /run/secrets/secret_key
+  DB_HOST: db
+  DB_NAME: redshadow
+  DB_USER: redshadow_app
+  DB_PASSWORD_FILE: /run/secrets/db_app_password
+  REDIS_HOST: redis
+  REDIS_PASSWORD_FILE: /run/secrets/redis_password
+  MFA_ENCRYPTION_KEY_FILE: /run/secrets/mfa_key
+  TLS_MODE: ${TLS_MODE:-selfsigned}
+  CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}
+  ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  APP_VERSION: ${APP_VERSION:-1.0.0}
+  BUILD_ID: ${BUILD_ID:-dev}
+  BUILD_DATE: ${BUILD_DATE:-}
+
+services:
+  secrets-init:
+    build: ./scripts/secrets-init
+    image: redshadow-secrets-init:local
+    restart: "no"
+    network_mode: none
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      TLS_MODE: ${TLS_MODE:-selfsigned}
+      TLS_HOSTNAME: ${TLS_HOSTNAME:-localhost}
+      TLS_EXTRA_SAN: ${TLS_EXTRA_SAN:-}
+    volumes:
+      - secrets:/secrets
+
+  db:
+    image: postgres:16-alpine@sha256:aa6cb33cf4c19c765cefcf48d96176258800870a9a1e930ad126200f9d825139
+    restart: unless-stopped
+    networks: [internal]
+    security_opt: ["no-new-privileges:true"]
+    # Postgres starts as root only to fix data-dir ownership, then drops to the postgres user.
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    read_only: true
+    tmpfs: [/tmp, /run/postgresql]
+    mem_limit: 1g
+    pids_limit: 400
+    environment:
+      POSTGRES_USER: redshadow_admin
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - secrets:/run/secrets:ro
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+      - ./db/sql:/opt/redshadow/sql:ro
+    depends_on:
+      secrets-init: {condition: service_completed_successfully}
+    healthcheck:
+      # TCP check: during first-run init Postgres listens on the unix socket only.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U redshadow_admin -d redshadow"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine@sha256:7f7d30b7fdd09467bac58198a1f166dd69789d348d4fe859cccb20e0cf287fbe
+    restart: unless-stopped
+    networks: [internal]
+    security_opt: ["no-new-privileges:true"]
+    # No persistence (cache and broker only), so it runs as the redis user on a read-only filesystem.
+    user: "999:1000"
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs: [/data]
+    mem_limit: 256m
+    pids_limit: 100
+    command:
+      - sh
+      - -c
+      - exec redis-server --requirepass "$$(cat /run/secrets/redis_password)" --save "" --appendonly no
+    volumes:
+      - secrets:/run/secrets:ro
+    depends_on:
+      secrets-init: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD-SHELL", 'REDISCLI_AUTH="$$(cat /run/secrets/redis_password)" redis-cli ping | grep -q PONG']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    <<: *backend
+    restart: "no"
+    command: ["sh", "-c", "python manage.py migrate --noinput && python manage.py bootstrap_admin"]
+    environment:
+      <<: *backend-env
+      DB_USER: redshadow_owner
+      DB_PASSWORD_FILE: /run/secrets/db_owner_password
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-admin@redshadow.local}
+      BOOTSTRAP_ADMIN_PASSWORD_FILE: /run/secrets/bootstrap_admin_password
+
+  backend:
+    <<: *backend
+    environment: *backend-env
+    depends_on:
+      <<: *backend-deps
+      migrate: {condition: service_completed_successfully}
+    volumes:
+      - secrets:/run/secrets:ro
+      - media:/data/media
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/ready', timeout=4).status == 200 else 1)"
+      interval: 10s
+      timeout: 6s
+      retries: 6
+      start_period: 15s
+
+  worker:
+    <<: *backend
+    environment: *backend-env
+    depends_on:
+      <<: *backend-deps
+      migrate: {condition: service_completed_successfully}
+    volumes:
+      - secrets:/run/secrets:ro
+      - media:/data/media
+    command: ["celery", "-A", "config", "worker", "-l", "INFO", "-Q", "default,imports,maintenance", "--concurrency", "2"]
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A config inspect ping -d celery@$$HOSTNAME -t 5 | grep -q pong"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # PDF rendering is memory hungry, so it has its own worker and memory limit; a bad report cannot starve imports.
+  reports-worker:
+    <<: *backend
+    environment: *backend-env
+    depends_on:
+      <<: *backend-deps
+      migrate: {condition: service_completed_successfully}
+    volumes:
+      - secrets:/run/secrets:ro
+      - media:/data/media
+    mem_limit: 1g
+    command: ["celery", "-A", "config", "worker", "-l", "INFO", "-Q", "reports", "-n", "reports@%h", "--concurrency", "2", "--max-tasks-per-child", "20"]
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A config inspect ping -d reports@$$HOSTNAME -t 5 | grep -q pong"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  beat:
+    <<: *backend
+    environment: *backend-env
+    depends_on:
+      worker: {condition: service_healthy}
+    volumes:
+      - secrets:/run/secrets:ro
+      - beat:/data/beat
+    command: ["celery", "-A", "config", "beat", "-l", "INFO", "-s", "/data/beat/celerybeat-schedule", "--pidfile=/tmp/celerybeat.pid"]
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "celery -A config beat"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    image: redshadow-nginx:local
+    restart: unless-stopped
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: [/tmp]
+    networks: [edge, internal]
+    ports:
+      - "${HTTP_PORT:-80}:8080"
+      - "${HTTPS_PORT:-443}:8443"
+    environment:
+      TLS_MODE: ${TLS_MODE:-selfsigned}
+      HTTPS_PORT: ${HTTPS_PORT:-443}
+    volumes:
+      - secrets:/run/secrets:ro
+      - media:/data/media:ro
+      - ${TLS_CERT_DIR:-./tls}:/etc/nginx/tls:ro
+    depends_on:
+      secrets-init: {condition: service_completed_successfully}
+      backend: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 4s
+      retries: 5
+
+  # Run with: docker compose --profile test run --rm backend-test
+  backend-test:
+    profiles: [test]
+    build:
+      context: ./backend
+      target: test
+    image: redshadow-backend-test:local
+    networks: [internal]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *backend-env
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      # Needs CREATEDB to build the throwaway test database; the app roles do not have it.
+      DB_USER: redshadow_admin
+      DB_PASSWORD_FILE: /run/secrets/db_admin_password
+      DOCS_DIR: /docs
+    volumes:
+      - secrets:/run/secrets:ro
+      - ./docs:/docs:ro
+    depends_on: *backend-deps
+
+networks:
+  edge: {}
+  internal:
+    internal: true
+
+volumes:
+  pgdata: {}
+  media: {}
+  beat: {}
+  secrets: {}

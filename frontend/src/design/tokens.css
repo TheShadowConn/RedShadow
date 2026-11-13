@@ -1,0 +1,71 @@
+/*
+ * RedShadow tokens. Dealt with design-taste-frontend (start.mjs deal --page software):
+ * palette "cool-white-slate", pairing "geist" (Geist + Geist Mono), radius "sharp".
+ * Interface stays 90-95% neutral; ONE accent (teal) for the primary action, focus ring and links.
+ * Crimson is the brand mark and the critical severity only. Never violet.
+ * Text people read is 16px, ink contrast >= 7:1, muted >= 4.5:1. Controls are 44px high.
+ */
+@theme {
+  --font-sans: "Geist Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --color-ground: #f7f9fa;
+  --color-surface: #ffffff;
+  --color-raised: #ecf0f2;
+  --color-line: rgb(31 48 56 / 0.14);
+  --color-line-strong: rgb(31 48 56 / 0.28);
+  --color-ink: #1f3038;
+  --color-muted: #5d6b72;
+  --color-accent: #0d7480;
+  --color-accent-hover: #0a5c66;
+  --color-on-accent: #ffffff;
+  --color-brand: #e5383b;
+
+  --color-ok: #1b6b3a;
+  --color-ok-bg: #e4f3e9;
+  --color-warn: #8a5a00;
+  --color-warn-bg: #fbf0d6;
+  --color-fail: #b3261e;
+  --color-fail-bg: #fbe5e3;
+  --color-info: #3b5360;
+  --color-info-bg: #e6edf0;
+
+  --color-sev-critical: #b3261e;
+  --color-sev-high: #a63509;
+  --color-sev-medium: #7a5000;
+  --color-sev-low: #1d4ed8;
+  --color-sev-info: #475569;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --ease-ui: cubic-bezier(0.2, 0, 0, 1);
+}
+
+:root[data-theme="dark"] {
+  --color-ground: #141d21;
+  --color-surface: #1b272d;
+  --color-raised: #26353d;
+  --color-line: rgb(247 249 250 / 0.14);
+  --color-line-strong: rgb(247 249 250 / 0.3);
+  --color-ink: #f7f9fa;
+  --color-muted: #a3afb5;
+  --color-accent: #4cc3d0;
+  --color-accent-hover: #72d3dd;
+  --color-on-accent: #07181b;
+
+  --color-ok: #5fd68a;
+  --color-ok-bg: #16311f;
+  --color-warn: #e3b341;
+  --color-warn-bg: #352a10;
+  --color-fail: #ff8a82;
+  --color-fail-bg: #3a1b19;
+  --color-info: #b4c3cb;
+  --color-info-bg: #26353d;
+
+  --color-sev-critical: #ff8a82;
+  --color-sev-high: #ff9a62;
+  --color-sev-medium: #e3b341;
+  --color-sev-low: #79a8ff;
+  --color-sev-info: #9aa7b8;
+}

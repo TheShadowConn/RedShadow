@@ -1,0 +1,18 @@
+RedShadow
+Copyright 2026 Arun Kumar Subbiah M (Shadowconn, https://github.com/TheShadowConn)
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+TRADEMARKS AND BRAND ASSETS ARE NOT LICENSED
+The names "RedShadow" and "Shadowconn", their logos (including the RedShadow eclipse
+wordmark, the "O" mark and the Shadowconn wolf and wordmark) and the tagline "Offensive
+Security, under control." are the property of Arun Kumar Subbiah M (Shadowconn). The Apache License does not
+grant any right to use them (Apache License section 6). See TRADEMARKS.md.
+
+THIRD-PARTY COMPONENTS
+This product includes third-party software and data under their own licenses. See
+THIRD_PARTY_LICENSES.md. In particular:
+  - Geist and Geist Mono fonts, SIL Open Font License 1.1
+    (backend/apps/reports/assets/fonts/OFL.txt)
+  - CWE (Common Weakness Enumeration) names, (c) The MITRE Corporation, used under the
+    CWE Terms of Use (https://cwe.mitre.org/about/termsofuse.html)
