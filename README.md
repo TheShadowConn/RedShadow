@@ -4,11 +4,51 @@
 
 **Offensive Security, under control.**
 
-RedShadow is a self-hosted penetration-test management platform. It takes an engagement from scoping to a **verified fix**: organisations, assets, engagements, findings, evidence, remediation, retests, scheduling, an append-only audit log and professional PDF and CSV reports. Everyone sees only the work they are meant to see.
+[![CI](https://github.com/TheShadowConn/RedShadow/actions/workflows/ci.yml/badge.svg)](https://github.com/TheShadowConn/RedShadow/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-b10f27.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/TheShadowConn/RedShadow?color=ef233c)](https://github.com/TheShadowConn/RedShadow/releases)
+[![Self-hosted](https://img.shields.io/badge/self--hosted-Docker%20Compose-1f3038.svg)](#quick-start)
 
-Django REST, React and PostgreSQL, run entirely with Docker Compose.
+**RedShadow is an open-source pentest management platform.** Plan engagements, record findings with CVSS and evidence, assign fixes, **retest and verify** them, keep a tamper-evident audit trail, and hand clients a professional PDF report. Self-hosted with one command: `docker compose up`.
 
-![RedShadow overview](docs/manual/shots/02-admin-dashboard.png)
+It is built for the people in a real penetration test: the **lead who runs the engagement**, the **testers** who find issues, the **remediation owners** who fix them, and **external vendors** who contribute their own findings. Everyone sees only the work they are meant to see.
+
+> Looking for a pentest reporting tool, a findings tracker or a self-hosted alternative to spreadsheets and heavyweight vulnerability managers? RedShadow focuses on the engagement from scoping to a *verified* fix.
+
+## See it
+
+| Dashboard | Finding awaiting verification |
+|---|---|
+| ![Dashboard](docs/manual/shots/02-admin-dashboard.png) | ![Finding](docs/manual/shots/17-finding-detail.png) |
+| **Retest round** | **Audit log with verified chain** |
+| ![Retest](docs/manual/shots/20-retest-pass.png) | ![Audit](docs/manual/shots/09-audit.png) |
+
+<details>
+<summary>More screens</summary>
+
+| | |
+|---|---|
+| ![Engagement](docs/manual/shots/04-engagement-overview.png) | ![Calendar](docs/manual/shots/12-calendar.png) |
+| ![Import check](docs/manual/shots/23-import-check.png) | ![New report](docs/manual/shots/13-new-report.png) |
+| ![Remediation queue](docs/manual/shots/24-remediation-queue.png) | ![Vendor dashboard](docs/manual/shots/27-vendor-dashboard.png) |
+| ![Roles](docs/manual/shots/08-roles.png) | ![Mobile](docs/manual/shots/30-mobile.jpg) |
+
+</details>
+
+All screens show fictional demo data.
+
+## Why RedShadow
+
+| | Spreadsheets and documents | General vulnerability managers | **RedShadow** |
+|---|---|---|---|
+| Built around the pentest engagement | Manual | Often product or scan centred | **Yes**: scope, team, rules of engagement, calendar |
+| Verified fixes with a written reason | Manual | Varies | **Yes**: retest rounds, pass and fail, reopen |
+| Outside testers see only their own work | No | Varies | **Yes**: External Vendor role with own-findings scope |
+| Tamper-evident history | No | Varies | **Yes**: hash-chained, database-enforced audit log |
+| Client PDF in your style | Copy and paste | Varies | **Yes**: client and internal editions, template editor |
+| Runs on your own hardware | Yes | Varies | **Yes**: Docker Compose, no cloud account |
+
+The comparison is general. Check any tool against your own needs.
 
 ## Features
 
@@ -36,6 +76,10 @@ Open https://localhost (self-signed certificate) and sign in as `admin@redshadow
 
 > Never run `docker compose down -v` on a real installation: it deletes the database, uploads and secrets.
 
+## How it works
+
+Nginx in front, a Django REST API behind it, PostgreSQL for data, Redis and Celery for background jobs, a React app for the interface. Nine containers start in a safe order and only Nginx is exposed. Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the [ADRs](docs/adr).
+
 ## Documentation
 
 - **User and workflow manual (PDF)**: [docs/manual/RedShadow-User-Manual.pdf](docs/manual/RedShadow-User-Manual.pdf). Rebuild with `make manual`.
@@ -43,17 +87,21 @@ Open https://localhost (self-signed certificate) and sign in as `admin@redshadow
 - Operations: [docs/DOCKER_SETUP.md](docs/DOCKER_SETUP.md), [docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md), [docs/RUNBOOKS.md](docs/RUNBOOKS.md)
 - Security: [docs/SECURITY.md](docs/SECURITY.md), [docs/ASVS_L2_CHECKLIST.md](docs/ASVS_L2_CHECKLIST.md), [SECURITY.md](SECURITY.md)
 - Permissions: [docs/RBAC_PERMISSION_MATRIX.md](docs/RBAC_PERMISSION_MATRIX.md)
-- Project status: [PROJECT_STATUS.md](PROJECT_STATUS.md)
+- Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
 
-## Development
+## Status
+
+Version 1.0. The backend has about 780 automated tests, the stack has a 34-check smoke test and a backup and restore drill. An OWASP ZAP scan has not been run yet. Please report vulnerabilities privately: see [SECURITY.md](SECURITY.md).
+
+## Contribute
+
+Ideas, bug reports and pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and the issues labelled **good first issue**, or open a discussion. Please star the repo if RedShadow is useful to you, it helps others find it.
 
 ```bash
 make test     # backend tests against real Postgres and Redis
 make lint     # ruff
 make smoke    # stack checks
 ```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License and brand
 
