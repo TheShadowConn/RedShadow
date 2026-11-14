@@ -17,6 +17,8 @@ It is built for the people in a real penetration test: the **lead who runs the e
 
 ## See it
 
+![RedShadow in action: dashboard, engagement, finding, verification, retest and audit](docs/brand/demo.gif)
+
 | Dashboard | Finding awaiting verification |
 |---|---|
 | ![Dashboard](docs/manual/shots/02-admin-dashboard.png) | ![Finding](docs/manual/shots/17-finding-detail.png) |
