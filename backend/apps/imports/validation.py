@@ -23,6 +23,11 @@ def _err(errors: list, field: str, code: str, message: str) -> None:
     errors.append({"field": field, "code": code, "message": message})
 
 
+def asset_key(text: str) -> str:
+    """Match key for an asset cell: case-insensitive, trimmed, and tolerant of a trailing slash on URLs."""
+    return text.strip().lower().rstrip("/")
+
+
 class RowValidator:
     def __init__(self, engagement, headers: list[str], column_map: dict, value_map: dict):
         self.engagement = engagement
@@ -32,8 +37,9 @@ class RowValidator:
         self.assets = {}
         for link in EngagementAsset.objects.filter(engagement=engagement, in_scope=True).select_related("asset"):
             if link.asset.archived_at is None:
-                self.assets.setdefault(link.asset.name.strip().lower(), link.asset.pk)
-                self.assets.setdefault(link.asset.identifier.strip().lower(), link.asset.pk)
+                self.assets.setdefault(asset_key(link.asset.name), link.asset.pk)
+                if link.asset.identifier.strip():
+                    self.assets.setdefault(asset_key(link.asset.identifier), link.asset.pk)
         self.cwes = set(CWE.objects.values_list("pk", flat=True)) if "cwe" in self.index else set()
 
     def cell(self, raw: list[str], field: str) -> str:
@@ -105,13 +111,13 @@ class RowValidator:
         asset_text = self.cell(raw, "asset")
         out["asset_id"] = None
         if asset_text:
-            found = self.assets.get(asset_text.lower())
+            found = self.assets.get(asset_key(asset_text))
             if found is None:
                 _err(
                     errors,
                     "asset",
                     "unknown_asset",
-                    f"No in-scope asset of this engagement is named or identified {asset_text!r}.",
+                    f"No in-scope asset of this engagement has the name, IP address or URL {asset_text!r}.",
                 )
             else:
                 out["asset_id"] = str(found)

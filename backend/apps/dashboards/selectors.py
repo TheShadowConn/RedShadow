@@ -4,17 +4,18 @@ dashboard can never show more than the matching list screens. Counting is done i
 from collections import Counter
 from datetime import timedelta
 
-from django.db.models import Avg, Count, DurationField, ExpressionWrapper, F, Q
+from django.db.models import Avg, Count, DurationField, ExpressionWrapper, F, Q, Sum
 from django.db.models.functions import TruncWeek
 from django.utils import timezone
 
 from apps.audit.models import IntegrityCheck
 from apps.audit.selectors import scope_audit
-from apps.engagements.models import Engagement
-from apps.engagements.selectors import scope_engagements, with_overdue
+from apps.engagements.models import Engagement, EngagementCost
+from apps.engagements.selectors import cost_totals, scope_engagements, with_overdue
 from apps.findings import lifecycle
 from apps.findings.models import SEVERITIES, STATUSES, Finding, RetestItem, RetestRound
 from apps.findings.selectors import scope_findings, with_severity_rank
+from apps.rbac.authz import has_platform_perm
 
 SEVERITY_KEYS = [k for k, _ in SEVERITIES]
 STATUS_KEYS = [k for k, _ in STATUSES]
@@ -25,6 +26,7 @@ UPCOMING_DAYS = 30
 DUE_SOON_DAYS = 7
 SLA_WINDOW_DAYS = 90
 ACTIVITY_LIMIT = 8
+COST_TOP = 8
 
 
 def _zeroed(keys, counts) -> dict[str, int]:
@@ -218,8 +220,31 @@ def integrity() -> dict | None:
 # one entry per dashboard
 
 
+def costs_block(user) -> dict | None:
+    """Total cost per currency and the biggest engagements. None unless the user holds engagement_costs.view."""
+    if not has_platform_perm(user, "engagement_costs.view"):
+        return None
+    scope = scope_engagements(user)
+    rows = (
+        EngagementCost.objects.filter(engagement__in=scope)
+        .order_by()
+        .values("engagement_id", "engagement__ref", "engagement__name", "currency")
+        .annotate(total=Sum("amount"))
+        .order_by("-total")[:COST_TOP]
+    )
+    return {
+        "totals": cost_totals(engagements_qs=scope),
+        "top": [
+            {"engagement": {"id": str(r["engagement_id"]), "ref": r["engagement__ref"], "name": r["engagement__name"]},
+             "currency": r["currency"], "total": r["total"]}
+            for r in rows
+        ],
+    }  # fmt: skip
+
+
 def admin(user, today) -> dict:
     return {
+        "costs": costs_block(user),
         "top_organisations": top_organisations(user),
         "next_due": next_due(user, today),
         "integrity": integrity(),

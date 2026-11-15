@@ -131,21 +131,52 @@ class ImportJobViewSet(ScopedModelViewSet):
     @action(detail=False, methods=["get"], url_path="template.csv", url_name="template")
     def template(self, request):
         header = [label for _, label, _ in mapping_rules.FIELDS]
-        example = [
-            "SQL injection in search",
-            "high",
-            "",
-            "The search parameter is concatenated into a query.",
-            "Use parameterised queries.",
-            "",
-            "",
-            "/search",
-            "",
-            "89",
-            "2026-11-13",
-            "OWASP|https://owasp.org/",
+        # The Asset column takes an asset's name, IP address or URL, exactly as recorded on the asset.
+        examples = [
+            [
+                "SQL injection in search",
+                "high",
+                "",
+                "The search parameter is concatenated into a query.",
+                "Use parameterised queries.",
+                "",
+                "",
+                "/search",
+                "Acme shop",
+                "89",
+                "2026-11-13",
+                "OWASP|https://owasp.org/",
+            ],
+            [
+                "Outdated SSH service",
+                "medium",
+                "",
+                "The host runs an SSH version with known flaws.",
+                "Upgrade OpenSSH.",
+                "",
+                "",
+                "",
+                "10.0.0.5",
+                "",
+                "2026-11-13",
+                "",
+            ],
+            [
+                "Missing security headers",
+                "low",
+                "",
+                "The response lacks common hardening headers.",
+                "Add the headers at the proxy.",
+                "",
+                "",
+                "/",
+                "https://shop.acme.test",
+                "693",
+                "2026-11-13",
+                "",
+            ],
         ]
-        handle, _, _ = write_csv(header, [example])
+        handle, _, _ = write_csv(header, examples)
         response = FileResponse(
             handle, content_type="text/csv; charset=utf-8", as_attachment=True, filename="redshadow-import-template.csv"
         )

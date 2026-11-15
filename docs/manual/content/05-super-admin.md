@@ -73,10 +73,21 @@ The buttons at the top of the engagement page follow the status rules in Chapter
 - **Findings**: all findings of the engagement with the same filters as the Findings page.
 - **Reports**: reports built for this engagement.
 - **Team**: members and roles.
+- **Cost**: cost lines of the engagement, each in its own currency. Shown only to people who hold the cost permissions (see Engagement cost below).
 - **Notes and documents**: team or shared notes, and documents such as the statement of work (drag and drop, 25 MB each).
 - **History**: every change to this engagement.
 
 > **Warning:** Editing an engagement uses a version check. If someone else saved first, you see a conflict message. Reload and apply your change again so that you never overwrite another person's work.
+
+### Engagement cost
+
+The **Cost** tab records what an engagement costs. It is visible only to roles that hold `engagement_costs.view`; by default that is Super Admin alone. Pentesters, Remediation Owners and External Vendors do not see the tab, the totals or the dashboard panel.
+
+1. Open the engagement and select the **Cost** tab, then **Add cost**.
+2. Enter the **amount**, choose the **currency** (44 ISO 4217 codes, for example USD, EUR, GBP, INR, AED), the **category** (labour, tools and licences, travel, subcontractor or other), the **date** and an optional description.
+3. Select **Add cost**. Use the pencil to edit a line or the bin to delete one. Both are recorded in the history.
+
+An engagement can hold lines in several currencies. The **Total cost** card adds each currency separately. RedShadow never converts between currencies, so no exchange rate is applied. Archived engagements are read-only. Adding, editing and deleting needs `engagement_costs.manage`; a custom role can be given either permission in **Roles**.
 
 ### Manage the team
 
@@ -103,6 +114,8 @@ Open **Calendar** to see scheduled, in-progress, reporting and completed engagem
 ## Dashboard
 
 The **Administration** dashboard shows open, overdue and due-soon findings, items waiting for verification, running engagements, severity and status charts, a twelve-week trend, fix-deadline compliance, upcoming engagements and the latest activity. Each number equals the same filter on the matching list page.
+
+The **Engagement cost** panel shows the total cost for every engagement you can see, one line per currency, and the highest-cost engagements. It appears only for roles that hold `engagement_costs.view`.
 
 ## Other Super Admin duties
 

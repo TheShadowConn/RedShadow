@@ -32,7 +32,7 @@ class ReportTemplate(BaseModel):
 
     name = models.CharField(max_length=120, unique=True)
     sections = models.JSONField(default=default_sections)  # ordered list of SECTION_KEYS
-    accent = models.CharField(max_length=7, default="#e5383b")
+    accent = models.CharField(max_length=7, default="#ef233c")
     font = models.CharField(max_length=10, choices=FONTS, default="geist")
     footer_text = models.CharField(max_length=160, blank=True)
     logo_key = models.CharField(max_length=64, blank=True)

@@ -16,7 +16,7 @@ FIELDS = [
     ("technical_details", "Technical details", ""),
     ("poc", "Proof of concept", ""),
     ("endpoint", "Endpoint", ""),
-    ("asset", "Asset", "Matched by name or identifier among the engagement's in-scope assets"),
+    ("asset", "Asset", "Asset name, IP address or URL, matched against the engagement's in-scope assets"),
     ("cwe", "CWE", "A number or CWE-79 style"),
     ("discovered_at", "Discovered date", "Use YYYY-MM-DD"),
     ("references", "References", "Links, optionally Label|URL, separated by semicolons or new lines"),
@@ -32,7 +32,10 @@ ALIASES = {
     "technical_details": ["technical details", "technical", "technical description"],
     "poc": ["poc", "proof of concept", "proof", "steps to reproduce", "reproduction"],
     "endpoint": ["endpoint", "url", "path", "location", "affected url"],
-    "asset": ["asset", "host", "target", "hostname", "ip", "affected asset"],
+    "asset": [
+        "asset", "asset name", "host", "target", "hostname", "ip", "ip address", "asset ip",
+        "affected asset", "affected host",
+    ],  # fmt: skip
     "cwe": ["cwe", "cwe id", "cwe-id"],
     "discovered_at": ["discovered", "discovered at", "date", "found", "date found", "discovered date"],
     "references": ["references", "reference", "links", "urls"],

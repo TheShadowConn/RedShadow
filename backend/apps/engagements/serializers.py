@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework import serializers
 
 from apps.accounts.models import User
@@ -10,7 +12,15 @@ from apps.rbac.authz import engagement_permissions
 from apps.rbac.catalogue import ENGAGEMENT, PERMISSIONS
 from apps.rbac.models import Role
 
-from .models import Engagement, EngagementAsset, EngagementMembership, EngagementNote
+from .models import (
+    CATEGORY_CODES,
+    CURRENCY_CODES,
+    Engagement,
+    EngagementAsset,
+    EngagementCost,
+    EngagementMembership,
+    EngagementNote,
+)
 
 _ENGAGEMENT_CODES = {c for c, (scope, _) in PERMISSIONS.items() if scope == ENGAGEMENT}
 
@@ -176,3 +186,27 @@ class HistorySerializer(serializers.ModelSerializer):
             "outcome",
         ]
         read_only_fields = fields
+
+
+class CostSerializer(serializers.ModelSerializer):
+    created_by = UserRefSerializer(read_only=True)
+
+    class Meta:
+        model = EngagementCost
+        fields = ["id", "amount", "currency", "category", "description", "incurred_on", "created_by", "created_at"]
+        read_only_fields = fields
+
+
+class CostCreateSerializer(StrictSerializer):
+    amount = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=Decimal("0.01"))
+    currency = serializers.ChoiceField(choices=CURRENCY_CODES)
+    category = serializers.ChoiceField(choices=CATEGORY_CODES, required=False, default="other")
+    description = serializers.CharField(required=False, allow_blank=True, max_length=300, default="")
+    incurred_on = serializers.DateField()
+
+
+class CostUpdateSerializer(CostCreateSerializer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.required = False

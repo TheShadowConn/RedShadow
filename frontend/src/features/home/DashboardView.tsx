@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../api/auth";
 import { api } from "../../api/client";
 import { type Dashboard, type DashboardKind, type DashEngagement, type DashFinding } from "../../api/types";
-import { EmptyState, EngagementStatus, ErrorState, formatDate, formatDay, LoadingRows, PageHeader, Tabs } from "../../design/ui";
+import { EmptyState, EngagementStatus, ErrorState, formatDate, formatDay, LoadingRows, money, PageHeader, Tabs } from "../../design/ui";
 import { SeverityBadge } from "../findings/shared";
 import { SeverityBars, StatusStrip, TrendChart } from "./charts";
 
@@ -136,6 +136,22 @@ function Body({ d }: { d: Dashboard }) {
             <Panel title="My retests" action={<Link to="/retests" className="inline-flex min-h-11 items-center text-accent hover:underline">All retests</Link>}>
               {d.retests.rounds.length === 0 ? <p className="m-0 text-muted">No retest round is waiting for you.</p> : (
                 <ul className="m-0 list-none divide-y divide-line p-0">{d.retests.rounds.map((r) => <li key={r.id}><Link to={`/retests/${r.id}`} className="flex min-h-11 items-center justify-between gap-3 py-3 hover:bg-raised"><span><span className="mono">{r.ref}</span> <span className="text-muted">{r.engagement.ref}</span></span><span className="text-[14px] text-muted">{r.pending} to test</span></Link></li>)}</ul>
+              )}
+            </Panel>
+          )}
+          {kind === "admin" && d.costs && (
+            <Panel title="Engagement cost" wide>
+              {d.costs.totals.length === 0 ? <p className="m-0 text-muted">No cost recorded yet. Add cost lines on an engagement's Cost tab.</p> : (
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div>
+                    <h3 className="mb-2 text-[14px] font-medium text-muted">Total by currency</h3>
+                    <ul className="m-0 list-none divide-y divide-line p-0">{d.costs.totals.map((t) => <li key={t.currency} className="flex min-h-11 items-center justify-between gap-3 py-2"><span><span className="mono font-medium">{t.currency}</span> <span className="text-[14px] text-muted">{t.lines} {t.lines === 1 ? "line" : "lines"}</span></span><span className="mono text-[20px] font-semibold">{money(t.total, t.currency)}</span></li>)}</ul>
+                  </div>
+                  <div>
+                    <h3 className="mb-2 text-[14px] font-medium text-muted">Highest-cost engagements</h3>
+                    <ul className="m-0 list-none divide-y divide-line p-0">{d.costs.top.map((r) => <li key={`${r.engagement.id}${r.currency}`}><Link to={`/engagements/${r.engagement.id}`} className="flex min-h-11 items-center justify-between gap-3 py-2 hover:bg-raised"><span className="min-w-0"><span className="mono text-[14px] text-muted">{r.engagement.ref}</span> <span className="font-medium">{r.engagement.name}</span></span><span className="mono shrink-0">{money(r.total, r.currency)}</span></Link></li>)}</ul>
+                  </div>
+                </div>
               )}
             </Panel>
           )}

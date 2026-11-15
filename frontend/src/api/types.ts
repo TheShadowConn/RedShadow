@@ -483,8 +483,30 @@ export type Dashboard = {
   activity: Array<{ id: number; at: string; action: string; entity_type: string; entity_label: string; actor: string; engagement_ref: string; outcome: string }>;
   next_due: DashFinding[];
   top_organisations?: Array<{ id: string; name: string; critical: number; high: number }>;
+  costs?: { totals: Array<{ currency: string; total: string; lines: number }>; top: Array<{ engagement: { id: string; ref: string; name: string }; currency: string; total: string }> } | null;
   integrity?: { status: string; finished_at: string | null; checked: number; reason: string } | null;
   mine?: { open: number; overdue: number; drafts: number };
   retests?: { active_rounds: number; items_pending: number; rounds: Array<{ id: string; ref: string; engagement: { id: string; ref: string }; status: string; pending: number }> };
   recently_closed?: number;
 };
+
+export const COST_CATEGORIES = [
+  ["labour", "Labour"], ["tools", "Tools and licences"], ["travel", "Travel"], ["subcontractor", "Subcontractor"], ["other", "Other"],
+] as const;
+export const CURRENCIES = [
+  ["USD", "US dollar"], ["EUR", "Euro"], ["GBP", "Pound sterling"], ["INR", "Indian rupee"], ["AED", "UAE dirham"], ["SAR", "Saudi riyal"],
+  ["QAR", "Qatari riyal"], ["KWD", "Kuwaiti dinar"], ["BHD", "Bahraini dinar"], ["OMR", "Omani rial"], ["SGD", "Singapore dollar"],
+  ["MYR", "Malaysian ringgit"], ["AUD", "Australian dollar"], ["NZD", "New Zealand dollar"], ["CAD", "Canadian dollar"], ["CHF", "Swiss franc"],
+  ["SEK", "Swedish krona"], ["NOK", "Norwegian krone"], ["DKK", "Danish krone"], ["PLN", "Polish zloty"], ["CZK", "Czech koruna"],
+  ["ZAR", "South African rand"], ["NGN", "Nigerian naira"], ["KES", "Kenyan shilling"], ["EGP", "Egyptian pound"], ["TRY", "Turkish lira"],
+  ["ILS", "Israeli shekel"], ["JPY", "Japanese yen"], ["CNY", "Chinese yuan"], ["HKD", "Hong Kong dollar"], ["KRW", "South Korean won"],
+  ["THB", "Thai baht"], ["IDR", "Indonesian rupiah"], ["PHP", "Philippine peso"], ["VND", "Vietnamese dong"], ["PKR", "Pakistani rupee"],
+  ["BDT", "Bangladeshi taka"], ["LKR", "Sri Lankan rupee"], ["BRL", "Brazilian real"], ["MXN", "Mexican peso"], ["ARS", "Argentine peso"],
+  ["CLP", "Chilean peso"], ["COP", "Colombian peso"], ["RUB", "Russian rouble"], ["UAH", "Ukrainian hryvnia"],
+] as const;
+export type CostLine = {
+  id: string; amount: string; currency: string; category: string; description: string; incurred_on: string;
+  created_by: { id: string; display_name: string; email: string } | null; created_at: string;
+};
+export type CostTotal = { currency: string; total: string; lines: number };
+export type EngagementCosts = { totals: CostTotal[]; items: CostLine[] };

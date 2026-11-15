@@ -217,7 +217,7 @@ def save_template(request, actor, template: ReportTemplate | None, data: dict) -
         fields["sections"] = _clean_sections(data["sections"])
     if "accent" in data:
         if not HEX.match(data["accent"]):
-            raise ValidationError({"accent": ["Use a colour like #e5383b."]})
+            raise ValidationError({"accent": ["Use a colour like #ef233c."]})
         fields["accent"] = data["accent"].lower()
     for key in ("font", "footer_text"):
         if key in data:

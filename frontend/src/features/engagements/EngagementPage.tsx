@@ -12,9 +12,10 @@ import {
 import { FindingsList } from "../findings/FindingsList";
 import { EngagementFields } from "./EngagementsPage";
 import { ReportsList } from "../reports/ReportsList";
+import { CostTab } from "./CostTab";
 import { DocumentsPanel, HistoryTab, NotesPanel, ScopeTab, TeamTab } from "./EngagementTabs";
 
-type Tab = "overview" | "scope" | "findings" | "reports" | "team" | "notes" | "history";
+type Tab = "overview" | "scope" | "findings" | "reports" | "team" | "costs" | "notes" | "history";
 
 const STATUS_VERB: Record<string, string> = { planned: "Move back to planned", scheduled: "Mark scheduled", in_progress: "Start testing", reporting: "Move to reporting", completed: "Mark completed", cancelled: "Cancel engagement" };
 
@@ -57,6 +58,7 @@ export function EngagementPage() {
     ...(perms.has("findings.view") ? [{ id: "findings" as const, label: "Findings" }] : []),
     ...(perms.has("reports.view") ? [{ id: "reports" as const, label: "Reports" }] : []),
     { id: "team", label: "Team" },
+    ...(can("engagement_costs.view") ? [{ id: "costs" as const, label: "Cost" }] : []),
     ...(perms.has("engagement_notes.view_shared") || perms.has("documents.view") ? [{ id: "notes" as const, label: "Notes and documents" }] : []),
     ...(perms.has("audit.view_engagement") ? [{ id: "history" as const, label: "History" }] : []),
   ];
@@ -92,6 +94,7 @@ export function EngagementPage() {
         {active === "findings" && <FindingsList engagement={eng} />}
         {active === "reports" && <ReportsList engagement={eng} canCreate={!archived && (perms.has("reports.generate_pdf") || perms.has("exports.csv"))} />}
         {active === "team" && <TeamTab eng={eng} />}
+        {active === "costs" && <CostTab eng={eng} />}
         {active === "notes" && (
           <div className="space-y-8">
             {perms.has("engagement_notes.view_shared") && <NotesPanel eng={eng} />}

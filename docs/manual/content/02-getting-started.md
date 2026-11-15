@@ -13,6 +13,10 @@ Open the address your administrator gave you, for example `https://redshadow.exa
 
 > **Warning:** Recovery codes are shown only once. Each works one time. Store them in your password manager. If you lose both your device and your codes, an administrator must reset your two-step verification.
 
+### Loading
+
+While RedShadow loads a page, a list or a saved change, you see the eclipse "O" of the logo: a red arc circles the ring while the red cut pulses. A button that is saving shows a small white version and cannot be pressed twice. If your system is set to reduce motion, the animation stays still.
+
 ### Sessions and lockout
 
 - A session ends after **30 minutes without activity**, or after **12 hours** in total, whichever comes first.

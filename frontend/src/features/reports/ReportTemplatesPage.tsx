@@ -66,7 +66,7 @@ function initialItems(sections: string[] | undefined): Item[] {
 function TemplateForm({ template, onClose }: { template?: ReportTemplate; onClose: () => void }) {
   const qc = useQueryClient();
   const [name, setName] = useState(template?.name ?? "");
-  const [accent, setAccent] = useState(template?.accent ?? "#e5383b");
+  const [accent, setAccent] = useState(template?.accent ?? "#ef233c");
   const [font, setFont] = useState<string>(template?.font ?? "geist");
   const [footer, setFooter] = useState(template?.footer_text ?? "");
   const [isDefault, setIsDefault] = useState(template?.is_default ?? false);

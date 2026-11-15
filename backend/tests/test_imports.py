@@ -240,6 +240,34 @@ class TestMapping:
 
 
 @pytest.mark.django_db
+class TestAssetColumn:
+    """The Asset column takes the asset's name, its IP address or its URL (the asset identifier)."""
+
+    def test_name_ip_and_url_all_resolve(self, w, p1c, admin):
+        from apps.engagements import services as eng_services
+        from apps.organisations import services as org_services
+
+        host = org_services.create_asset(None, admin, w.org_a, {"name": "Jump host", "type": "host", "identifier": "10.9.8.7"})
+        eng_services.link_asset(None, admin, w.eng_a, host, True, "")
+        data = [
+            ["By name", "low", "", "", "acme SHOP", "", "", ""],
+            ["By url", "low", "", "", "https://shop.acme.test/", "", "", ""],
+            ["By ip", "low", "", "", " 10.9.8.7 ", "", "", ""],
+            ["By nothing", "low", "", "", "10.9.8.8", "", "", ""],
+        ]
+        job = prepared(p1c, w.eng_a, data)
+        got = {r["row_number"]: r for r in rows(p1c, job)}
+        assert job["counts"]["valid"] == 3 and job["counts"]["invalid"] == 1
+        assert [e["code"] for e in got[5]["errors"]] == ["unknown_asset"]
+        assert "IP address or URL" in got[5]["errors"][0]["message"]
+        assert commit(p1c, job).status_code == 202
+        from apps.findings.models import Finding
+
+        by_title = {f.title: f.asset_id for f in Finding.objects.filter(engagement=w.eng_a)}
+        assert by_title == {"By name": w.asset_a.pk, "By url": w.asset_a.pk, "By ip": host.pk}
+
+
+@pytest.mark.django_db
 class TestValidation:
     def test_each_rule(self, w, p1c):
         bad = [
@@ -497,7 +525,9 @@ class TestAccessAndHousekeeping:
 
     def test_template_download(self, w, p1c, r1c):
         r = p1c.get(f"{API}/imports/template.csv")
-        assert r.status_code == 200 and b"Title,Severity" in b"".join(r.streaming_content)
+        body = b"".join(r.streaming_content)
+        assert r.status_code == 200 and b"Title,Severity" in body
+        assert b"Acme shop" in body and b"10.0.0.5" in body and b"https://shop.acme.test" in body
         assert r1c.get(f"{API}/imports/template.csv").status_code == 403
 
     def test_cleanup_closes_stuck_jobs_and_purges_old_files(self, w, p1c):
