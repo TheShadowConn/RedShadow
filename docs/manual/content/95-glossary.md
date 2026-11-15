@@ -22,3 +22,4 @@
 | **Scope** | Where a role's permissions apply: which engagements and which findings. |
 | **SLA** | The target time to fix a finding, set by severity. |
 | **Verification** | A person confirming that a fix works and recording how. |
+| **Cost line** | One amount in one currency on an engagement, with a category and a date. Totals are per currency and never converted. |

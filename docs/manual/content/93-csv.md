@@ -12,10 +12,12 @@
 | Technical details | No | technical details, technical | Testing team only. |
 | Proof of concept | No | poc, proof of concept, steps to reproduce | |
 | Endpoint | No | endpoint, url, path, location | Up to 500 characters. |
-| Asset | No | asset, host, target, hostname, ip | Matched by name or identifier among in-scope assets. |
+| Asset | No | asset, asset name, host, target, hostname, ip, ip address, affected asset, affected host | Asset name, IP address or URL, matched against the in-scope assets. |
 | CWE | No | cwe, cwe id | A number or `CWE-79` style. |
 | Discovered date | No | discovered, date, found | `YYYY-MM-DD`. |
 | References | No | references, links, urls | Links, optionally `Label|URL`, separated by semicolons or new lines. |
+
+The downloadable template has three example rows: an asset by name (`Acme shop`), by IP address (`10.0.0.5`) and by URL (`https://shop.acme.test`).
 
 **Limits:** CSV, TSV or TXT; UTF-8 or Windows-1252; 10 MB; 50,000 rows; 60 columns; 100,000 characters per cell.
 

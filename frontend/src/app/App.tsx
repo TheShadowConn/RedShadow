@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { AuthProvider, useAuth } from "../api/auth";
+import { Loader } from "../design/Loader";
 import { Logo } from "../design/Logo";
 import { Button, ErrorNote } from "../design/ui";
 import { LoginPage } from "../features/auth/LoginPage";
@@ -53,7 +54,7 @@ function Landing() {
 
 function Gate() {
   const { me, loading, error, refresh } = useAuth();
-  if (loading) return <Splash><p className="m-0 text-muted" role="status">Loading…</p></Splash>;
+  if (loading) return <Splash><Loader /></Splash>;
   if (error)
     return (
       <Splash>

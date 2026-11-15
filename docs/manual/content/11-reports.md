@@ -26,7 +26,7 @@ A report is assembled from sections. The default template includes all of them, 
 
 | Section | Content |
 |---|---|
-| Cover | Client, engagement, testing period, version, classification, overall risk posture. |
+| Cover | Red gradient cover with the RedShadow eclipse wordmark (or your logo), client, engagement, testing period, version, classification, overall risk posture. |
 | Document control | Version, date, distribution, classification. |
 | Executive summary | Plain-language result and the number of findings by severity. |
 | Engagement overview | Dates, team, type, objectives. |
@@ -46,11 +46,11 @@ Reports use only fonts and images built into RedShadow. A finding cannot make th
 {SA} Open **Report styles** to manage templates.
 
 - **Name**: shown in the picker.
-- **Accent colour**: used for the cover bar, numbers and rules.
+- **Accent colour**: sets the cover gradient, section numbers, rules and table accents. The default is Racing Red (`#ef233c`), the same red as the application. Darker tones of the cover are derived from it.
 - **Font**: Geist (sans-serif) or DejaVu Serif.
 - **Footer text**: printed bottom left on every page. Empty prints the engagement reference.
 - **Sections**: tick which sections to include and use the arrows to reorder them. **Detailed findings** is always included.
-- **Logo**: upload a PNG or JPEG for the cover. It is re-encoded for safety.
+- **Logo**: upload a PNG or JPEG for the cover. It is re-encoded for safety and shown on a white tab in place of the white RedShadow wordmark.
 - A built-in default template cannot be deleted.
 
 ## CSV exports

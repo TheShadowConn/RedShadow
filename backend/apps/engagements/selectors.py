@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from apps.rbac.authz import engagement_permissions, role_permission_codes, user_permissions
 
-from .models import OPEN_STATUSES, Engagement, EngagementMembership, EngagementNote
+from .models import OPEN_STATUSES, Engagement, EngagementCost, EngagementMembership, EngagementNote
 
 # Holding any of these platform permissions means "applies everywhere", so the holder must
 # be able to reach every engagement to use them.
@@ -97,3 +97,16 @@ def visible_notes(user, engagement: Engagement):
     elif "engagement_notes.view_shared" in codes:
         levels.append("all")
     return EngagementNote.objects.filter(engagement=engagement, visibility__in=levels).select_related("author")
+
+
+def cost_totals(engagements_qs=None, engagement=None) -> list[dict]:
+    """Sum per currency. Currencies are never converted into each other."""
+    from django.db.models import Count, Sum
+
+    qs = EngagementCost.objects.all()
+    if engagement is not None:
+        qs = qs.filter(engagement=engagement)
+    elif engagements_qs is not None:
+        qs = qs.filter(engagement__in=engagements_qs)
+    rows = qs.order_by().values("currency").annotate(total=Sum("amount"), lines=Count("pk")).order_by("currency")
+    return [{"currency": r["currency"], "total": r["total"], "lines": r["lines"]} for r in rows]

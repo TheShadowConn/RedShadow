@@ -103,3 +103,48 @@ class EngagementNote(BaseModel):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+# ISO 4217 codes offered in the UI and accepted by the API. Money is never converted between currencies.
+CURRENCIES = [
+    ("USD", "US dollar"), ("EUR", "Euro"), ("GBP", "Pound sterling"), ("INR", "Indian rupee"),
+    ("AED", "UAE dirham"), ("SAR", "Saudi riyal"), ("QAR", "Qatari riyal"), ("KWD", "Kuwaiti dinar"),
+    ("BHD", "Bahraini dinar"), ("OMR", "Omani rial"), ("SGD", "Singapore dollar"), ("MYR", "Malaysian ringgit"),
+    ("AUD", "Australian dollar"), ("NZD", "New Zealand dollar"), ("CAD", "Canadian dollar"),
+    ("CHF", "Swiss franc"), ("SEK", "Swedish krona"), ("NOK", "Norwegian krone"), ("DKK", "Danish krone"),
+    ("PLN", "Polish zloty"), ("CZK", "Czech koruna"), ("ZAR", "South African rand"), ("NGN", "Nigerian naira"),
+    ("KES", "Kenyan shilling"), ("EGP", "Egyptian pound"), ("TRY", "Turkish lira"), ("ILS", "Israeli shekel"),
+    ("JPY", "Japanese yen"), ("CNY", "Chinese yuan"), ("HKD", "Hong Kong dollar"), ("KRW", "South Korean won"),
+    ("THB", "Thai baht"), ("IDR", "Indonesian rupiah"), ("PHP", "Philippine peso"), ("VND", "Vietnamese dong"),
+    ("PKR", "Pakistani rupee"), ("BDT", "Bangladeshi taka"), ("LKR", "Sri Lankan rupee"),
+    ("BRL", "Brazilian real"), ("MXN", "Mexican peso"), ("ARS", "Argentine peso"), ("CLP", "Chilean peso"),
+    ("COP", "Colombian peso"), ("RUB", "Russian rouble"), ("UAH", "Ukrainian hryvnia"),
+]  # fmt: skip
+CURRENCY_CODES = [code for code, _ in CURRENCIES]
+
+
+class EngagementCost(BaseModel):
+    """One cost line of an engagement. An engagement can hold lines in several currencies."""
+
+    CATEGORIES = [
+        ("labour", "Labour"), ("tools", "Tools and licences"), ("travel", "Travel"),
+        ("subcontractor", "Subcontractor"), ("other", "Other"),
+    ]  # fmt: skip
+
+    engagement = models.ForeignKey(Engagement, on_delete=models.CASCADE, related_name="costs")
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    currency = models.CharField(max_length=3, choices=CURRENCIES)
+    category = models.CharField(max_length=16, choices=CATEGORIES, default="other")
+    description = models.CharField(max_length=300, blank=True)
+    incurred_on = models.DateField()
+    created_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.PROTECT, related_name="+")
+
+    class Meta:
+        ordering = ["-incurred_on", "-created_at"]
+        constraints = [models.CheckConstraint(condition=Q(amount__gt=0), name="engagement_cost_positive")]
+        indexes = [models.Index(fields=["engagement", "currency"])]
+
+    def audit_label(self) -> str:
+        return f"{self.amount} {self.currency}"
+
+CATEGORY_CODES = [code for code, _ in EngagementCost.CATEGORIES]

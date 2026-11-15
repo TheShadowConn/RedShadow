@@ -4,6 +4,7 @@ import { Bug, Building2, CalendarDays, ClipboardCheck, FileUp, FileText, Palette
 
 import { useAuth } from "../api/auth";
 import { Credit } from "../design/Credit";
+import { Loader } from "../design/Loader";
 import { Logo, Mark } from "../design/Logo";
 import { Sheet } from "../design/ui";
 import { IntegrityBanner } from "../features/audit/IntegrityBanner";
@@ -131,7 +132,7 @@ export function Shell() {
           </button>
         </header>
         <main id="main" className="mx-auto w-full max-w-[1200px] flex-1 p-4 md:p-8">
-          <Suspense fallback={<p className="m-0 text-muted" role="status">Loading…</p>}>
+          <Suspense fallback={<Loader block />}>
             <Outlet />
           </Suspense>
         </main>

@@ -18,6 +18,7 @@ from apps.rbac.guards import deny
 from .models import (
     Engagement,
     EngagementAsset,
+    EngagementCost,
     EngagementCounter,
     EngagementMembership,
     EngagementNote,
@@ -359,3 +360,42 @@ def add_note(request, actor, eng: Engagement, body: str, visibility: str) -> Eng
         audit.record("engagement.note_added", request=request, entity=eng, engagement=eng,
                      metadata={"note_id": str(note.pk), "visibility": visibility})  # fmt: skip
     return note
+
+
+# costs. The platform permission is enforced by the viewset; the engagement is already scoped by get_object.
+
+COST_FIELDS = ("amount", "currency", "category", "description", "incurred_on")
+
+
+def add_cost(request, actor, eng: Engagement, data: dict) -> EngagementCost:
+    with transaction.atomic():
+        eng = _lock(eng)
+        _assert_writable(eng)
+        cost = EngagementCost.objects.create(engagement=eng, created_by=actor, **{k: data[k] for k in COST_FIELDS})
+        audit.record("engagement.cost_added", request=request, entity=eng, engagement=eng,
+                     metadata={"cost_id": str(cost.pk), "amount": cost.amount, "currency": cost.currency,
+                               "category": cost.category})  # fmt: skip
+    return cost
+
+
+def update_cost(request, actor, eng: Engagement, cost: EngagementCost, data: dict) -> EngagementCost:
+    with transaction.atomic():
+        eng = _lock(eng)
+        _assert_writable(eng)
+        cost = EngagementCost.objects.select_related("created_by").get(pk=cost.pk)
+        changes = apply_changes(cost, data, COST_FIELDS)
+        if changes:
+            cost.save()
+            audit.record("engagement.cost_updated", request=request, entity=eng, engagement=eng,
+                         changes=changes, metadata={"cost_id": str(cost.pk)})  # fmt: skip
+    return cost
+
+
+def delete_cost(request, actor, eng: Engagement, cost: EngagementCost) -> None:
+    with transaction.atomic():
+        eng = _lock(eng)
+        _assert_writable(eng)
+        cost = EngagementCost.objects.get(pk=cost.pk)
+        meta = {"cost_id": str(cost.pk), "amount": cost.amount, "currency": cost.currency, "category": cost.category}
+        cost.delete()
+        audit.record("engagement.cost_deleted", request=request, entity=eng, engagement=eng, metadata=meta)

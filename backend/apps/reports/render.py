@@ -59,13 +59,27 @@ def _font_face(family: str, weight: int, file: str) -> str:
     return f'@font-face{{font-family:"{family}";font-weight:{weight};src:url("{uri}")}}'
 
 
+DEFAULT_ACCENT = "#ef233c"  # Racing Red, the application and manual colour
+
+
+def _shade(hex_colour: str, factor: float) -> str:
+    """Darken (factor < 1) a #rrggbb colour. The cover gradient and heading tones derive from the accent."""
+    r, g, b = (int(hex_colour[i : i + 2], 16) for i in (1, 3, 5))
+    return "#{:02x}{:02x}{:02x}".format(*(round(c * factor) for c in (r, g, b)))
+
+
 def _css(accent: str, font: str, footer: str, ref: str) -> str:
     css = (ASSETS / "report.css").read_text()
     faces = [_font_face("Geist", w, f"geist-latin-{w}-normal.woff") for w in (400, 500, 600, 700)]
     faces += [_font_face("Geist Mono", w, f"geist-mono-latin-{w}-normal.woff") for w in (400, 500, 600)]
-    colour = accent if HEX.match(accent or "") else "#e5383b"
+    colour = accent if HEX.match(accent or "") else DEFAULT_ACCENT
+    if len(colour) == 4:  # #rgb
+        colour = "#" + "".join(ch * 2 for ch in colour[1:])
     stack = FONT_STACKS.get(font, FONT_STACKS["geist"])
-    root = f":root{{--accent:{colour};--font:{stack}}}"
+    root = (
+        f":root{{--accent:{colour};--accent-deep:{_shade(colour, 0.74)};--accent-dark:{_shade(colour, 0.32)};"
+        f"--font:{stack}}}"
+    )
     running = (
         f"@page{{@bottom-left{{content:{_css_string(footer or ref)}}}"
         "@top-right{font:500 7.5pt var(--font);color:#6b7882;letter-spacing:.08em;text-transform:uppercase;"
@@ -89,6 +103,7 @@ def build_html(ctx: dict, template) -> str:
             (template.footer_text if template else "") or "",
             ctx["engagement"].ref,
         ),
+        "wordmark_white": _data_uri(ASSETS / "wordmark-white.svg", "image/svg+xml"),
         "wordmark_light": _data_uri(ASSETS / "wordmark-light.svg", "image/svg+xml"),
         "wordmark_dark": _data_uri(ASSETS / "wordmark-dark.svg", "image/svg+xml"),
         "custom_logo": ctx.get("custom_logo", ""),

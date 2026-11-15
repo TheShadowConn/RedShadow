@@ -36,6 +36,9 @@ Someone else saved first. Reload the page and apply your change again.
 **The severity will not change.**
 When a CVSS vector is set, the severity follows it. Clear the vector first to set a severity by hand.
 
+**An import row says no in-scope asset has the name, IP address or URL.**
+Use the name, IP address or URL exactly as it appears on the asset, and make sure the asset is linked to the engagement as **in scope**. A different spelling of a host name does not match.
+
 **The asset is not offered.**
 Only assets linked to the engagement as **in scope** can be chosen. Ask an administrator to link the asset on the **Scope and assets** tab.
 

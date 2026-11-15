@@ -336,3 +336,21 @@ input[type="checkbox"], input[type="radio"] { width: 24px; height: 24px; flex: n
 .sc-wolf, .sc-word { display: inline-block; flex: none; background-color: currentColor; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center; -webkit-mask-size: contain; mask-size: contain; }
 .sc-wolf { aspect-ratio: 451 / 563; -webkit-mask-image: url(/brand/shadowconn-wolf-white.svg); mask-image: url(/brand/shadowconn-wolf-white.svg); }
 .sc-word { aspect-ratio: 936 / 130; -webkit-mask-image: url(/brand/shadowconn-wordmark-white.svg); mask-image: url(/brand/shadowconn-wordmark-white.svg); }
+
+/* ---- Eclipse loader (the O of the logo) ---- */
+.eclipse-o { display: block; flex: none; color: var(--color-ink); overflow: visible; }
+.eclipse-track, .eclipse-arc { fill: none; stroke-width: 17; }
+.eclipse-track { stroke: currentColor; opacity: 0.14; }
+.eclipse-arc { stroke: var(--color-brand); stroke-linecap: butt; stroke-dasharray: 30 70; animation: eclipse-orbit 1.5s linear infinite; }
+.eclipse-wedge { fill: var(--color-brand); transform-box: fill-box; transform-origin: 100% 100%; animation: eclipse-breathe 1.5s ease-in-out infinite; }
+.eclipse-mono { color: inherit; }
+.eclipse-mono .eclipse-arc { stroke: currentColor; }
+.eclipse-mono .eclipse-wedge { fill: currentColor; stroke: none; }
+.eclipse-loader { display: inline-flex; flex-direction: column; align-items: center; gap: 12px; color: var(--color-muted); }
+.eclipse-block { display: flex; width: 100%; padding: 48px 16px; justify-content: center; }
+.eclipse-label { font-size: 14px; }
+@keyframes eclipse-orbit { to { stroke-dashoffset: -100; } }
+@keyframes eclipse-breathe { 0%, 100% { opacity: 0.35; transform: scale(0.82); } 50% { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .eclipse-arc, .eclipse-wedge { animation: none; }
+}

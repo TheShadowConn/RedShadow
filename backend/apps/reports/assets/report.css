@@ -1,19 +1,20 @@
 /* RedShadow report stylesheet. Print only. Fonts and the accent colour are injected ahead of this file. */
 
 :root {
-  --ink: #1f3038;
+  --ink: #1b2429;
   --ink-deep: #121c21;
-  --text: #243038;
-  --muted: #5b6872;
-  --line: #dde3e7;
-  --surface: #f5f7f8;
+  --text: #2a353c;
+  --muted: #5d6a72;
+  --line: #e3e7ea;
+  --surface: #f6f8f9;
+  --tint-accent: #fdf1f2;
   --mono: "Geist Mono", "DejaVu Sans Mono", monospace;
 }
 
 @page {
   size: A4;
   margin: 26mm 18mm 24mm 18mm;
-  @top-left { font: 500 7.5pt var(--font); color: #6b7882; letter-spacing: .08em; text-transform: uppercase; content: string(section); }
+  @top-left { font: 500 7.5pt var(--font); color: var(--accent-deep); letter-spacing: .08em; text-transform: uppercase; content: string(section); }
   @bottom-right { font: 500 8pt var(--font); color: #6b7882; content: "Page " counter(page) " of " counter(pages); }
   @bottom-left { font: 400 7.5pt var(--font); color: #6b7882; }
 }
@@ -31,30 +32,30 @@ p { margin: 0 0 3mm; orphans: 3; widows: 3; }
 
 /* ------------------------------------------------------------ cover */
 .cover {
-  page: cover; width: 210mm; height: 297mm; padding: 22mm 20mm 20mm; background: var(--ink-deep); color: #eef2f4;
+  page: cover; width: 210mm; height: 297mm; padding: 24mm 22mm 20mm; color: #fff;
+  background: linear-gradient(160deg, var(--accent) 0%, var(--accent-deep) 58%, var(--accent-dark) 100%);
   display: flex; flex-direction: column; justify-content: space-between; break-after: page; position: relative; overflow: hidden;
 }
-.cover::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 7mm; background: var(--accent); }
-.cover::after { content: ""; position: absolute; right: -40mm; bottom: -40mm; width: 150mm; height: 150mm; border-radius: 50%; border: 0.6mm solid rgba(255,255,255,.07); box-shadow: inset 0 0 0 14mm rgba(255,255,255,.015); }
-.cover-top { display: flex; justify-content: space-between; align-items: center; padding-left: 6mm; }
-.cover-logo { height: 11mm; max-width: 60mm; }
-.cover-logo:not(.wordmark) { height: 14mm; background: #fff; padding: 2mm 3.5mm; border-radius: 1.6mm; }
-.classification { font: 600 7.5pt var(--font); letter-spacing: .14em; text-transform: uppercase; color: #fff; border: 0.3mm solid rgba(255,255,255,.35); padding: 1.4mm 3.4mm; border-radius: 10mm; }
-.cover-main { padding-left: 6mm; margin-top: -30mm; }
-.eyebrow { font: 600 9pt var(--font); letter-spacing: .22em; text-transform: uppercase; color: var(--accent); margin: 0 0 6mm; }
-.cover h1 { font: 700 34pt/1.08 var(--font); letter-spacing: -.02em; margin: 0 0 5mm; color: #fff; max-width: 150mm; }
-.cover-sub { font: 400 14pt/1.35 var(--font); color: #b8c3ca; margin: 0; max-width: 140mm; }
-.cover-rule { width: 22mm; height: 0.9mm; background: var(--accent); margin: 12mm 0 10mm; }
+.cover-o { position: absolute; right: -28mm; top: 52mm; height: 215mm; width: auto; }
+.cover-top { position: relative; display: flex; justify-content: space-between; align-items: center; }
+.cover-logo { height: 13mm; max-width: 92mm; }
+.cover-logo:not(.wordmark) { height: 15mm; background: #fff; padding: 2mm 3.5mm; border-radius: 1.6mm; }
+.classification { font: 600 7.5pt var(--font); letter-spacing: .14em; text-transform: uppercase; color: #fff; border: 0.3mm solid rgba(255,255,255,.55); padding: 1.4mm 3.4mm; border-radius: 10mm; }
+.cover-main { position: relative; margin-top: -10mm; }
+.eyebrow { font: 600 8.5pt var(--font); letter-spacing: .24em; text-transform: uppercase; color: rgba(255,255,255,.78); margin: 0 0 6mm; }
+.cover h1 { font: 700 36pt/1.06 var(--font); letter-spacing: -.025em; margin: 0 0 5mm; color: #fff; max-width: 150mm; }
+.cover-sub { font: 400 14pt/1.35 var(--font); color: rgba(255,255,255,.88); margin: 0; max-width: 140mm; }
+.cover-rule { width: 24mm; height: 1mm; background: #fff; margin: 12mm 0 10mm; }
 .cover-meta { margin: 0; display: flex; flex-wrap: wrap; max-width: 165mm; }
 .cover-meta div { width: 50%; margin-bottom: 6mm; padding-right: 8mm; }
-.cover-meta dt { font: 600 7pt var(--font); letter-spacing: .16em; text-transform: uppercase; color: #8d9ba5; margin: 0 0 1mm; }
-.cover-meta dd { margin: 0; font: 500 11pt var(--font); color: #f2f5f6; }
-.cover-bottom { padding-left: 6mm; display: flex; justify-content: space-between; align-items: flex-end; }
-.cover-risk { border-left: 1.2mm solid var(--rc, #64748b); padding: 1mm 0 1mm 4mm; }
-.cover-risk span { display: block; font: 600 7pt var(--font); letter-spacing: .16em; text-transform: uppercase; color: #8d9ba5; }
+.cover-meta dt { font: 600 7pt var(--font); letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.66); margin: 0 0 1mm; }
+.cover-meta dd { margin: 0; font: 500 11pt var(--font); color: #fff; }
+.cover-bottom { position: relative; display: flex; justify-content: space-between; align-items: flex-end; }
+.cover-risk { border-left: 1.4mm solid #fff; padding: 1mm 0 1mm 4mm; }
+.cover-risk span { display: block; font: 600 7pt var(--font); letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.7); }
 .cover-risk strong { display: block; font: 700 17pt var(--font); color: #fff; margin-top: 1mm; }
 .risk-critical { --rc: #e5483f; } .risk-high { --rc: #f0773a; } .risk-medium { --rc: #e3a72f; } .risk-low { --rc: #5b8cff; } .risk-info { --rc: #5fbf8f; }
-.cover-foot { font: 400 8.5pt var(--font); color: #8d9ba5; margin: 0; max-width: 70mm; text-align: right; }
+.cover-foot { font: 400 8.5pt var(--font); color: rgba(255,255,255,.8); margin: 0; max-width: 70mm; text-align: right; }
 
 /* ------------------------------------------------------------ sections */
 .page { break-before: page; }
@@ -62,7 +63,7 @@ p { margin: 0 0 3mm; orphans: 3; widows: 3; }
 .contents + .page { break-before: page; }
 .findings-intro.page { break-before: page; }
 h2 {
-  font: 700 21pt/1.15 var(--font); letter-spacing: -.015em; color: var(--ink); margin: 0 0 7mm; padding-top: 4mm; position: relative;
+  font: 700 21pt/1.15 var(--font); letter-spacing: -.015em; color: var(--ink); margin: 0 0 7mm; padding-top: 4mm; position: relative; border-top: 0.9mm solid var(--accent); width: 100%;
   string-set: section content(text); counter-increment: sec; break-after: avoid;
 }
 h2::before { content: counter(sec, decimal-leading-zero); display: block; font: 600 8.5pt var(--font); letter-spacing: .2em; color: var(--accent); margin-bottom: 2mm; }
@@ -96,7 +97,7 @@ h4 { font: 600 8pt var(--font); letter-spacing: .14em; text-transform: uppercase
 .prose table { width: 100%; border-collapse: collapse; margin: 0 0 3.5mm; font-size: 8.6pt; }
 .prose th, .prose td { border: 0.25mm solid var(--line); padding: 1.6mm 2.4mm; text-align: left; vertical-align: top; }
 .prose th { background: var(--surface); }
-.prose a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--accent); }
+.prose a { color: var(--accent-deep); text-decoration: underline; text-decoration-color: var(--accent); }
 .prose hr { border: 0; border-top: 0.25mm solid var(--line); margin: 4mm 0; }
 
 /* ------------------------------------------------------------ tables */
@@ -107,10 +108,10 @@ tr { break-inside: avoid; }
 .kv td { padding: 2.4mm 0; border-bottom: 0.25mm solid var(--line); }
 .kv.small th, .kv.small td { padding-top: 1.5mm; padding-bottom: 1.5mm; font-size: 8.6pt; }
 .grid { font-size: 8.8pt; margin-bottom: 4mm; }
-.grid th { text-align: left; font: 600 7.4pt var(--font); letter-spacing: .12em; text-transform: uppercase; color: #fff; background: var(--ink); padding: 2.2mm 2.6mm; }
+.grid th { text-align: left; font: 600 7.4pt var(--font); letter-spacing: .12em; text-transform: uppercase; color: #fff; background: var(--ink); padding: 2.2mm 2.6mm; border-bottom: 0.7mm solid var(--accent); }
 .grid th:first-child { border-radius: 1.2mm 0 0 1.2mm; } .grid th:last-child { border-radius: 0 1.2mm 1.2mm 0; }
 .grid td { padding: 2.3mm 2.6mm; border-bottom: 0.25mm solid var(--line); vertical-align: top; }
-.grid tbody tr:nth-child(even) td { background: #fafbfc; }
+.grid tbody tr:nth-child(even) td { background: var(--tint-accent); }
 .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 th.num { text-align: right; }
 .zero { color: #b2bcc3; }

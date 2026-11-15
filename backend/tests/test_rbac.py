@@ -270,6 +270,8 @@ COVERED_ROUTES = {
     "engagement-list", "engagement-detail", "engagement-archive", "engagement-unarchive",
     "engagement-change-status", "engagement-members", "engagement-update-member",
     "engagement-assets", "engagement-update-asset-link", "engagement-notes", "engagement-history",
+    # Engagement costs: covered by tests/test_costs.py
+    "engagement-costs", "engagement-update-cost",
     # Phase 3B: covered by tests/test_files.py
     "engagement-documents", "organisation-logo", "attachment-list", "attachment-detail", "attachment-download",
     # Phase 4A: covered by tests/test_findings.py and the MATRIX rows above

@@ -225,3 +225,25 @@ Done on a throwaway `rs_qa` stack (removed with its own volumes only; real `reds
 - Known shared surface: vendors on the same engagement can see engagement documents and shared notes (documents.view, engagement_notes.view_shared).
 - Section 4 done: `docs/manual/RedShadow-User-Manual.pdf` (70 pages, A4, Racing Red theme). Source in `docs/manual` (`content/*.md`, `manual.css`, `build_manual.py`, 29 screenshots of a fictional Acme Corp engagement). Build with `make manual` (WeasyPrint in the backend test image, no network). The role tables, permission matrix and finding status moves are generated from `apps/rbac/catalogue.py` and `apps/findings/lifecycle.py`. Tests: `backend/tests/test_manual.py`. Chapters: roles, getting started, concepts, worked example, Super Admin, Pentester, Remediation Owner, External Vendor, verification and retests, audit, reports, administration, troubleshooting, appendices A to E.
 - Rebuild the manual after UI or role changes; screenshots must be retaken by hand when screens change.
+
+## Engagement cost (2026-11-15)
+
+- `EngagementCost` (migration `engagements/0005_engagement_costs`): many lines per engagement, each with amount (> 0, 2 decimals), currency (44 ISO 4217 codes, `CURRENCIES` in `engagements/models.py`), category (labour, tools, travel, subcontractor, other), description, date, creator. Currencies are never converted; totals are per currency.
+- API: `GET/POST /engagements/{id}/costs`, `PATCH/DELETE /engagements/{id}/costs/{cost_id}`. Audited: `engagement.cost_added`, `cost_updated`, `cost_deleted`. Archived engagements are read-only.
+- Permissions (platform scope): `engagement_costs.view`, `engagement_costs.manage`. Super Admin only by default; Pentester, Remediation and External Vendor have none. Custom roles can be granted them. `docs/RBAC_PERMISSION_MATRIX.md` regenerated.
+- Admin dashboard: `costs` block (totals per currency, top engagement/currency rows), `null` unless the user holds `engagement_costs.view`. Frontend: "Cost" tab on the engagement page (`features/engagements/CostTab.tsx`) and an "Engagement cost" panel on the admin dashboard.
+- Tests: `backend/tests/test_costs.py` (10). Cost lines are not in PDF reports.
+
+## Report theme and import asset column (2026-11-15)
+
+- Report PDFs use the Racing Red theme of the app and manual: accent gradient cover with the white eclipse wordmark (`reports/assets/wordmark-white.svg`) and a ghost eclipse "O", red section rules, accent-tinted table rows. Gradient and heading tones derive from the template accent (`render._shade`). Default accent is `#ef233c` (migration `reports/0002_racing_red_accent` moves templates still on `#e5383b`; custom accents are kept).
+- Assets carry a name and an identifier (IP, URL or hostname). The import "Asset" column matches either, case-insensitive, trailing slash tolerated (`imports/validation.asset_key`). The template CSV has three example rows (name, IP, URL); more header aliases map to Asset. Tests: `TestAssetColumn`, `test_template_download`.
+
+## Eclipse loading animation (2026-11-15)
+
+- `frontend/src/design/Loader.tsx`: `EclipseO` and `Loader`. The logo's O is a stroked rounded rectangle; a crimson arc circles it while the eclipse cut breathes (CSS in `design/components.css`). `prefers-reduced-motion` freezes it.
+- Used for the pre-mount boot screen (`frontend/index.html`), the sign-in check splash, route suspense, `LoadingRows` and the busy state of every `Button`.
+
+## Manual (2026-11-15)
+
+- `docs/manual` updated: engagement cost (Super Admin chapter, dashboard panel), import Asset column (name, IP address or URL), report cover and accent, loading animation, troubleshooting entry, glossary, CSV appendix. PDF rebuilt (69 pages).

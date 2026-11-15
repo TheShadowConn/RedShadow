@@ -9,9 +9,10 @@ import {
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from "react";
-import { AlertCircle, AlertTriangle, Check, CheckCircle2, Copy, Loader2, X } from "lucide-react";
+import { AlertCircle, AlertTriangle, Check, CheckCircle2, Copy, X } from "lucide-react";
 
 import { ApiError } from "../api/client";
+import { EclipseO } from "./Loader";
 
 export function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
@@ -33,7 +34,7 @@ export function Button({ variant = "secondary", size = "md", loading, block, cla
       aria-busy={loading || undefined}
       className={cx("btn", `btn-${variant}`, size === "sm" && "btn-sm", block && "btn-block", className)}
     >
-      {loading && <Loader2 size={18} className="animate-spin" aria-hidden />}
+      {loading && <EclipseO size={20} mono />}
       {children}
     </button>
   );
@@ -124,6 +125,7 @@ export function Skeleton({ className }: { className?: string }) {
 export function LoadingRows({ rows = 5 }: { rows?: number }) {
   return (
     <div className="space-y-3 p-4" aria-busy="true" aria-label="Loading">
+      <div className="flex justify-center py-2"><EclipseO size={32} /></div>
       {Array.from({ length: rows }, (_, i) => (
         <Skeleton key={i} className="h-11 w-full" />
       ))}
@@ -384,4 +386,14 @@ export function NotFoundOrError({ error, what, onRetry }: { error: unknown; what
     return <EmptyState title={`${what} not found`} body="It may not exist, or you may not have access to it." />;
   }
   return <ErrorState error={error} onRetry={onRetry} />;
+}
+
+/** Money in its own currency, never converted. Falls back to "1,234.50 CODE" for a code the browser does not know. */
+export function money(amount: string | number, currency: string): string {
+  const n = Number(amount);
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(n);
+  } catch {
+    return `${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+  }
 }

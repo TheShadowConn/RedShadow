@@ -34,6 +34,8 @@ engagement the user can reach (all-engagement roles, or membership from Phase 3)
 | `engagement_notes.view_team` | engagement | yes | yes | - | - | View team-only engagement notes |
 | `engagement_notes.view_shared` | engagement | yes | yes | yes | yes | View shared engagement notes |
 | `engagement_notes.create` | engagement | yes | yes | - | - | Create engagement notes |
+| `engagement_costs.view` | platform | yes | - | - | - | View engagement costs and the cost totals on the admin dashboard |
+| `engagement_costs.manage` | platform | yes | - | - | - | Add, edit and delete engagement cost lines |
 | `documents.view` | engagement | yes | yes | yes | yes | View engagement documents |
 | `documents.upload` | engagement | yes | yes | - | yes | Upload engagement documents |
 | `documents.delete` | engagement | yes | - | - | - | Delete engagement documents |

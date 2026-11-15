@@ -42,6 +42,8 @@ PERMISSIONS: dict[str, tuple[str, str]] = {
     "engagement_notes.view_team": (ENGAGEMENT, "View team-only engagement notes"),
     "engagement_notes.view_shared": (ENGAGEMENT, "View shared engagement notes"),
     "engagement_notes.create": (ENGAGEMENT, "Create engagement notes"),
+    "engagement_costs.view": (PLATFORM, "View engagement costs and the cost totals on the admin dashboard"),
+    "engagement_costs.manage": (PLATFORM, "Add, edit and delete engagement cost lines"),
     "documents.view": (ENGAGEMENT, "View engagement documents"),
     "documents.upload": (ENGAGEMENT, "Upload engagement documents"),
     "documents.delete": (ENGAGEMENT, "Delete engagement documents"),

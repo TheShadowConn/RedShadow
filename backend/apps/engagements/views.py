@@ -16,10 +16,13 @@ from apps.rbac.authz import has_engagement_perm
 from apps.rbac.viewsets import ScopedModelViewSet
 
 from . import selectors, services
-from .models import EngagementAsset, EngagementMembership
+from .models import EngagementAsset, EngagementCost, EngagementMembership
 from .serializers import (
     AssetLinkCreateSerializer,
     AssetLinkUpdateSerializer,
+    CostCreateSerializer,
+    CostSerializer,
+    CostUpdateSerializer,
     EngagementAssetSerializer,
     EngagementCreateSerializer,
     EngagementListSerializer,
@@ -72,6 +75,10 @@ class EngagementViewSet(ScopedModelViewSet):
         "link_asset": "engagements.update",
         "update_asset_link": "engagements.update",
         "unlink_asset": "engagements.update",
+        "costs": "engagement_costs.view",
+        "add_cost": "engagement_costs.manage",
+        "update_cost": "engagement_costs.manage",
+        "delete_cost": "engagement_costs.manage",
         "notes": "engagement_notes.view_shared",
         "add_note": "engagement_notes.create",
         "history": "audit.view_engagement",
@@ -222,6 +229,36 @@ class EngagementViewSet(ScopedModelViewSet):
             EngagementAsset.objects.select_related("asset"), engagement=eng, pk=_uuid_or_404(link_id)
         )
         services.unlink_asset(request, request.user, eng, link)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    # costs
+
+    @action(detail=True, methods=["get"], url_path="costs", pagination_class=None)
+    def costs(self, request, pk=None):
+        eng = self.get_object()
+        lines = EngagementCost.objects.filter(engagement=eng).select_related("created_by")
+        totals = selectors.cost_totals(engagement=eng)
+        return Response({"totals": totals, "items": CostSerializer(lines, many=True).data})
+
+    @costs.mapping.post
+    def add_cost(self, request, pk=None):
+        eng = self.get_object()
+        data = _validated(CostCreateSerializer, request)
+        return Response(CostSerializer(services.add_cost(request, request.user, eng, data)).data,
+                        status=status.HTTP_201_CREATED)  # fmt: skip
+
+    @action(detail=True, methods=["patch"], url_path=r"costs/(?P<cost_id>[^/.]+)")
+    def update_cost(self, request, pk=None, cost_id=None):
+        eng = self.get_object()
+        cost = get_object_or_404(EngagementCost, engagement=eng, pk=_uuid_or_404(cost_id))
+        data = _validated(CostUpdateSerializer, request, partial=True)
+        return Response(CostSerializer(services.update_cost(request, request.user, eng, cost, data)).data)
+
+    @update_cost.mapping.delete
+    def delete_cost(self, request, pk=None, cost_id=None):
+        eng = self.get_object()
+        cost = get_object_or_404(EngagementCost, engagement=eng, pk=_uuid_or_404(cost_id))
+        services.delete_cost(request, request.user, eng, cost)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     # notes
