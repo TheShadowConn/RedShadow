@@ -247,3 +247,8 @@ Done on a throwaway `rs_qa` stack (removed with its own volumes only; real `reds
 ## Manual (2026-11-15)
 
 - `docs/manual` updated: engagement cost (Super Admin chapter, dashboard panel), import Asset column (name, IP address or URL), report cover and accent, loading animation, troubleshooting entry, glossary, CSV appendix. PDF rebuilt (69 pages).
+
+## Release 1.1.0 (2026-11-16)
+
+- Version default raised to 1.1.0 (`APP_VERSION` in compose, Makefile and settings, shown on the About page and the manual cover). The manual PDF is rebuilt for 1.1.0.
+- Contents of 1.1.0 since 1.0.0: engagement cost (per currency, Super Admin only by default), the Racing Red report theme, asset matching by name, IP or URL on CSV import, the eclipse loading animation, and the updated user manual.
