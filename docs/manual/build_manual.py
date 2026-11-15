@@ -29,7 +29,7 @@ from apps.rbac.catalogue import PERMISSIONS, PLATFORM, SYSTEM_ROLES  # noqa: E40
 BACKEND = Path(os.environ.get("BACKEND_DIR", "/app"))
 FONTS = BACKEND / "apps" / "reports" / "assets" / "fonts"
 BRAND = Path(os.environ.get("BRAND_DIR", HERE.parent.parent / "frontend" / "public" / "brand"))
-VERSION = os.environ.get("APP_VERSION", "1.0.0")
+VERSION = os.environ.get("APP_VERSION", "1.1.0")
 TODAY = datetime.date.today()
 OUT = Path(os.environ.get("MANUAL_OUT", HERE / "RedShadow-User-Manual.pdf"))
 

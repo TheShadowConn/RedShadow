@@ -48,7 +48,7 @@ Settings are environment variables in `.env` (see `.env.example`). The most usef
 | `SLA_DAYS_CRITICAL`, `_HIGH`, `_MEDIUM`, `_LOW` | Fix targets in days | 7, 30, 90, 180 |
 | `RISK_ACCEPT_MAX_DAYS` | Longest risk acceptance | 365 |
 | `REPORT_RETENTION_DAYS` | How long report files are kept | 90 |
-| `APP_VERSION` | Version shown on the About page | 1.0.0 |
+| `APP_VERSION` | Version shown on the About page | 1.1.0 |
 
 After changing a value run `make up` to apply it.
 

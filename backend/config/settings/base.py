@@ -76,7 +76,7 @@ SLA_DAYS = {
     "low": int(os.environ.get("SLA_DAYS_LOW", "180")),
 }
 # Shown on the About page. Set through compose env (APP_VERSION, BUILD_ID, BUILD_DATE).
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.0")
+APP_VERSION = os.environ.get("APP_VERSION", "1.1.0")
 BUILD_ID = os.environ.get("BUILD_ID", "dev")
 BUILD_DATE = os.environ.get("BUILD_DATE", "")
 
