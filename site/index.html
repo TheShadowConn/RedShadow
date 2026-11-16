@@ -1,7 +1,8 @@
 <!doctype html>
-<!-- RedShadow marketing page. Kind: software. Deal: hero product (live app-frame stage), brand palette on a dark ground
-     (Racing Red #ef233c, ink #0d1215), type mona (Mona Sans + Geist Mono), radius soft, buttons solid. Motion: assets/motion.
-     Real product screens come from docs/manual/shots (fictional Acme Corp demo data). -->
+<!-- RedShadow marketing page. Kind: software. Hero: a WebGL eclipse (a cream sphere casting a Racing Red shadow, assets/redshadow-3d.js).
+     Product section: the four lifecycle screens as a CSS 3D deck. Palette: cream #f7f4ef, Racing Red #ef233c, deep red #c8102e for text.
+     Type: Newsreader, Hanken Grotesk, JetBrains Mono. Radius soft, buttons solid. Motion: assets/motion.
+     Real product screens come from docs/manual/shots (fictional Acme Corp demo data). The page before 3D: .taste-skill/index-before-3d.html -->
 <html lang="en" data-type="software" data-radius="soft" data-buttons="solid" data-motion>
 <head>
 <meta charset="utf-8">
@@ -19,7 +20,7 @@
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,400..600&family=Geist+Mono:wght@400..500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..600&family=Hanken+Grotesk:wght@400..600&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/system.css">
 <link rel="stylesheet" href="assets/ui/cards.css">
 <link rel="stylesheet" href="assets/motion/motion.css">
@@ -32,13 +33,13 @@
   --p-accent: #c8102e; --p-accent-ink: #ffffff; --p-action: #c8102e; --p-action-ink: #ffffff;
   --p-inv-bg: #121a1f; --p-inv-surface: #1b252b; --p-inv-ink: #eef2f4; --p-inv-muted: #a3b0b7;
   --p-inv-accent: #ff4d5e; --p-inv-accent-ink: #0a0a0a; --p-inv-action: #ef233c; --p-inv-action-ink: #0a0a0a;
-  --font-display: "Mona Sans", system-ui, sans-serif;
-  --font-text: "Mona Sans", system-ui, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-text: "Hanken Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --display-weight: 500;
-  --display-tracking: -0.03em;
-  --display-tracking-xl: -0.04em;
-  --display-stretch: 104%;
+  --display-tracking: -0.022em;
+  --display-tracking-xl: -0.03em;
+  --display-stretch: 100%;
   --ly-scale: 0.96;
 }
 @media (max-width: 639px) { :root { --ly-scale: 0.8; } .hero--product .hero__stage { aspect-ratio: 342 / 352; } }
@@ -51,47 +52,41 @@
   .pill-tag i { width: 8px; height: 8px; border-radius: 50%; background: var(--p-accent); box-shadow: 0 0 0 4px rgb(239 35 60 / .18); animation: pulse 2.4s ease-in-out 2; }
   @keyframes pulse { 50% { box-shadow: 0 0 0 8px rgb(239 35 60 / 0); } }
 
-  /* small hotspot discs on the hero dashboard */
-  .ly-spot > button { width: 20px; height: 20px; min-width: 20px; min-height: 20px; box-shadow: 0 0 0 4px rgb(255 255 255 / .28); }
-  .ly-spot > button svg { width: 9px; height: 9px; }
-  .ly-spot > button:hover, .ly-spot.is-open > button { transform: scale(1.1); box-shadow: 0 0 0 6px rgb(255 255 255 / .3); }
+  /* hero: the eclipse (WebGL canvas over a still CSS fallback) */
+  .hero--product .hero__stage:has(> .ecl) { background: transparent; border: 0; border-radius: 0; overflow: visible; }
+  .ecl { position: absolute; inset: 0; }
+  .ecl__gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .5s; cursor: grab; touch-action: pan-y; outline: none; }
+  .ecl.is-live .ecl__gl { opacity: 1; }
+  .ecl.is-drag .ecl__gl { cursor: grabbing; }
+  .ecl__gl:focus-visible { outline: 2px solid var(--action); outline-offset: -2px; border-radius: var(--r-lg); }
+  .ecl__still { position: absolute; inset: 0; transition: opacity .5s; }
+  .ecl.is-live .ecl__still { opacity: 0; }
+  .ecl__still::before { content: ""; position: absolute; left: 50%; top: 50%; height: 62%; aspect-ratio: 1; transform: translate(-50%, -54%); border-radius: 50%; background: radial-gradient(circle at 34% 30%, #fffdf9 0 34%, #ece3d8 52%, #ef233c 72%, #8a0c1f 100%); }
+  .ecl__still::after { content: ""; position: absolute; left: 50%; top: 50%; width: 46%; height: 20%; transform: translate(-22%, 92%); border-radius: 50%; background: radial-gradient(closest-side, #c8102e, rgb(239 35 60 / .55) 60%, rgb(239 35 60 / 0)); z-index: -1; }
+  .ecl__pause { position: absolute; right: 0; bottom: 0; width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--p-bg); color: var(--ink); cursor: pointer; transition: border-color .15s, transform .15s; }
+  .ecl__pause:hover { border-color: var(--ink); transform: translateY(-1px); }
+  .ecl__pause:active { transform: translateY(0) scale(.96); }
+  .ecl__pause:focus-visible { outline: 2px solid var(--action); outline-offset: 2px; }
+  .ecl__pause svg { width: 12px; height: 12px; fill: currentColor; }
+  .ecl__pause .i-play, .ecl__pause[aria-pressed="true"] .i-pause { display: none; }
+  .ecl__pause[aria-pressed="true"] .i-play { display: block; }
+  .ecl.is-still .ecl__pause { display: none; }
 
-  /* live dashboard in the hero stage */
-  .app { --bg: #0d1215; --surface: #151c21; --ink: #eef2f4; --muted: #9aa8b0; --line: rgb(255 255 255 / .12); --accent: #ff4d5e; color: var(--ink); display: grid; grid-template-columns: 188px 1fr; height: 100%; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); overflow: hidden; text-align: left; }
-  .app__side { border-right: 1px solid var(--line); padding: var(--s-4) var(--s-3); display: flex; flex-direction: column; gap: 4px; background: color-mix(in srgb, var(--bg) 60%, var(--surface)); }
-  .app__logo { display: flex; align-items: center; padding: 4px 8px var(--s-3); }
-  .app__logo img { height: 20px; width: auto; }
-  .app__nav { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; font-size: 14px; color: var(--muted); }
-  .app__nav.is-on { background: rgb(239 35 60 / .14); color: var(--ink); }
-  .app__nav i { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid currentColor; opacity: .7; }
-  .app__main { padding: var(--s-4) var(--s-5); display: grid; grid-template-rows: auto auto 1fr; gap: var(--s-4); min-width: 0; }
-  .app__top { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: var(--muted); }
-  .app__top b { color: var(--ink); font-weight: 500; font-size: 16px; }
-  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-3); }
-  .tile-s { border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px 16px; background: var(--bg); }
-  .tile-s span { display: block; font-size: 13px; color: var(--muted); }
-  .tile-s strong { display: block; font: 500 30px/1.15 var(--font-display); letter-spacing: -.02em; margin-top: 2px; }
-  .tile-s.is-fail strong { color: #ff6b6b; }
-  .tile-s.is-warn strong { color: #f2b24c; }
-  .panels { display: grid; grid-template-columns: 1.15fr 1fr; gap: var(--s-3); min-height: 0; }
-  .pn { border: 1px solid var(--line); border-radius: var(--r-md); padding: 16px; background: var(--bg); min-width: 0; }
-  .pn h4 { margin: 0 0 var(--s-3); font: 500 14px/1.2 var(--font-text); color: var(--muted); }
-  .sev { display: grid; grid-template-columns: 62px 1fr 28px; align-items: center; gap: 10px; font-size: 13px; margin-bottom: 9px; }
-  .sev__bar { height: 10px; border-radius: 6px; background: var(--surface); overflow: hidden; }
-  .sev__bar i { display: block; height: 100%; width: 0; border-radius: 6px; background: var(--c); animation: grow 1.4s .3s cubic-bezier(.2,.7,.2,1) forwards; }
-  @keyframes grow { to { width: var(--w); } }
-  .sev b { font-weight: 500; text-align: right; }
-  .trend { width: 100%; height: 150px; display: block; }
-  .trend path { fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 600; stroke-dashoffset: 600; animation: draw 2s .4s ease forwards; }
-  @keyframes draw { to { stroke-dashoffset: 0; } }
-  .due { list-style: none; margin: 0; padding: 0; font-size: 13px; }
-  .due li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
-  .due li:first-child { border-top: 0; }
-  .due em { font-style: normal; color: var(--muted); font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
-  .hero__stage .app { position: absolute; inset: 0; }
-  @media (max-width: 1023px) { .app { grid-template-columns: 1fr; } .app__side { display: none; } .tiles { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 639px) { .app__top { display: none; } .tile-s { padding: 10px 12px; } .tile-s strong { font-size: 24px; } .pn { padding: 12px; } .sev { margin-bottom: 5px; } .nav__logo img { height: 16px !important; } header.nav .nav__actions .btn.btn--primary { padding-inline: 10px; font-size: 13px; } .panels { grid-template-columns: 1fr; } .panels .pn:nth-child(2) { display: none; } .app__main { padding: var(--s-3); } }
-  @media (prefers-reduced-motion: reduce) { .sev__bar i { animation: none; width: var(--w); } .trend path { animation: none; stroke-dashoffset: 0; } .pill-tag i { animation: none; } }
+  /* product: the four screens as a deck in depth (CSS 3D) */
+  .deck { position: relative; aspect-ratio: 1 / .8; perspective: 1500px; perspective-origin: 50% 42%; touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; }
+  .deck.is-drag { cursor: grabbing; }
+  .deck__tilt { position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateX(var(--rx, 9deg)) rotateY(var(--ry, -22deg)); transition: transform .6s cubic-bezier(.2, .7, .2, 1); }
+  .deck.is-drag .deck__tilt { transition: none; }
+  .deck__pane { --k: 0; position: absolute; left: 0; top: 33%; width: 84%; height: auto; display: block; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); box-shadow: 0 34px 50px -34px rgb(27 36 41 / .5); transform: translate3d(calc(var(--k) * 7%), calc(var(--k) * -17%), calc(var(--k) * -150px)); opacity: calc(1 - var(--k) * .1); transition: transform .7s cubic-bezier(.2, .7, .2, 1), opacity .4s, border-color .3s, box-shadow .3s; cursor: pointer; -webkit-user-drag: none; }
+  .deck__pane.is-front { border-color: var(--accent); box-shadow: 0 40px 60px -34px rgb(200 16 46 / .55); cursor: grab; }
+  .step-btn { all: unset; display: block; width: 100%; box-sizing: border-box; cursor: pointer; }
+  .step-btn:focus-visible { outline: 2px solid var(--action); outline-offset: 4px; border-radius: 4px; }
+  .steps li:has(.step-btn) { position: relative; transition: border-color .2s; }
+  .steps li:has(.step-btn)::after { content: ""; position: absolute; left: 0; top: -1px; height: 2px; width: 0; background: var(--accent); transition: width .35s cubic-bezier(.2, .7, .2, 1); }
+  .steps li:has(.step-btn[aria-pressed="true"])::after { width: 100%; }
+  .steps li:has(.step-btn:hover) strong, .step-btn[aria-pressed="true"] strong { color: var(--accent); }
+  @media (max-width: 639px) { .nav__logo img { height: 16px !important; } header.nav .nav__actions .btn.btn--primary { padding-inline: 10px; font-size: 13px; } .deck { aspect-ratio: 1 / .86; } .deck__pane { width: 74%; transform: translate3d(calc(var(--k) * 5%), calc(var(--k) * -17%), calc(var(--k) * -120px)); } .ecl__pause { bottom: auto; top: 0; } }
+  @media (prefers-reduced-motion: reduce) { .pill-tag i { animation: none; } .deck__tilt, .deck__pane, .ecl__gl, .ecl__still { transition: none; } }
 
   /* product screenshots (real, fictional demo data) */
   .shot { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); }
@@ -166,56 +161,10 @@
         <div class="btn-row"><a class="btn btn--primary" href="https://github.com/TheShadowConn/RedShadow/releases/latest">Download from GitHub</a><a class="btn btn--secondary" href="#film">Watch the demo</a></div>
       </div>
       <div class="hero__stage">
-        <div class="app ui" role="img" aria-label="RedShadow admin dashboard with demo data: open findings, severity bars, a twelve-week trend and the next fixes due">
-          <aside class="app__side" aria-hidden="true">
-            <div class="app__logo"><img src="assets/brand/wordmark-light.svg" alt=""></div>
-            <span class="app__nav is-on"><i></i>Overview</span>
-            <span class="app__nav"><i></i>Engagements</span>
-            <span class="app__nav"><i></i>Findings</span>
-            <span class="app__nav"><i></i>Remediation</span>
-            <span class="app__nav"><i></i>Retests</span>
-            <span class="app__nav"><i></i>Calendar</span>
-            <span class="app__nav"><i></i>Reports</span>
-            <span class="app__nav"><i></i>Audit</span>
-          </aside>
-          <div class="app__main">
-            <div class="app__top"><b>Administration</b><span>Last 12 weeks</span></div>
-            <div class="tiles" aria-hidden="true">
-              <div class="tile-s"><span>Open findings</span><strong>38</strong></div>
-              <div class="tile-s is-fail"><span>Overdue</span><strong>4</strong></div>
-              <div class="tile-s is-warn"><span>Due in 7 days</span><strong>9</strong></div>
-              <div class="tile-s"><span>To verify</span><strong>6</strong></div>
-            </div>
-            <div class="panels" aria-hidden="true">
-              <div class="pn">
-                <h4>Open by severity</h4>
-                <div class="sev"><span>Critical</span><div class="sev__bar"><i style="--c:#ff4d5e;--w:22%"></i></div><b>3</b></div>
-                <div class="sev"><span>High</span><div class="sev__bar"><i style="--c:#ff8a3d;--w:54%"></i></div><b>9</b></div>
-                <div class="sev"><span>Medium</span><div class="sev__bar"><i style="--c:#f2b24c;--w:92%"></i></div><b>15</b></div>
-                <div class="sev"><span>Low</span><div class="sev__bar"><i style="--c:#5b8cff;--w:60%"></i></div><b>8</b></div>
-                <div class="sev"><span>Info</span><div class="sev__bar"><i style="--c:#7d8b93;--w:18%"></i></div><b>3</b></div>
-              </div>
-              <div class="pn">
-                <h4>Opened and closed, 12 weeks</h4>
-                <svg class="trend" viewBox="0 0 400 118" preserveAspectRatio="none">
-                  <path d="M0 88 C40 80 60 60 100 66 S170 30 210 44 S290 70 330 36 S380 28 400 22" stroke="#ef233c"/>
-                  <path d="M0 100 C50 96 70 84 110 88 S180 70 220 76 S300 58 340 62 S385 50 400 46" stroke="#9aa8b0" style="animation-delay:.7s"/>
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="ly-spot" style="--x: 38%; --y: 46%">
-          <button type="button" aria-label="About the severity counts"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
-          <div class="ly-spot__card" role="note"><strong>Severity counts</strong>Every number equals the same filter on the Findings page.</div>
-        </div>
-        <div class="ly-spot ly-spot--left" style="--x: 82%; --y: 40%">
-          <button type="button" aria-label="About the trend chart"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
-          <div class="ly-spot__card" role="note"><strong>Twelve-week trend</strong>Findings opened against findings closed, per week.</div>
-        </div>
-        <div class="ly-spot ly-spot--left" style="--x: 82%; --y: 82%">
-          <button type="button" aria-label="About the fix deadlines"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
-          <div class="ly-spot__card" role="note"><strong>Fix deadlines</strong>The next findings due, from the SLA set per severity.</div>
+        <div class="ecl" id="ecl">
+          <div class="ecl__still" aria-hidden="true"></div>
+          <canvas class="ecl__gl" tabindex="0" role="img" aria-label="A cream sphere casting a red shadow, with a small red sphere in orbit. Drag, or use the arrow keys, to turn it. Move the pointer to move the light."></canvas>
+          <button class="ecl__pause" type="button" aria-pressed="false" aria-label="Pause the orbit"><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.5h2.5v9H2.5zM7 1.5h2.5v9H7z"/></svg><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2 10.5 6 3 10.8z"/></svg></button>
         </div>
       </div>
     </div></div>
@@ -226,13 +175,20 @@
       <div class="span-6">
         <div class="section-head"><h2 id="product-h">RedShadow findings and retests</h2><p class="t-lead measure">Every finding goes from first note to verified fix. Nothing closes until a tester has retested it.</p></div>
         <ol class="steps">
-          <li><span><strong>Record it.</strong> Severity from a CVSS vector, evidence, proof of concept and notes.</span></li>
-          <li><span><strong>Assign it.</strong> A remediation owner gets a fix date set by severity.</span></li>
-          <li><span><strong>Fix it.</strong> The owner updates status and submits it for verification.</span></li>
-          <li><span><strong>Retest it.</strong> A named assessor records pass or fail in a retest round.</span></li>
+          <li><button class="step-btn" type="button" data-pane="0" aria-pressed="true"><strong>Record it.</strong> Severity from a CVSS vector, evidence, proof of concept and notes.</button></li>
+          <li><button class="step-btn" type="button" data-pane="1" aria-pressed="false"><strong>Assign it.</strong> A remediation owner gets a fix date set by severity.</button></li>
+          <li><button class="step-btn" type="button" data-pane="2" aria-pressed="false"><strong>Fix it.</strong> The owner updates status and submits it for verification.</button></li>
+          <li><button class="step-btn" type="button" data-pane="3" aria-pressed="false"><strong>Retest it.</strong> A named assessor records pass or fail in a retest round.</button></li>
         </ol>
       </div>
-      <div class="span-6 start-7"><img class="shot" src="assets/shots/17-finding-detail.png" alt="A finding in RedShadow with severity, CVSS score, status, history and the verify action" width="800" height="500" loading="lazy"></div>
+      <div class="span-6 start-7"><div class="deck" id="deck" role="group" aria-label="The RedShadow screen for each step">
+        <div class="deck__tilt">
+          <img class="deck__pane is-front" style="--k:0" src="assets/shots/17-finding-detail.png" alt="A finding in RedShadow with severity, CVSS score, status, history and the verify action" width="800" height="500" draggable="false">
+          <img class="deck__pane" style="--k:1" src="assets/shots/16-findings-list.png" alt="The findings list with owners and due dates" width="800" height="500" draggable="false">
+          <img class="deck__pane" style="--k:2" src="assets/shots/24-remediation-queue.png" alt="The remediation queue of assigned findings" width="800" height="500" draggable="false">
+          <img class="deck__pane" style="--k:3" src="assets/shots/20-retest-pass.png" alt="A retest round recorded as passed" width="800" height="500" draggable="false">
+        </div>
+      </div></div>
     </div>
   </section>
 
@@ -333,6 +289,7 @@
 </footer>
 <script type="module" src="assets/system.js"></script>
 <script type="module" src="assets/layout/layout.js"></script>
+<script src="assets/redshadow-3d.js" defer></script>
 <script>
   (function () {
     var shot = document.getElementById('role-shot'), roles = document.querySelectorAll('.role');
