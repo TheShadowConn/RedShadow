@@ -6,6 +6,8 @@ from apps.accounts.models import User
 from apps.rbac.models import Permission, Role, RolePermission
 
 PASSWORD = "Correct-Horse-Battery-9"
+# Fixed test-only TOTP secret: 32 base32 characters (160 bits). pyotp rejects secrets under 112 bits.
+TEST_MFA_SECRET = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP"
 SAFE = {"GET", "HEAD", "OPTIONS"}
 
 
@@ -65,7 +67,7 @@ def signed_in(user, password=PASSWORD):
 
 @pytest.fixture
 def admin(db):
-    return make_user("admin@example.com", "super_admin", mfa_enabled=True, **_mfa("JBSWY3DPEHPK3PXP"))
+    return make_user("admin@example.com", "super_admin", mfa_enabled=True, **_mfa(TEST_MFA_SECRET))
 
 
 def _mfa(secret):
