@@ -1,13 +1,13 @@
 <!doctype html>
-<!-- RedShadow marketing page. Kind: software. Deal: hero product (live app-frame stage), brand palette on a dark ground
-     (Racing Red #ef233c, ink #0d1215), type mona (Mona Sans + Geist Mono), radius soft, buttons solid. Motion: assets/motion.
-     Real product screens come from docs/manual/shots (fictional Acme Corp demo data). -->
-<html lang="en" data-type="software" data-radius="soft" data-buttons="solid" data-motion>
+<!-- RedShadow marketing page. Five parts only (user's choice): hero with the tagline "Offensive Security, Under Control" and a live console
+     (assets/shadow/hero.js), run it with one command (terminal boot, assets/shadow/boot.js), roles and access, imports and exports, audit logs.
+     Footer: huge eclipse wordmark whose red shadow follows the pointer (assets/shadow/mark.js).
+     Palette: cream #f7f4ef ground, slate #1f3038 text (the logo's colour), Racing Red #ef233c components. Type: Bricolage Grotesque, Hanken Grotesk, JetBrains Mono.
+     Product screens: fictional Acme Corp demo data. -->
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="site-kind" content="software">
-<meta name="page-type" content="software">
 <title>RedShadow: Offensive Security, Under Control. Pentest management software</title>
 <meta name="description" content="RedShadow is open-source pentest management software. Plan engagements, record findings, assign fixes, retest, verify and report in one self-hosted app. Offensive Security, Under Control.">
 <meta property="og:title" content="RedShadow: Offensive Security, Under Control">
@@ -19,350 +19,180 @@
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,400..600&family=Geist+Mono:wght@400..500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/system.css">
-<link rel="stylesheet" href="assets/ui/cards.css">
-<link rel="stylesheet" href="assets/motion/motion.css">
-<link rel="stylesheet" href="assets/backgrounds/backgrounds.css">
-<link rel="stylesheet" href="assets/layout/layout.css">
-<link rel="stylesheet" href="assets/icons/icon.css">
-<style>
-:root {
-  --p-bg: #f7f4ef; --p-surface: #ece8e1; --p-ink: #1b2429; --p-muted: #56626a;
-  --p-accent: #c8102e; --p-accent-ink: #ffffff; --p-action: #c8102e; --p-action-ink: #ffffff;
-  --p-inv-bg: #121a1f; --p-inv-surface: #1b252b; --p-inv-ink: #eef2f4; --p-inv-muted: #a3b0b7;
-  --p-inv-accent: #ff4d5e; --p-inv-accent-ink: #0a0a0a; --p-inv-action: #ef233c; --p-inv-action-ink: #0a0a0a;
-  --font-display: "Mona Sans", system-ui, sans-serif;
-  --font-text: "Mona Sans", system-ui, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  --display-weight: 500;
-  --display-tracking: -0.03em;
-  --display-tracking-xl: -0.04em;
-  --display-stretch: 104%;
-  --ly-scale: 0.96;
-}
-@media (max-width: 639px) { :root { --ly-scale: 0.8; } .hero--product .hero__stage { aspect-ratio: 342 / 352; } }
-</style>
-<script src="assets/backgrounds/backgrounds.js"></script>
-<style>
-  /* ---- page CSS: only what sits inside a visual ---- */
-  .mark-o { display: inline-block; width: 22px; height: 26px; vertical-align: -5px; margin-right: 10px; }
-  .pill-tag { display: inline-flex; align-items: center; gap: 10px; font: 500 var(--t-label)/1 var(--font-mono); color: var(--muted); margin-bottom: var(--s-4); }
-  .pill-tag i { width: 8px; height: 8px; border-radius: 50%; background: var(--p-accent); box-shadow: 0 0 0 4px rgb(239 35 60 / .18); animation: pulse 2.4s ease-in-out 2; }
-  @keyframes pulse { 50% { box-shadow: 0 0 0 8px rgb(239 35 60 / 0); } }
-
-  /* small hotspot discs on the hero dashboard */
-  .ly-spot > button { width: 20px; height: 20px; min-width: 20px; min-height: 20px; box-shadow: 0 0 0 4px rgb(255 255 255 / .28); }
-  .ly-spot > button svg { width: 9px; height: 9px; }
-  .ly-spot > button:hover, .ly-spot.is-open > button { transform: scale(1.1); box-shadow: 0 0 0 6px rgb(255 255 255 / .3); }
-
-  /* live dashboard in the hero stage */
-  .app { --bg: #0d1215; --surface: #151c21; --ink: #eef2f4; --muted: #9aa8b0; --line: rgb(255 255 255 / .12); --accent: #ff4d5e; color: var(--ink); display: grid; grid-template-columns: 188px 1fr; height: 100%; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); overflow: hidden; text-align: left; }
-  .app__side { border-right: 1px solid var(--line); padding: var(--s-4) var(--s-3); display: flex; flex-direction: column; gap: 4px; background: color-mix(in srgb, var(--bg) 60%, var(--surface)); }
-  .app__logo { display: flex; align-items: center; padding: 4px 8px var(--s-3); }
-  .app__logo img { height: 20px; width: auto; }
-  .app__nav { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; font-size: 14px; color: var(--muted); }
-  .app__nav.is-on { background: rgb(239 35 60 / .14); color: var(--ink); }
-  .app__nav i { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid currentColor; opacity: .7; }
-  .app__main { padding: var(--s-4) var(--s-5); display: grid; grid-template-rows: auto auto 1fr; gap: var(--s-4); min-width: 0; }
-  .app__top { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: var(--muted); }
-  .app__top b { color: var(--ink); font-weight: 500; font-size: 16px; }
-  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-3); }
-  .tile-s { border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px 16px; background: var(--bg); }
-  .tile-s span { display: block; font-size: 13px; color: var(--muted); }
-  .tile-s strong { display: block; font: 500 30px/1.15 var(--font-display); letter-spacing: -.02em; margin-top: 2px; }
-  .tile-s.is-fail strong { color: #ff6b6b; }
-  .tile-s.is-warn strong { color: #f2b24c; }
-  .panels { display: grid; grid-template-columns: 1.15fr 1fr; gap: var(--s-3); min-height: 0; }
-  .pn { border: 1px solid var(--line); border-radius: var(--r-md); padding: 16px; background: var(--bg); min-width: 0; }
-  .pn h4 { margin: 0 0 var(--s-3); font: 500 14px/1.2 var(--font-text); color: var(--muted); }
-  .sev { display: grid; grid-template-columns: 62px 1fr 28px; align-items: center; gap: 10px; font-size: 13px; margin-bottom: 9px; }
-  .sev__bar { height: 10px; border-radius: 6px; background: var(--surface); overflow: hidden; }
-  .sev__bar i { display: block; height: 100%; width: 0; border-radius: 6px; background: var(--c); animation: grow 1.4s .3s cubic-bezier(.2,.7,.2,1) forwards; }
-  @keyframes grow { to { width: var(--w); } }
-  .sev b { font-weight: 500; text-align: right; }
-  .trend { width: 100%; height: 150px; display: block; }
-  .trend path { fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 600; stroke-dashoffset: 600; animation: draw 2s .4s ease forwards; }
-  @keyframes draw { to { stroke-dashoffset: 0; } }
-  .due { list-style: none; margin: 0; padding: 0; font-size: 13px; }
-  .due li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
-  .due li:first-child { border-top: 0; }
-  .due em { font-style: normal; color: var(--muted); font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
-  .hero__stage .app { position: absolute; inset: 0; }
-  @media (max-width: 1023px) { .app { grid-template-columns: 1fr; } .app__side { display: none; } .tiles { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 639px) { .app__top { display: none; } .tile-s { padding: 10px 12px; } .tile-s strong { font-size: 24px; } .pn { padding: 12px; } .sev { margin-bottom: 5px; } .nav__logo img { height: 16px !important; } header.nav .nav__actions .btn.btn--primary { padding-inline: 10px; font-size: 13px; } .panels { grid-template-columns: 1fr; } .panels .pn:nth-child(2) { display: none; } .app__main { padding: var(--s-3); } }
-  @media (prefers-reduced-motion: reduce) { .sev__bar i { animation: none; width: var(--w); } .trend path { animation: none; stroke-dashoffset: 0; } .pill-tag i { animation: none; } }
-
-  /* product screenshots (real, fictional demo data) */
-  .shot { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); }
-    .steps { counter-reset: s; list-style: none; margin: 0; padding: 0; }
-  .steps li { counter-increment: s; display: block; padding: var(--s-5) 0; border-top: 1px solid var(--line); font-size: var(--t-body); line-height: 1.5; }
-  .steps li::before { content: counter(s, decimal-leading-zero); display: block; margin-bottom: 4px; font: 500 var(--t-label)/1.6 var(--font-mono); color: var(--accent); }
-  .steps strong { font-weight: 500; color: var(--ink); }
-  .roles { display: grid; gap: var(--s-3); }
-  .role { display: block; text-align: left; width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-left: 4px solid transparent; border-radius: var(--r-md); padding: var(--s-4); cursor: pointer; transition: border-color .15s, background .15s, transform .15s; }
-  .role b { display: block; font: 500 var(--t-card)/1.25 var(--font-display); letter-spacing: -.01em; }
-  .role span { display: block; margin-top: 4px; font-size: var(--t-body); line-height: 1.5; color: var(--muted); }
-  .role:hover { transform: translateY(-2px); border-color: var(--ink); }
-  .role:focus-visible { outline: 2px solid var(--action); outline-offset: 2px; }
-  .role.is-on { border-left-color: var(--accent); border-color: var(--accent); background: #fff; box-shadow: 0 10px 28px -16px rgb(200 16 46 / .45); }
-  .role.is-on b { color: var(--accent); }
-  #role-shot { transition: opacity .2s; }
-  .duo { display: grid; grid-template-columns: .62fr 1fr; gap: var(--s-4); align-items: start; }
-  .duo .shot:first-child { height: auto; }
-  @media (max-width: 1100px) { .duo { grid-template-columns: 1fr; } .duo .shot:nth-child(2) { display: none; } .sev:nth-of-type(5) { display: none; } }
-  @media (min-width: 640px) and (max-width: 1023px) { .steps { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--s-5); } .roles { grid-template-columns: 1fr 1fr; } .roles .role span { font-size: var(--t-small); } }
-  @media (max-width: 639px) { #product, #roles, #reports, #start { --h: 2; } #security .t-lead { display: none; } .steps li { padding: var(--s-4) 0; } .ly-spot:nth-of-type(n+3) { display: none; } }
-  @media (min-width: 1024px) { .start-steps { display: none; } }
-  .film { position: relative; border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; background: #000; aspect-ratio: 16 / 9; }
-  @media (max-width: 1023px) { .film { aspect-ratio: 1 / 1; } }
-  @media (max-width: 639px) { .film { aspect-ratio: 4 / 5; } }
-  .film video { display: block; width: 100%; height: 100%; object-fit: cover; }
-  .term { --line: rgb(255 255 255 / .14); --ink: #eef2f4; --muted: #a3b0b7; --accent: #ff7a86; border: 1px solid var(--line); border-radius: var(--r-lg); background: #121a1f; color: var(--ink); overflow: hidden; }
-  .term__bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); font: 400 var(--t-label)/1 var(--font-mono); color: var(--muted); }
-  .term__bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
-  .term__bar button { margin-left: auto; font: 500 var(--t-label)/1 var(--font-text); color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 12px; min-height: 36px; cursor: pointer; }
-  .term__bar button:hover { border-color: var(--ink); }
-  .term pre { margin: 0; padding: var(--s-5) var(--s-4); white-space: pre-wrap; overflow-wrap: anywhere; font: 400 16px/2.1 var(--font-mono); color: var(--ink); }
-  @media (max-width: 639px) { .term pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; } }
-  .term pre .c { color: var(--muted); }
-  .term pre .p { color: #ff8a95; user-select: none; }
-  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-5); margin-top: var(--s-6); }
-  .facts div { border-top: 1px solid var(--line); padding-top: var(--s-3); }
-  .facts strong { display: block; font: 500 var(--t-stat)/1.1 var(--font-display); letter-spacing: -.02em; }
-  .facts span { color: var(--muted); font-size: var(--t-body); }
-  @media (max-width: 639px) { .facts { grid-template-columns: 1fr; } }
-  .stack-list { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-5); }
-  .stack-list span { border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; font: 500 var(--t-label)/1 var(--font-mono); color: var(--muted); }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..700&family=Hanken+Grotesk:wght@400..600&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shadow/site.css">
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 <header class="nav">
-  <div class="wrap nav__bar">
-    <a class="nav__logo" href="#top" aria-label="RedShadow home"><img src="assets/brand/wordmark-dark.svg" alt="RedShadow" style="height:24px;width:auto"></a>
-    <nav class="nav__links" aria-label="Main">
-      <div class="nav__item"><a class="nav__link" href="#product">Findings</a></div>
-      <div class="nav__item"><a class="nav__link" href="#roles">Roles</a></div>
-      <div class="nav__item"><a class="nav__link" href="#reports">Reports</a></div>
-      <div class="nav__item"><a class="nav__link" href="#security">Security</a></div>
-      <div class="nav__item"><a class="nav__link" href="#start">Install</a></div>
-    </nav>
-    <div class="nav__actions">
-      <a class="btn btn--primary" href="https://github.com/TheShadowConn/RedShadow/releases/latest">Download from GitHub</a>
-    </div>
-    <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
-  </div>
+  <a class="nav__logo" href="#hero" aria-label="RedShadow home"><img src="assets/brand/wordmark-dark.svg" alt="RedShadow" width="200" height="29"></a>
+  <nav class="nav__links" aria-label="Main">
+    <a href="#install">Install</a><a href="#roles">Roles</a><a href="#imports">Imports and exports</a><a href="#audit">Audit logs</a>
+  </nav>
+  <a class="btn btn--red btn--sm" href="https://github.com/TheShadowConn/RedShadow/releases/latest">Download</a>
 </header>
 
-<main id="top">
-  <section class="hero hero--product" aria-labelledby="hero-h">
-    <div class="wrap"><div class="hero-text hero__in">
-      <p class="pill-tag" style="margin:0 0 var(--s-5)">Offensive Security, Under Control<i aria-hidden="true"></i></p>
-      <div class="hero__head">
-        <div>
-          <h1 id="hero-h">Pentest management software</h1>
-          <p class="hero__lead">For security teams. Plan engagements, record findings with CVSS and evidence, assign fixes, retest and verify them, then report. Self-hosted and free under Apache-2.0.</p>
-        </div>
-        <div class="btn-row"><a class="btn btn--primary" href="https://github.com/TheShadowConn/RedShadow/releases/latest">Download from GitHub</a><a class="btn btn--secondary" href="#film">Watch the demo</a></div>
+<main id="main">
+  <!-- 1. Hero -->
+  <section class="hero" id="hero" aria-labelledby="hero-h">
+    <div class="wrap hero__in">
+      <div>
+        <p class="eyebrow">Open-source pentest management</p>
+        <h1 id="hero-h">Offensive Security, <span class="red">Under Control.</span></h1>
+        <p class="lead">Plan engagements, record findings with evidence, assign fixes, retest, verify and report. One self-hosted app, free under Apache-2.0.</p>
+        <div class="row"><a class="btn btn--red" href="https://github.com/TheShadowConn/RedShadow/releases/latest">Download from GitHub</a><a class="btn btn--line" href="#install">See the install</a></div>
+        <ul class="facts"><li>Docker Compose</li><li>4 built-in roles</li><li>PDF and CSV</li></ul>
       </div>
       <div class="hero__stage">
-        <div class="app ui" role="img" aria-label="RedShadow admin dashboard with demo data: open findings, severity bars, a twelve-week trend and the next fixes due">
-          <aside class="app__side" aria-hidden="true">
-            <div class="app__logo"><img src="assets/brand/wordmark-light.svg" alt=""></div>
-            <span class="app__nav is-on"><i></i>Overview</span>
-            <span class="app__nav"><i></i>Engagements</span>
-            <span class="app__nav"><i></i>Findings</span>
-            <span class="app__nav"><i></i>Remediation</span>
-            <span class="app__nav"><i></i>Retests</span>
-            <span class="app__nav"><i></i>Calendar</span>
-            <span class="app__nav"><i></i>Reports</span>
-            <span class="app__nav"><i></i>Audit</span>
-          </aside>
-          <div class="app__main">
-            <div class="app__top"><b>Administration</b><span>Last 12 weeks</span></div>
-            <div class="tiles" aria-hidden="true">
-              <div class="tile-s"><span>Open findings</span><strong>38</strong></div>
-              <div class="tile-s is-fail"><span>Overdue</span><strong>4</strong></div>
-              <div class="tile-s is-warn"><span>Due in 7 days</span><strong>9</strong></div>
-              <div class="tile-s"><span>To verify</span><strong>6</strong></div>
+        <div class="con" role="group" aria-label="Live demo of the RedShadow console with fictional Acme data">
+          <div class="con__bar"><i></i><i></i><i></i><span>acme-q4 / Findings</span><span class="con__live">Live</span></div>
+          <div class="con__body">
+            <div class="con__map">
+              <p class="con__lbl">Assets in scope <b id="c-assets">96</b></p>
+              <div class="con__grid" aria-hidden="true"><span class="con__scan"></span></div>
+              <p class="con__legend"><span class="k k--open"></span><b id="c-open">0</b> open <span class="k k--fixed"></span><b id="c-fixed">0</b> verified</p>
             </div>
-            <div class="panels" aria-hidden="true">
-              <div class="pn">
-                <h4>Open by severity</h4>
-                <div class="sev"><span>Critical</span><div class="sev__bar"><i style="--c:#ff4d5e;--w:22%"></i></div><b>3</b></div>
-                <div class="sev"><span>High</span><div class="sev__bar"><i style="--c:#ff8a3d;--w:54%"></i></div><b>9</b></div>
-                <div class="sev"><span>Medium</span><div class="sev__bar"><i style="--c:#f2b24c;--w:92%"></i></div><b>15</b></div>
-                <div class="sev"><span>Low</span><div class="sev__bar"><i style="--c:#5b8cff;--w:60%"></i></div><b>8</b></div>
-                <div class="sev"><span>Info</span><div class="sev__bar"><i style="--c:#7d8b93;--w:18%"></i></div><b>3</b></div>
-              </div>
-              <div class="pn">
-                <h4>Opened and closed, 12 weeks</h4>
-                <svg class="trend" viewBox="0 0 400 118" preserveAspectRatio="none">
-                  <path d="M0 88 C40 80 60 60 100 66 S170 30 210 44 S290 70 330 36 S380 28 400 22" stroke="#ef233c"/>
-                  <path d="M0 100 C50 96 70 84 110 88 S180 70 220 76 S300 58 340 62 S385 50 400 46" stroke="#9aa8b0" style="animation-delay:.7s"/>
-                </svg>
-              </div>
+            <div class="con__list">
+              <p class="con__lbl">Newest findings</p>
+              <ol class="con__rows"></ol>
             </div>
           </div>
         </div>
-        <div class="ly-spot" style="--x: 38%; --y: 46%">
-          <button type="button" aria-label="About the severity counts"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
-          <div class="ly-spot__card" role="note"><strong>Severity counts</strong>Every number equals the same filter on the Findings page.</div>
-        </div>
-        <div class="ly-spot ly-spot--left" style="--x: 82%; --y: 40%">
-          <button type="button" aria-label="About the trend chart"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
-          <div class="ly-spot__card" role="note"><strong>Twelve-week trend</strong>Findings opened against findings closed, per week.</div>
-        </div>
-        <div class="ly-spot ly-spot--left" style="--x: 82%; --y: 82%">
-          <button type="button" aria-label="About the fix deadlines"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
-          <div class="ly-spot__card" role="note"><strong>Fix deadlines</strong>The next findings due, from the SLA set per severity.</div>
-        </div>
       </div>
-    </div></div>
-  </section>
-
-  <section class="section" id="product" aria-labelledby="product-h">
-    <div class="wrap grid grid--middle">
-      <div class="span-6">
-        <div class="section-head"><h2 id="product-h">RedShadow findings and retests</h2><p class="t-lead measure">Every finding goes from first note to verified fix. Nothing closes until a tester has retested it.</p></div>
-        <ol class="steps">
-          <li><span><strong>Record it.</strong> Severity from a CVSS vector, evidence, proof of concept and notes.</span></li>
-          <li><span><strong>Assign it.</strong> A remediation owner gets a fix date set by severity.</span></li>
-          <li><span><strong>Fix it.</strong> The owner updates status and submits it for verification.</span></li>
-          <li><span><strong>Retest it.</strong> A named assessor records pass or fail in a retest round.</span></li>
-        </ol>
-      </div>
-      <div class="span-6 start-7"><img class="shot" src="assets/shots/17-finding-detail.png" alt="A finding in RedShadow with severity, CVSS score, status, history and the verify action" width="800" height="500" loading="lazy"></div>
     </div>
   </section>
 
-  <section class="section ground-surface" id="roles" aria-labelledby="roles-h">
-    <div class="wrap grid grid--middle">
-      <div class="span-6">
-        <div class="section-head"><h2 id="roles-h">RedShadow roles and access</h2><p class="t-lead measure">Four built-in roles. Everyone sees only the engagements and findings they are allowed to.</p></div>
-        <div class="roles" role="tablist" aria-label="RedShadow roles">
-          <button class="role is-on" type="button" role="tab" aria-selected="true" data-img="assets/shots/02-admin-dashboard.png" data-alt="The Super Admin dashboard"><b>Super Admin</b><span>Runs the platform: users, roles, engagements, cost and the full audit log.</span></button>
-          <button class="role" type="button" role="tab" aria-selected="false" data-img="assets/shots/16-findings-list.png" data-alt="The findings list of a Pentester"><b>Pentester</b><span>Reports findings, uploads evidence, imports CSV and verifies fixes on assigned engagements.</span></button>
-          <button class="role" type="button" role="tab" aria-selected="false" data-img="assets/shots/24-remediation-queue.png" data-alt="The remediation queue of a Remediation Owner"><b>Remediation Owner</b><span>Works a queue of assigned findings with due dates and submits fixes for verification.</span></button>
-          <button class="role" type="button" role="tab" aria-selected="false" data-img="assets/shots/27-vendor-dashboard.png" data-alt="The External Vendor dashboard"><b>External Vendor</b><span>Reports and imports findings and sees only their own, never anyone else's.</span></button>
-        </div>
-      </div>
-      <div class="span-6 start-7"><img id="role-shot" class="shot" src="assets/shots/02-admin-dashboard.png" alt="The Super Admin dashboard" width="800" height="500"></div>
-    </div>
-  </section>
-
-  <section class="section" id="reports" aria-labelledby="reports-h">
-    <div class="wrap grid grid--middle">
-      <div class="span-6">
-        <div class="section-head"><h2 id="reports-h">RedShadow reports and CSV import</h2><p class="t-lead measure">Hand the client a finished PDF, and bring findings in from any spreadsheet.</p></div>
-        <ol class="steps">
-          <li><span><strong>Report styles.</strong> Your logo, accent colour and sections, in client and internal editions.</span></li>
-          <li><span><strong>CSV import.</strong> Map columns, preview, catch duplicates, import in one safe transaction.</span></li>
-          <li><span><strong>Assets by name, IP or URL.</strong> Rows match the in-scope assets of the engagement.</span></li>
-        </ol>
-      </div>
-      <div class="span-6 start-7"><div class="duo"><img class="shot" src="assets/shots/report-cover.jpg" alt="The cover of a RedShadow PDF report" width="990" height="1400"><img class="shot" src="assets/shots/23-import-check.png" alt="The CSV import check step" width="800" height="500"></div></div>
-    </div>
-  </section>
-
-  <section class="section ground-surface" id="security" aria-labelledby="security-h">
-    <div class="wrap grid grid--middle">
-      <div class="span-6">
-        <div class="section-head"><h2 id="security-h">Access control and audit log</h2><p class="t-lead measure">Permissions are enforced by the server, and every change is recorded.</p></div>
-        <ol class="steps">
-          <li><span><strong>Server-side permissions.</strong> Roles and per-engagement scope are enforced by the API, not the screen.</span></li>
-          <li><span><strong>Hash-chained audit log.</strong> Append-only entries with a built-in integrity check.</span></li>
-          <li><span><strong>Two-step sign-in.</strong> TOTP required by role, Argon2 passwords and lockout.</span></li>
-        </ol>
-      </div>
-      <div class="span-6 start-7"><img class="shot" src="assets/shots/09-audit.png" alt="The audit log with the integrity check passing" width="800" height="500"></div>
-    </div>
-  </section>
-
-  <section class="section" id="film" aria-labelledby="film-h">
+  <!-- 2. Run it with one command -->
+  <section class="sec sec--alt" id="install" aria-labelledby="install-h">
     <div class="wrap">
-      <div class="section-head section-head--center"><h2 id="film-h">RedShadow demo video</h2><p class="t-lead measure">A 30-second tour of the dashboard, a finding, verification, a retest and the audit log.</p></div>
-      <div class="film"><video controls preload="none" poster="assets/shots/launch-poster.jpg" playsinline><source src="assets/shots/launch.mp4" type="video/mp4"></video></div>
+      <div class="head head--center reveal">
+        <p class="eyebrow">Install</p>
+        <h2 id="install-h">Run it with <span class="red">one command.</span></h2>
+        <p class="lead">Docker Compose starts the database, Redis, workers and the web app. Migrations run on their own, and your data stays in named volumes.</p>
+      </div>
+      <div class="boot reveal" id="boot">
+        <div class="term">
+          <div class="term__bar"><i></i><i></i><i></i><span>~/RedShadow</span><button type="button" id="boot-replay" aria-label="Replay the install animation">Replay</button><button type="button" id="copy" aria-label="Copy the install commands">Copy</button></div>
+          <pre id="boot-out" aria-hidden="true"></pre>
+          <pre class="sr-only" id="cmds">git clone https://github.com/TheShadowConn/RedShadow.git
+cd RedShadow
+docker compose up --build -d --wait
+docker compose logs migrate | grep -A3 "FIRST LOGIN"</pre>
+        </div>
+        <div class="browser" id="boot-browser" aria-hidden="true">
+          <div class="browser__bar"><span class="browser__url"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.5" y="5.5" width="7" height="5" rx="1"/><path d="M4 5.5V4a2 2 0 0 1 4 0v1.5"/></svg>https://localhost</span></div>
+          <div class="browser__view">
+            <div class="loader"><svg viewBox="623 0 85 100"><path fill="#1f3038" d="M650.3 0H680.3C695.21 0 707.3 12.09 707.3 27V73C707.3 87.91 695.21 100 680.3 100H650.3C635.38 100 623.3 87.91 623.3 73V27C623.3 12.09 635.38 0 650.3 0ZM649.3 17C645.98 17 643.3 19.69 643.3 23V77C643.3 80.31 645.98 83 649.3 83H681.3C684.61 83 687.3 80.31 687.3 77V23C687.3 19.69 684.61 17 681.3 17Z"/><path class="wedge" fill="#ef233c" d="M683.3 32V77C683.3 78.1 682.4 79 681.3 79H649.3C648.19 79 647.3 78.1 647.3 77V68L683.3 32Z"/></svg></div>
+            <p class="browser__wait">Waiting for the stack</p>
+            <img src="assets/shots/01-signin.png" alt="" width="800" height="500" loading="lazy">
+          </div>
+        </div>
+      </div>
+      <p class="note" style="text-align:center">The first admin password is printed once by the migrate step. You change it at first sign-in and enrol two-step sign-in.</p>
     </div>
   </section>
 
-  <section class="section ground-surface" id="start" aria-labelledby="start-h">
-    <div class="wrap grid grid--middle">
-      <div class="span-6">
-        <div class="section-head"><h2 id="start-h">Install RedShadow</h2><p class="t-lead measure">One command starts Docker Compose with PostgreSQL and Redis included.</p></div>
-        <div class="term">
-          <div class="term__bar"><i></i><i></i><i></i><span>Terminal</span><button type="button" id="copy" aria-label="Copy the install commands">Copy commands</button></div>
-<pre id="cmds"><span class="p">$ </span>git clone https://github.com/TheShadowConn/RedShadow.git
-<span class="p">$ </span>cd RedShadow
-<span class="p">$ </span>docker compose up --build -d --wait
-<span class="p">$ </span>docker compose logs migrate | grep -A3 "FIRST LOGIN"
-<span class="c"># the first admin password is printed once</span>
-<span class="c"># then open https://localhost and sign in</span></pre>
+  <!-- 3. Roles and access -->
+  <section class="sec" id="roles" aria-labelledby="roles-h">
+    <div class="wrap split">
+      <div class="reveal">
+        <p class="eyebrow">Roles and access</p>
+        <h2 id="roles-h">Everyone sees <span class="red">only their part.</span></h2>
+        <p class="lead">Four built-in roles, plus your own. Scope is checked by the server on every request, never only hidden on screen.</p>
+        <div class="roles" role="tablist" aria-label="RedShadow roles" style="margin-top:36px">
+          <button class="role is-on" type="button" role="tab" aria-selected="true" aria-controls="role-shot" data-img="assets/shots/02-admin-dashboard.png" data-alt="The Super Admin dashboard"><b>Super Admin</b><span>Users, roles, engagements, cost and the full audit log.</span></button>
+          <button class="role" type="button" role="tab" aria-selected="false" aria-controls="role-shot" data-img="assets/shots/16-findings-list.png" data-alt="The findings list of a Pentester"><b>Pentester</b><span>Findings, evidence, CSV import and retests on assigned engagements only.</span></button>
+          <button class="role" type="button" role="tab" aria-selected="false" aria-controls="role-shot" data-img="assets/shots/24-remediation-queue.png" data-alt="The remediation queue of a Remediation Owner"><b>Remediation Owner</b><span>A queue of assigned fixes with due dates, submitted for verification.</span></button>
+          <button class="role" type="button" role="tab" aria-selected="false" aria-controls="role-shot" data-img="assets/shots/27-vendor-dashboard.png" data-alt="The External Vendor dashboard"><b>External Vendor</b><span>Reports and imports findings, and sees only their own.</span></button>
         </div>
-        <ol class="steps start-steps">
-          <li><span><strong>Clone and start.</strong> Migrations run on their own and your data stays in named volumes.</span></li>
-          <li><span><strong>Sign in.</strong> Use the one-time admin password, then set your own and enrol two-step sign-in.</span></li>
-        </ol>
       </div>
-      <div class="span-6 start-7"><img class="shot" src="assets/shots/01-signin.png" alt="The RedShadow sign-in page" width="800" height="500"></div>
+      <div class="reveal"><img id="role-shot" role="tabpanel" class="shot" src="assets/shots/02-admin-dashboard.png" alt="The Super Admin dashboard" width="800" height="500" loading="lazy"></div>
+    </div>
+  </section>
+
+  <!-- 4. Imports and exports -->
+  <section class="sec sec--alt" id="imports" aria-labelledby="imports-h">
+    <div class="wrap split">
+      <div class="reveal">
+        <p class="eyebrow">Imports and exports</p>
+        <h2 id="imports-h">Any spreadsheet in. <span class="red">A finished report out.</span></h2>
+        <ul class="list" style="margin-top:40px">
+          <li><span class="ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10M6 9l4 4 4-4M4 16h12"/></svg></span><b>CSV import</b><span>Map columns, preview, catch duplicates and row errors, then import in one transaction.</span></li>
+          <li><span class="ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M3 10h14M10 3c2 2.2 2 11.8 0 14M10 3c-2 2.2-2 11.8 0 14"/></svg></span><b>Assets by name, IP or URL</b><span>Rows match the in-scope assets of the engagement.</span></li>
+          <li><span class="ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5h6l4 4v11H6z"/><path d="M12 2.5v4h4M8.5 11h5M8.5 14h5"/></svg></span><b>PDF reports</b><span>Your logo, accent colour and sections, in client and internal editions.</span></li>
+          <li><span class="ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17V7M6 11l4-4 4 4M4 4h12"/></svg></span><b>CSV export</b><span>Findings with severity, status and timestamps, with a checksum for every file.</span></li>
+        </ul>
+      </div>
+      <div class="reveal"><div class="duo"><img class="shot" src="assets/shots/report-cover.jpg" alt="The cover of a RedShadow PDF report" width="990" height="1400" loading="lazy"><img class="shot" src="assets/shots/23-import-check.png" alt="The CSV import check step" width="800" height="500" loading="lazy"></div></div>
+    </div>
+  </section>
+
+  <!-- 5. Audit logs -->
+  <section class="sec" id="audit" aria-labelledby="audit-h">
+    <div class="wrap split">
+      <div class="reveal">
+        <p class="eyebrow">Audit logs</p>
+        <h2 id="audit-h">Every change, <span class="red">on the record.</span></h2>
+        <ul class="list" style="margin-top:40px">
+          <li><span class="ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="6" height="6" rx="2"/><rect x="11.5" y="7" width="6" height="6" rx="2"/><path d="M8.5 10h3"/></svg></span><b>Hash-chained</b><span>Append-only events. Each SHA-256 hash covers the one before it.</span></li>
+          <li><span class="ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l6 2.5v5c0 3.6-2.6 6.3-6 7.5-3.4-1.2-6-3.9-6-7.5V5z"/><path d="M7 10l2 2 4-4"/></svg></span><b>Integrity check</b><span>Run it by hand or every night. It names the first event that was edited or removed.</span></li>
+          <li><span class="ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h14M5.5 10h9M8 15h4"/></svg></span><b>Filters you can share</b><span>Engagement, person, action, outcome and dates, kept in the address.</span></li>
+        </ul>
+      </div>
+      <div class="reveal"><img class="shot" src="assets/shots/09-audit.png" alt="The audit log with the integrity check passing" width="800" height="500" loading="lazy"></div>
     </div>
   </section>
 </main>
 
-<footer class="footer closing footer--dark" aria-labelledby="close-h">
+<footer class="foot" aria-labelledby="close-h">
   <div class="wrap">
-    <div class="closing__cta close--type">
-      <div class="section-head"><h2 id="close-h">Self-host RedShadow today</h2></div>
-      <a class="btn btn--primary btn--xl" href="https://github.com/TheShadowConn/RedShadow/releases/latest">Download from GitHub<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+    <div class="foot__cta">
+      <h2 id="close-h">Self-host RedShadow <span class="red">today.</span></h2>
+      <div class="row" style="margin-top:0"><a class="btn btn--red" href="https://github.com/TheShadowConn/RedShadow/releases/latest">Download from GitHub</a><a class="btn btn--line" href="https://github.com/TheShadowConn/RedShadow">Source code</a></div>
     </div>
-    <div class="closing__links">
-      <div class="grid">
-        <div class="span-6 stack-5">
-          <a class="nav__logo" href="#top"><img src="assets/brand/wordmark-dark.svg" alt="RedShadow" style="height:26px;width:auto"></a>
-          <p class="footer__lede">Offensive Security, Under Control.</p>
-        </div>
-        <div class="span-3 start-7 footer__col"><h4>Product</h4><ul><li><a href="#product">Findings</a></li><li><a href="#roles">Roles</a></li><li><a href="#reports">Reports</a></li><li><a href="#security">Security</a></li></ul></div>
-        <div class="span-3 footer__col"><h4>Project</h4><ul><li><a href="https://github.com/TheShadowConn/RedShadow">Source on GitHub</a></li><li><a href="https://github.com/TheShadowConn/RedShadow/releases/latest">Latest release</a></li><li><a href="https://github.com/TheShadowConn/RedShadow/blob/main/docs/manual/RedShadow-User-Manual.pdf">User manual</a></li><li><a href="https://github.com/TheShadowConn/RedShadow/issues">Report an issue</a></li></ul></div>
-      </div>
-      <div class="footer__legal">
-        <span>&copy; 2026 RedShadow. Apache-2.0.</span>
-        <span>Built by <a class="link" href="https://github.com/TheShadowConn">Shadowconn</a></span>
-      </div>
+    <div class="foot__links">
+      <a href="https://github.com/TheShadowConn/RedShadow/blob/main/docs/manual/RedShadow-User-Manual.pdf">User manual</a>
+      <a href="https://github.com/TheShadowConn/RedShadow/releases/latest">Latest release</a>
+      <a href="https://github.com/TheShadowConn/RedShadow/issues">Report an issue</a>
+      <span class="legal">&copy; 2026 RedShadow. Apache-2.0. Built by <a href="https://github.com/TheShadowConn">Shadowconn</a></span>
     </div>
+    <svg class="mark" id="mark" viewBox="-12 -12 872.28 160" role="img" aria-labelledby="mark-t">
+      <title id="mark-t">RedShadow</title>
+      <path class="cast" id="mark-cast" d=""/>
+      <path class="wedge" d="M683.3 32V77C683.3 78.1 682.4 79 681.3 79H649.3C648.19 79 647.3 78.1 647.3 77V68L683.3 32Z"/>
+      <path class="letters" d="M650.3 0H680.3C695.21 0 707.3 12.09 707.3 27V73C707.3 87.91 695.21 100 680.3 100H650.3C635.38 100 623.3 87.91 623.3 73V27C623.3 12.09 635.38 0 650.3 0ZM169 0H222C236.91 0 249 12.09 249 27V73C249 87.91 236.91 100 222 100H169ZM530.1 0H583.1C598.01 0 610.1 12.09 610.1 27V73C610.1 87.91 598.01 100 583.1 100H530.1ZM714.4 0H735.1L753.04 66.960L770.99 0H791.69L809.63 66.96L827.58 0H848.28L821.49 100H797.78L781.34 38.64L764.9 100H741.19ZM0 0H51.16C64.88 0 76 11.12 76 24.84V34.16C76 42.43 71.96 49.75 65.75 54.27L78 100H57.29L46.31 59H20V100H0ZM351.8 0H371.8V38.5H409.8V0H429.8V100H409.8V55.5H371.8V100H351.8ZM468.09 0H491.8L507.95 60.27L518.6 100H497.89L490.52 72.5H469.37L462.01 100H441.3L451.95 60.27L453.22 55.5ZM90 0H154V17H110V38.5H148V55.5H110V83H154V100H90ZM286.85 0H309.55C321.78 0 332 8.55 334.58 20H314.9C314.23 18.25 312.54 17 310.550 17H285.85C283.28 17 281.2 19.08 281.2 21.65V36.85C281.2 39.42 283.28 41.5 285.85 41.5H309.55C323.72 41.5 335.2 52.98 335.2 67.15V74.35C335.2 88.52 323.72 100 309.55 100H286.85C274.62 100 264.4 91.45 261.82 80H281.5C282.17 81.75 283.86 83 285.85 83H310.55C313.12 83 315.2 80.92 315.2 78.35V63.15C315.2 60.58 313.12 58.5 310.55 58.5H286.85C272.68 58.5 261.2 47.02 261.2 32.85V25.65C261.2 11.48 272.68 0 286.85 0ZM649.3 17C645.98 17 643.3 19.69 643.3 23V77C643.3 80.31 645.98 83 649.3 83H681.3C684.61 83 687.3 80.31 687.3 77V23C687.3 19.69 684.61 17 681.3 17ZM550.1 17V83H584.1C587.41 83 590.1 80.31 590.1 77V23C590.1 19.69 587.41 17 584.1 17ZM189 17V83H223C226.31 83 229 80.31 229 77V23C229 19.69 226.31 17 223 17ZM20 17V42H52.16C54.28 42 56 40.28 56 38.16V20.84C56 18.72 54.28 17 52.16 17ZM485.97 55.5 479.95 33.04 473.93 55.5Z"/>
+    </svg>
+    <p class="mark__tag"><span>Offensive Security, Under Control.</span><span aria-hidden="true">Move your pointer to cast the shadow</span></p>
   </div>
 </footer>
-<script type="module" src="assets/system.js"></script>
-<script type="module" src="assets/layout/layout.js"></script>
+
+<dialog class="shotdlg" id="shot-dlg" aria-labelledby="shot-cap"><figure><img id="shot-img" src="" alt="" width="800" height="500"><figcaption id="shot-cap"></figcaption></figure><button type="button" class="btn btn--line btn--sm" id="shot-close">Close</button></dialog>
+
+<script type="module" src="assets/shadow/hero.js"></script>
+<script type="module" src="assets/shadow/boot.js"></script>
+<script type="module" src="assets/shadow/mark.js"></script>
 <script>
   (function () {
     var shot = document.getElementById('role-shot'), roles = document.querySelectorAll('.role');
-    roles.forEach(function (r) {
-      r.addEventListener('click', function () {
-        roles.forEach(function (o) { o.classList.remove('is-on'); o.setAttribute('aria-selected', 'false'); });
-        r.classList.add('is-on'); r.setAttribute('aria-selected', 'true');
-        shot.style.opacity = '.0';
-        setTimeout(function () { shot.src = r.dataset.img; shot.alt = r.dataset.alt; shot.style.opacity = '1'; }, 120);
+    function pick(r) {
+      roles.forEach(function (o) { o.classList.remove('is-on'); o.setAttribute('aria-selected', 'false'); o.tabIndex = -1; });
+      r.classList.add('is-on'); r.setAttribute('aria-selected', 'true'); r.tabIndex = 0;
+      shot.style.opacity = '0'; setTimeout(function () { shot.src = r.dataset.img; shot.alt = r.dataset.alt; shot.style.opacity = '1'; }, 140);
+    }
+    roles.forEach(function (r, i) {
+      r.tabIndex = i ? -1 : 0;
+      r.addEventListener('click', function () { pick(r); });
+      r.addEventListener('keydown', function (e) {
+        var d = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key]; if (!d) return;
+        e.preventDefault(); var n = roles[(i + d + roles.length) % roles.length]; pick(n); n.focus();
       });
     });
-    var links = document.querySelectorAll('.nav__link[href^="#"]'), map = {};
-    links.forEach(function (a) { var t = document.querySelector(a.getAttribute('href')); if (t) map[t.id] = a; });
     if ('IntersectionObserver' in window) {
-      var io = new IntersectionObserver(function (es) {
-        es.forEach(function (e) { if (e.isIntersecting) { links.forEach(function (a) { a.removeAttribute('aria-current'); }); map[e.target.id].setAttribute('aria-current', 'true'); } });
-      }, { rootMargin: '-45% 0px -50% 0px' });
-      Object.keys(map).forEach(function (id) { io.observe(document.getElementById(id)); });
-    }
-  })();
-  (function () {
-    var b = document.getElementById('copy'), p = document.getElementById('cmds');
-    if (!b || !p) return;
-    b.addEventListener('click', function () {
-      var text = p.innerText.replace(/^\$ /gm, '');
-      (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () {
-        b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy commands'; }, 1800);
-      }).catch(function () { var r = document.createRange(); r.selectNodeContents(p); var s = getSelection(); s.removeAllRanges(); s.addRange(r); });
-    });
+      var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } }); }, { rootMargin: '0px 0px -8% 0px' });
+      document.querySelectorAll('.reveal').forEach(function (n) { io.observe(n); });
+    } else document.querySelectorAll('.reveal').forEach(function (n) { n.classList.add('is-in'); });
   })();
 </script>
+<noscript><style>.reveal{opacity:1;transform:none}.browser{opacity:1;transform:none}</style></noscript>
 </body>
 </html>
