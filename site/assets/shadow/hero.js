@@ -10,7 +10,7 @@ function init() {
   const nOpen = $('#c-open'), nFixed = $('#c-fixed'), dlg = $('#shot-dlg'), dlgImg = $('#shot-img'), dlgCap = $('#shot-cap');
   const COLS = 12, ROWS = 8, N = COLS * ROWS;
   const SEV = { c: 'Critical', h: 'High', m: 'Medium', l: 'Low' };
-  const SHOT = { c: ['17-finding-detail.png', 'A critical finding with CVSS score, evidence and history'], h: ['16-findings-list.png', 'The findings list with owners and due dates'], m: ['24-remediation-queue.png', 'The remediation queue of assigned findings'], l: ['20-retest-pass.png', 'A retest round recorded as passed'] };
+  const SHOT = { c: ['17-finding-detail', 'A critical finding with CVSS score, evidence and history'], h: ['16-findings-list', 'The findings list with owners and due dates'], m: ['24-remediation-queue', 'The remediation queue of assigned findings'], l: ['20-retest-pass', 'A retest round recorded as passed'] };
   const F = [
     ['F-101', 'c', 'SQL injection in the login filter', 'auth.acme.com', 14],
     ['F-102', 'h', 'Stored XSS in support tickets', 'help.acme.com', 27],
@@ -87,7 +87,7 @@ function init() {
 
   function showShot(f) {
     const [src, alt] = SHOT[f.sev];
-    dlgImg.src = `assets/shots/${src}`; dlgImg.alt = alt; dlgCap.textContent = `${alt}. Real RedShadow screen, demo data.`;
+    const b = `assets/shots/${src}`; dlgImg.srcset = `${b}-960.webp 960w, ${b}-1920.webp 1920w, ${b}-3840.webp 3840w`; dlgImg.src = `${b}-1920.webp`; dlgImg.alt = alt; dlgCap.textContent = `${alt}. Real RedShadow screen, demo data.`;
     if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
   }
   $('#shot-close').addEventListener('click', () => dlg.close());

@@ -19,7 +19,7 @@ function init() {
   ];
   let run = 0;
 
-  const line = (cls, text) => { const s = document.createElement('span'); if (cls) s.className = cls; s.textContent = text; out.appendChild(s); return s; };
+  const line = (cls, text) => { const s = document.createElement('span'); if (cls) s.className = cls; s.textContent = text; out.appendChild(s); out.scrollTop = out.scrollHeight; return s; };
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
   async function play() {
@@ -31,7 +31,7 @@ function init() {
       if (step.t === 'cmd') {
         line('p', '$ ');
         const s = line('', ''); out.appendChild(cur);
-        for (const ch of step.text) { if (me !== run) return; s.textContent += ch; await wait(reduce ? 0 : 22 + Math.random() * 30); }
+        for (const ch of step.text) { if (me !== run) return; s.textContent += ch; out.scrollTop = out.scrollHeight; await wait(reduce ? 0 : 22 + Math.random() * 30); }
         cur.remove(); line('', '\n'); await wait(reduce ? 0 : 320);
       } else {
         line(step.t, step.text + '\n'); await wait(reduce ? 0 : step.t === 'ok' ? 180 : 260);

@@ -197,3 +197,70 @@ h1 .red, h2 .red { color: var(--red); }
 
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 @media (pointer: coarse) { .mark__tag span:last-child { display: none; } }
+
+/* ---- sizing pass (user review): equal pairs, bigger screens ---- */
+.wrap--wide { max-width: 1320px; }
+/* section 2: terminal and browser card are the same size */
+.boot { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; }
+.term pre { min-height: 420px; }
+.browser__view { aspect-ratio: auto; flex: 1; min-height: 320px; }
+.browser__view img { object-position: 62% top; }
+/* section 3: role selector and screen share one height */
+.pair { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: clamp(24px, 3vw, 40px); align-items: stretch; }
+.pair .roles { grid-auto-rows: 1fr; }
+.pair .role { display: flex; flex-direction: column; justify-content: center; }
+.frame { position: relative; min-height: 360px; border-radius: 16px; border: 1px solid var(--line); background: #fff; overflow: hidden; box-shadow: 0 40px 70px -40px rgb(31 48 56 / .45); }
+.frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top left; transition: opacity .2s; }
+/* section 4: report cover and screen at one height, full width (columns match their aspect ratios) */
+.gallery { display: grid; grid-template-columns: minmax(0, 707fr) minmax(0, 1600fr); gap: clamp(16px, 2vw, 28px); align-items: start; }
+/* sections 4 and 5: points in a row under the screens */
+.list--row { display: grid; gap: 0 clamp(24px, 3vw, 40px); margin-top: clamp(40px, 5vw, 64px); }
+.list--row li, .list--row li:last-child { border-bottom: 0; }
+.list--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.list--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 1000px) {
+  .boot, .pair { grid-template-columns: 1fr; }
+  .frame { min-height: 0; aspect-ratio: 8 / 5; }
+  .list--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .gallery { grid-template-columns: 1fr; }
+  .gallery .shot:first-child { max-width: 320px; }
+  .list--4, .list--3 { grid-template-columns: 1fr; }
+  .term pre { min-height: 340px; }
+}
+/* audit screen: 800 px source, keep it near native size so it stays sharp */
+#audit .shot { max-width: 1000px; margin-inline: auto; }
+#audit .list--row { max-width: 1000px; margin-inline: auto; }
+/* no cropping (user review): the screenshot's own 8:5 shape sets the height, the other side stretches to match */
+.term pre { min-height: 0; font-size: 14px; line-height: 1.7; }
+.browser__view { flex: 1; min-height: 0; aspect-ratio: 8 / 5; }
+.browser__view img { object-fit: contain; object-position: center; }
+.frame { min-height: 0; aspect-ratio: 8 / 5; align-self: center; }
+.frame img { object-fit: contain; object-position: center; }
+.pair { align-items: stretch; }
+.pair .frame { align-self: stretch; height: auto; }
+@media (max-width: 760px) { .term pre { font-size: 12.5px; } }
+/* roles: the image keeps its width and its own height; the role cards stretch to that height */
+.pair .frame { aspect-ratio: auto; display: flex; align-items: center; }
+.pair .frame img { position: static; width: 100%; height: auto; }
+/* desktop pass (user review): image boxes hug the screenshot exactly (no crop, no bands);
+   the neighbour (terminal, role cards) takes the image's height instead */
+.browser__view { flex: none; aspect-ratio: auto; display: block; min-height: 0; }
+.browser__view img { position: static; display: block; width: 100%; height: auto; object-fit: initial; }
+.browser__view .loader { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -60%); }
+.browser { align-self: start; }
+.pair .frame { align-self: start; display: block; background: transparent; }
+@media (min-width: 1001px) {
+  .boot .term { height: 0; min-height: 100%; }     /* row height comes from the browser card */
+  .boot .term pre { overflow: hidden; font-size: 13.5px; line-height: 1.6; }
+}
+@media (min-width: 1200px) { .pair { grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr); } }
+@media (max-width: 1199px) { .pair { grid-template-columns: 1fr; } .pair .roles { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; } }
+@media (max-width: 640px) { .pair .roles { grid-template-columns: 1fr; } }
+@media (min-width: 1200px) {
+  .pair .roles { height: 0; min-height: 100%; gap: 8px; }   /* row height comes from the screenshot */
+  .pair .role { padding: 12px 18px; }
+  .pair .role b { font-size: 18px; }
+  .pair .role span { font-size: 15px; line-height: 1.45; margin-top: 4px; }
+}

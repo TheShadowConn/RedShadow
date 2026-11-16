@@ -84,7 +84,7 @@ docker compose logs migrate | grep -A3 "FIRST LOGIN"</pre>
           <div class="browser__view">
             <div class="loader"><svg viewBox="623 0 85 100"><path fill="#1f3038" d="M650.3 0H680.3C695.21 0 707.3 12.09 707.3 27V73C707.3 87.91 695.21 100 680.3 100H650.3C635.38 100 623.3 87.91 623.3 73V27C623.3 12.09 635.38 0 650.3 0ZM649.3 17C645.98 17 643.3 19.69 643.3 23V77C643.3 80.31 645.98 83 649.3 83H681.3C684.61 83 687.3 80.31 687.3 77V23C687.3 19.69 684.61 17 681.3 17Z"/><path class="wedge" fill="#ef233c" d="M683.3 32V77C683.3 78.1 682.4 79 681.3 79H649.3C648.19 79 647.3 78.1 647.3 77V68L683.3 32Z"/></svg></div>
             <p class="browser__wait">Waiting for the stack</p>
-            <img src="assets/shots/01-signin.png" alt="" width="800" height="500" loading="lazy">
+            <img src="assets/shots/01-signin-1920.webp" srcset="assets/shots/01-signin-960.webp 960w, assets/shots/01-signin-1920.webp 1920w, assets/shots/01-signin-3840.webp 3840w" sizes="(min-width: 1001px) 640px, 100vw" width="3840" height="2400" alt="" loading="lazy">
           </div>
         </div>
       </div>
@@ -94,52 +94,58 @@ docker compose logs migrate | grep -A3 "FIRST LOGIN"</pre>
 
   <!-- 3. Roles and access -->
   <section class="sec" id="roles" aria-labelledby="roles-h">
-    <div class="wrap split">
-      <div class="reveal">
+    <div class="wrap wrap--wide">
+      <div class="head reveal">
         <p class="eyebrow">Roles and access</p>
         <h2 id="roles-h">Everyone sees <span class="red">only their part.</span></h2>
         <p class="lead">Four built-in roles, plus your own. Scope is checked by the server on every request, never only hidden on screen.</p>
-        <div class="roles" role="tablist" aria-label="RedShadow roles" style="margin-top:36px">
-          <button class="role is-on" type="button" role="tab" aria-selected="true" aria-controls="role-shot" data-img="assets/shots/02-admin-dashboard.png" data-alt="The Super Admin dashboard"><b>Super Admin</b><span>Users, roles, engagements, cost and the full audit log.</span></button>
-          <button class="role" type="button" role="tab" aria-selected="false" aria-controls="role-shot" data-img="assets/shots/16-findings-list.png" data-alt="The findings list of a Pentester"><b>Pentester</b><span>Findings, evidence, CSV import and retests on assigned engagements only.</span></button>
-          <button class="role" type="button" role="tab" aria-selected="false" aria-controls="role-shot" data-img="assets/shots/24-remediation-queue.png" data-alt="The remediation queue of a Remediation Owner"><b>Remediation Owner</b><span>A queue of assigned fixes with due dates, submitted for verification.</span></button>
-          <button class="role" type="button" role="tab" aria-selected="false" aria-controls="role-shot" data-img="assets/shots/27-vendor-dashboard.png" data-alt="The External Vendor dashboard"><b>External Vendor</b><span>Reports and imports findings, and sees only their own.</span></button>
-        </div>
       </div>
-      <div class="reveal"><img id="role-shot" role="tabpanel" class="shot" src="assets/shots/02-admin-dashboard.png" alt="The Super Admin dashboard" width="800" height="500" loading="lazy"></div>
+      <div class="pair reveal">
+        <div class="roles" role="tablist" aria-label="RedShadow roles">
+          <button class="role is-on" type="button" role="tab" aria-selected="true" aria-controls="role-shot" data-img="02-admin-dashboard" data-alt="The Super Admin dashboard"><b>Super Admin</b><span>Users, roles, engagements, cost and the full audit log.</span></button>
+          <button class="role" type="button" role="tab" aria-selected="false" aria-controls="role-shot" data-img="16-findings-list" data-alt="The findings list of a Pentester"><b>Pentester</b><span>Findings, evidence, CSV import and retests on assigned engagements only.</span></button>
+          <button class="role" type="button" role="tab" aria-selected="false" aria-controls="role-shot" data-img="24-remediation-queue" data-alt="The remediation queue of a Remediation Owner"><b>Remediation Owner</b><span>A queue of assigned fixes with due dates, submitted for verification.</span></button>
+          <button class="role" type="button" role="tab" aria-selected="false" aria-controls="role-shot" data-img="27-vendor-dashboard" data-alt="The External Vendor dashboard"><b>External Vendor</b><span>Reports and imports findings, and sees only their own.</span></button>
+        </div>
+        <div class="frame"><img id="role-shot" role="tabpanel" src="assets/shots/02-admin-dashboard-1920.webp" srcset="assets/shots/02-admin-dashboard-960.webp 960w, assets/shots/02-admin-dashboard-1920.webp 1920w, assets/shots/02-admin-dashboard-3840.webp 3840w" sizes="(min-width: 1200px) 800px, 100vw" width="3840" height="2400" alt="The Super Admin dashboard" loading="lazy"></div>
+      </div>
     </div>
   </section>
 
   <!-- 4. Imports and exports -->
   <section class="sec sec--alt" id="imports" aria-labelledby="imports-h">
-    <div class="wrap split">
-      <div class="reveal">
+    <div class="wrap wrap--wide">
+      <div class="head reveal">
         <p class="eyebrow">Imports and exports</p>
         <h2 id="imports-h">Any spreadsheet in. <span class="red">A finished report out.</span></h2>
-        <ul class="list" style="margin-top:40px">
+      </div>
+      <div class="gallery reveal"><img class="shot" src="assets/shots/report-cover-1200.webp" srcset="assets/shots/report-cover-600.webp 600w, assets/shots/report-cover-1200.webp 1200w, assets/shots/report-cover-2400.webp 2400w" sizes="(min-width: 641px) 400px, 320px" width="2970" height="4200" alt="The cover of a RedShadow PDF report" loading="lazy"><img class="shot" src="assets/shots/23-import-check-1920.webp" srcset="assets/shots/23-import-check-960.webp 960w, assets/shots/23-import-check-1920.webp 1920w, assets/shots/23-import-check-3840.webp 3840w" sizes="(min-width: 641px) 900px, 100vw" width="3840" height="2400" alt="The CSV import check step" loading="lazy"></div>
+      <div class="reveal">
+        <ul class="list list--row list--4">
           <li><span class="ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10M6 9l4 4 4-4M4 16h12"/></svg></span><b>CSV import</b><span>Map columns, preview, catch duplicates and row errors, then import in one transaction.</span></li>
           <li><span class="ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M3 10h14M10 3c2 2.2 2 11.8 0 14M10 3c-2 2.2-2 11.8 0 14"/></svg></span><b>Assets by name, IP or URL</b><span>Rows match the in-scope assets of the engagement.</span></li>
           <li><span class="ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5h6l4 4v11H6z"/><path d="M12 2.5v4h4M8.5 11h5M8.5 14h5"/></svg></span><b>PDF reports</b><span>Your logo, accent colour and sections, in client and internal editions.</span></li>
           <li><span class="ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17V7M6 11l4-4 4 4M4 4h12"/></svg></span><b>CSV export</b><span>Findings with severity, status and timestamps, with a checksum for every file.</span></li>
         </ul>
       </div>
-      <div class="reveal"><div class="duo"><img class="shot" src="assets/shots/report-cover.jpg" alt="The cover of a RedShadow PDF report" width="990" height="1400" loading="lazy"><img class="shot" src="assets/shots/23-import-check.png" alt="The CSV import check step" width="800" height="500" loading="lazy"></div></div>
     </div>
   </section>
 
   <!-- 5. Audit logs -->
   <section class="sec" id="audit" aria-labelledby="audit-h">
-    <div class="wrap split">
-      <div class="reveal">
+    <div class="wrap wrap--wide">
+      <div class="head reveal">
         <p class="eyebrow">Audit logs</p>
         <h2 id="audit-h">Every change, <span class="red">on the record.</span></h2>
-        <ul class="list" style="margin-top:40px">
+      </div>
+      <div class="reveal"><img class="shot" src="assets/shots/09-audit-1920.webp" srcset="assets/shots/09-audit-960.webp 960w, assets/shots/09-audit-1920.webp 1920w, assets/shots/09-audit-3840.webp 3840w" sizes="(min-width: 1000px) 1000px, 100vw" width="3840" height="2400" alt="The audit log with the integrity check passing" loading="lazy"></div>
+      <div class="reveal">
+        <ul class="list list--row list--3">
           <li><span class="ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="6" height="6" rx="2"/><rect x="11.5" y="7" width="6" height="6" rx="2"/><path d="M8.5 10h3"/></svg></span><b>Hash-chained</b><span>Append-only events. Each SHA-256 hash covers the one before it.</span></li>
           <li><span class="ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l6 2.5v5c0 3.6-2.6 6.3-6 7.5-3.4-1.2-6-3.9-6-7.5V5z"/><path d="M7 10l2 2 4-4"/></svg></span><b>Integrity check</b><span>Run it by hand or every night. It names the first event that was edited or removed.</span></li>
           <li><span class="ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h14M5.5 10h9M8 15h4"/></svg></span><b>Filters you can share</b><span>Engagement, person, action, outcome and dates, kept in the address.</span></li>
         </ul>
       </div>
-      <div class="reveal"><img class="shot" src="assets/shots/09-audit.png" alt="The audit log with the integrity check passing" width="800" height="500" loading="lazy"></div>
     </div>
   </section>
 </main>
@@ -166,7 +172,7 @@ docker compose logs migrate | grep -A3 "FIRST LOGIN"</pre>
   </div>
 </footer>
 
-<dialog class="shotdlg" id="shot-dlg" aria-labelledby="shot-cap"><figure><img id="shot-img" src="" alt="" width="800" height="500"><figcaption id="shot-cap"></figcaption></figure><button type="button" class="btn btn--line btn--sm" id="shot-close">Close</button></dialog>
+<dialog class="shotdlg" id="shot-dlg" aria-labelledby="shot-cap"><figure><img id="shot-img" src="" alt="" width="3840" height="2400" sizes="(min-width: 1000px) 1000px, 94vw"><figcaption id="shot-cap"></figcaption></figure><button type="button" class="btn btn--line btn--sm" id="shot-close">Close</button></dialog>
 
 <script type="module" src="assets/shadow/hero.js"></script>
 <script type="module" src="assets/shadow/boot.js"></script>
@@ -177,7 +183,7 @@ docker compose logs migrate | grep -A3 "FIRST LOGIN"</pre>
     function pick(r) {
       roles.forEach(function (o) { o.classList.remove('is-on'); o.setAttribute('aria-selected', 'false'); o.tabIndex = -1; });
       r.classList.add('is-on'); r.setAttribute('aria-selected', 'true'); r.tabIndex = 0;
-      shot.style.opacity = '0'; setTimeout(function () { shot.src = r.dataset.img; shot.alt = r.dataset.alt; shot.style.opacity = '1'; }, 140);
+      shot.style.opacity = '0'; setTimeout(function () { var b = 'assets/shots/' + r.dataset.img; shot.srcset = b + '-960.webp 960w, ' + b + '-1920.webp 1920w, ' + b + '-3840.webp 3840w'; shot.src = b + '-1920.webp'; shot.alt = r.dataset.alt; shot.style.opacity = '1'; }, 140);
     }
     roles.forEach(function (r, i) {
       r.tabIndex = i ? -1 : 0;
