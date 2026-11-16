@@ -182,7 +182,12 @@ class TestMeasures:
     def test_trend_buckets_this_week(self, w, p1c):
         seed(w, p1c)
         trend = dash(p1c, "pentester")["trend"]
-        assert trend[-1]["opened"] == 10 and trend[-1]["closed"] == 1
+        assert trend[-1]["opened"] == 10
+        # seed() closes one finding two days ago, which is last week's bucket on a Monday or Tuesday
+        closed_day = (timezone.now() - timedelta(days=2)).date()
+        closed_week = closed_day - timedelta(days=closed_day.weekday())
+        closed = {str(t["week_start"]): t["closed"] for t in trend}
+        assert closed[str(closed_week)] == 1 and sum(closed.values()) == 1
         assert [t["week_start"] for t in trend] == sorted(t["week_start"] for t in trend)
 
     def test_upcoming_engagements_and_top_organisations(self, w, admin_client, p1c):
