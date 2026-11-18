@@ -26,3 +26,17 @@ The downloadable template has three example rows: an asset by name (`Acme shop`)
 `reference`, `engagement`, `engagement_name`, `title`, `severity`, `cvss_score`, `cvss_vector`, `status`, `asset`, `endpoint`, `cwe`, `assigned_pentester`, `remediation_owner`, `discovered_at`, `due_date`, `created_at`, `description`, `recommendation`, `technical_details`, `poc`, `references`.
 
 Exports contain only the findings the requester can see, with at most 50,000 rows.
+
+## Asset import fields
+
+| Field | Required | Accepted column names (examples) | Notes |
+|---|---|---|---|
+| Name | No | name, asset, system | The first identifier is used when empty. Up to 160 characters. |
+| Asset type | No | type, category | A type name such as `Host` or `web_app`. Guessed from the identifiers when empty. |
+| Environment | No | environment, env | `prod`, `staging`, `dev` (also production, uat, qa ...). Empty means production. |
+| Criticality | No | criticality, priority, tier | 1 to 5, or low, medium, high, critical. Empty means 3. |
+| Tags | No | tags, labels | Separated by semicolons. At most 20 of 40 characters. |
+| IP address, Hostname, Domain, URL, MAC address, Cloud resource ID, Repository | At least one identifier column | ip, hostname, fqdn, domain, url, mac, arn, repo | One or more values per cell, separated by semicolons or new lines. |
+| Other identifiers | | identifiers, aliases | Mixed values; the type of each is detected. |
+
+Rows are matched to existing assets by identifier. New assets are created not onboarded.

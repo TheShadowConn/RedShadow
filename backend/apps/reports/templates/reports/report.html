@@ -129,7 +129,7 @@
   {% if assets %}
   <h3>Assets</h3>
   <table class="grid"><thead><tr><th>Asset</th><th>Type</th><th>Identifier</th><th>Environment</th><th>Scope</th></tr></thead><tbody>
-    {% for a in assets %}<tr><td>{{ a.name }}</td><td>{{ a.type }}</td><td class="mono wrap">{{ a.identifier }}</td><td>{{ a.environment }}</td><td>{% if a.in_scope %}In scope{% else %}Out of scope{% endif %}</td></tr>{% endfor %}
+    {% for a in assets %}<tr><td>{{ a.name }}</td><td>{{ a.type }}</td><td class="mono wrap">{% for v in a.identifiers %}{{ v }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td><td>{{ a.environment }}</td><td>{% if a.in_scope %}In scope{% else %}Out of scope{% endif %}</td></tr>{% endfor %}
   </tbody></table>
   {% endif %}
   {% if out_of_scope_html %}<h3>Out of scope</h3><div class="prose">{{ out_of_scope_html|safe }}</div>{% endif %}

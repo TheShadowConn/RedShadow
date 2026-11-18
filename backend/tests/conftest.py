@@ -65,7 +65,7 @@ def signed_in(user, password=PASSWORD):
 
 @pytest.fixture
 def admin(db):
-    return make_user("admin@example.com", "super_admin", mfa_enabled=True, **_mfa("JBSWY3DPEHPK3PXP"))
+    return make_user("admin@example.com", "super_admin", mfa_enabled=True, **_mfa("JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP"))  # PyOTP >= 2.12 needs 112+ bits
 
 
 def _mfa(secret):

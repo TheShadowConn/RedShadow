@@ -263,10 +263,14 @@ def collect(job, actor) -> dict:
             "name": ea.asset.name,
             "type": ea.asset.get_type_display(),
             "identifier": ea.asset.identifier,
+            "identifiers": [i.value for i in ea.asset.identifiers.all()]
+            or ([ea.asset.identifier] if ea.asset.identifier else []),
             "environment": ea.asset.get_environment_display(),
             "in_scope": ea.in_scope,
         }
-        for ea in eng.engagement_assets.select_related("asset").order_by("-in_scope", "asset__name")
+        for ea in eng.engagement_assets.select_related("asset")
+        .prefetch_related("asset__identifiers")
+        .order_by("-in_scope", "asset__name")
     ]
 
     return {

@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { Bug, Building2, CalendarDays, ClipboardCheck, FileUp, FileText, Palette, Crosshair, FileStack, ScrollText, LayoutDashboard, MoreHorizontal, LogOut, Moon, Repeat2, ShieldCheck, Sun, UserCircle, Users, Wrench, type LucideIcon } from "lucide-react";
+import { Bug, Building2, Server, CalendarDays, ClipboardCheck, FileUp, FileText, Palette, Crosshair, FileStack, ScrollText, LayoutDashboard, MoreHorizontal, LogOut, Moon, Repeat2, ShieldCheck, Sun, UserCircle, Users, Wrench, type LucideIcon } from "lucide-react";
 
 import { useAuth } from "../api/auth";
 import { Credit } from "../design/Credit";
@@ -24,6 +24,7 @@ const ITEMS: Item[] = [
   { to: "/verification", label: "Verification", short: "Verify", icon: ClipboardCheck, perm: "findings.verify" },
   { to: "/retests", label: "Retests", icon: Repeat2, perm: "retests.view" },
   { to: "/organisations", label: "Organisations", short: "Orgs", icon: Building2, perm: "organisations.view" },
+  { to: "/assets", label: "Assets", short: "Assets", icon: Server, perm: "assets.view" },
   { to: "/templates", label: "Templates", icon: FileStack, perm: "templates.view" },
   { to: "/report-templates", label: "Report styles", icon: Palette, perm: "reports.manage_templates" },
   { to: "/audit", label: "Audit", icon: ScrollText, perm: "audit.view_engagement" },

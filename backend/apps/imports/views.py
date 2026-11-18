@@ -13,10 +13,13 @@ from . import mapping as mapping_rules
 from . import selectors, services
 from .models import ImportJob
 from .serializers import (
+    AssetUploadSerializer,
+    AttemptSerializer,
     CommitSerializer,
     ImportJobSerializer,
     ImportRowSerializer,
     MappingSerializer,
+    ReuploadSerializer,
     SavedMappingSerializer,
     UploadSerializer,
 )
@@ -32,11 +35,16 @@ def _validated(serializer_class, request):
 
 class ImportJobViewSet(ScopedModelViewSet):
     serializer_class = ImportJobSerializer
-    http_method_names = ["get", "post", "head", "options"]
+    http_method_names = ["get", "post", "delete", "head", "options"]
     permission_map = {
         "list": "imports.view",
         "retrieve": "imports.view",
         "create": "imports.create",
+        "destroy": "imports.create",
+        "reupload": "imports.create",
+        "retry": "imports.create",
+        "history": "imports.view",
+        "asset_template": "imports.view",
         "set_mapping": "imports.create",
         "rows": "imports.view",
         "commit": "imports.create",
@@ -51,8 +59,15 @@ class ImportJobViewSet(ScopedModelViewSet):
             p = self.request.query_params
             if p.get("engagement"):
                 qs = qs.filter(engagement_id=p["engagement"]) if _is_uuid(p["engagement"]) else qs.none()
+            if p.get("organisation"):
+                qs = qs.filter(organisation_id=p["organisation"]) if _is_uuid(p["organisation"]) else qs.none()
             if p.get("status") in dict(ImportJob.STATUSES):
                 qs = qs.filter(status=p["status"])
+            if p.get("kind") in dict(ImportJob.KINDS):
+                qs = qs.filter(kind=p["kind"])
+            term = p.get("search", "").strip()
+            if term:
+                qs = qs.filter(original_name__icontains=term)
         return qs
 
     def get_serializer_context(self):
@@ -61,9 +76,36 @@ class ImportJobViewSet(ScopedModelViewSet):
     parser_classes = [MultiPartParser, *ScopedModelViewSet.parser_classes]
 
     def create(self, request, *args, **kwargs):
-        data = _validated(UploadSerializer, request)
-        job = services.create_upload(request, request.user, data["engagement"], data["file"])
+        if request.data.get("kind") == "assets":
+            data = _validated(AssetUploadSerializer, request)
+            job = services.create_asset_upload(request, request.user, data["organisation"], data["file"])
+        else:
+            data = _validated(UploadSerializer, request)
+            job = services.create_upload(request, request.user, data["engagement"], data["file"])
         return Response(self._detail(job), status=status.HTTP_201_CREATED)
+
+    def destroy(self, request, *args, **kwargs):
+        services.delete_job(request, request.user, self.get_object())
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=["post"])
+    def reupload(self, request, pk=None):
+        """A corrected file for the same import: starts a new attempt and re-checks with the same columns."""
+        job = self.get_object()
+        data = _validated(ReuploadSerializer, request)
+        services.reupload(request, request.user, job, data["file"])
+        return Response(self._detail(job), status=status.HTTP_202_ACCEPTED)
+
+    @action(detail=True, methods=["post"])
+    def retry(self, request, pk=None):
+        job = self.get_object()
+        services.retry(request, request.user, job)
+        return Response(self._detail(job), status=status.HTTP_202_ACCEPTED)
+
+    @action(detail=True, methods=["get"], pagination_class=None)
+    def history(self, request, pk=None):
+        job = self.get_object()
+        return Response(AttemptSerializer(job.attempts.select_related("uploaded_by"), many=True).data)
 
     def update(self, request, *args, **kwargs):
         raise MethodNotAllowed(request.method)
@@ -91,7 +133,8 @@ class ImportJobViewSet(ScopedModelViewSet):
     @action(detail=True, methods=["get"])
     def rows(self, request, pk=None):
         job = self.get_object()
-        qs = job.rows.all()
+        attempt = request.query_params.get("attempt", "")
+        qs = job.rows.filter(attempt=int(attempt)) if attempt.isdigit() else job.rows_now
         wanted = [x for x in request.query_params.get("status", "").split(",") if x in ROW_STATUSES]
         if wanted:
             qs = qs.filter(status__in=wanted)
@@ -104,17 +147,18 @@ class ImportJobViewSet(ScopedModelViewSet):
     def errors(self, request, pk=None):
         """Rows that were not imported, with the reason, in the shape of the original file."""
         job = self.get_object()
-        rows = job.rows.exclude(status__in=["valid", "imported", "pending"]).order_by("row_number", "id")
+        rows = job.rows_now.exclude(status__in=["valid", "imported", "pending"]).order_by("row_number", "id")
 
         def lines():
             for r in rows.iterator(chunk_size=1000):
                 reasons = "; ".join(f"{e['field']}: {e['message']}" for e in r.errors)
                 if r.status == "duplicate" or r.status == "skipped":
-                    reasons = reasons or (
-                        f"Duplicate of line {r.duplicate_of_line}"
-                        if r.duplicate_of_line
+                    known = (
+                        "Already known: nothing new to add"
+                        if job.kind == "assets"
                         else "Duplicate of an existing finding"
                     )
+                    reasons = reasons or (f"Duplicate of line {r.duplicate_of_line}" if r.duplicate_of_line else known)
                 yield [r.row_number, r.status, reasons, *r.raw[: len(job.headers)]]
 
         handle, _, _ = write_csv(["line", "status", "problems", *job.headers], lines())
@@ -179,6 +223,52 @@ class ImportJobViewSet(ScopedModelViewSet):
         handle, _, _ = write_csv(header, examples)
         response = FileResponse(
             handle, content_type="text/csv; charset=utf-8", as_attachment=True, filename="redshadow-import-template.csv"
+        )
+        response["X-Content-Type-Options"] = "nosniff"
+        return response
+
+    @action(detail=False, methods=["get"], url_path="asset-template.csv", url_name="asset-template")
+    def asset_template(self, request):
+        header = [label for _, label, _ in mapping_rules.ASSET_FIELDS]
+        examples = [
+            [
+                "Acme shop",
+                "Web application",
+                "prod",
+                "5",
+                "pci;public",
+                "",
+                "",
+                "acme.test",
+                "https://shop.acme.test",
+                "",
+                "",
+                "",
+                "",
+            ],
+            [
+                "Web 01",
+                "Host",
+                "prod",
+                "high",
+                "",
+                "10.0.0.5; 10.0.1.5",
+                "web01.acme.test",
+                "",
+                "",
+                "00:1A:2B:3C:4D:5E",
+                "",
+                "",
+                "",
+            ],
+            ["", "", "staging", "", "", "", "", "", "", "", "", "https://git.acme.test/shop/api.git", ""],
+        ]
+        handle, _, _ = write_csv(header, examples)
+        response = FileResponse(
+            handle,
+            content_type="text/csv; charset=utf-8",
+            as_attachment=True,
+            filename="redshadow-asset-import-template.csv",
         )
         response["X-Content-Type-Options"] = "nosniff"
         return response

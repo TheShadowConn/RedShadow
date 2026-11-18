@@ -74,3 +74,7 @@ class UserCreateSerializer(StrictSerializer):
 class UserUpdateSerializer(StrictSerializer):
     display_name = serializers.CharField(max_length=120, required=False)
     role = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all(), required=False)
+
+
+class UserDeleteSerializer(StrictSerializer):
+    confirm_email = serializers.CharField(max_length=254)

@@ -4,9 +4,9 @@ import { ChevronRight, Plus, Search } from "lucide-react";
 
 import { useAuth } from "../../api/auth";
 import { api } from "../../api/client";
-import type { Page, Role, User } from "../../api/types";
+import type { DeletionImpact, Page, Role, User } from "../../api/types";
 import {
-  Badge, Button, ConfirmDialog, EmptyState, ErrorNote, ErrorState, Field, fieldError, formatDate, LoadingRows,
+  Alert, Badge, Button, ConfirmDialog, EmptyState, ErrorNote, ErrorState, Field, fieldError, formatDate, LoadingRows,
   Modal, PageHeader, SecretOnce, Select, Sheet, TextInput,
 } from "../../design/ui";
 
@@ -32,7 +32,7 @@ export function UsersPage() {
     <>
       <PageHeader
         title="Users"
-        lead="Everyone who can sign in to RedShadow. Accounts are deactivated, never deleted, so history stays attributed."
+        lead="Everyone who can sign in to RedShadow. Deactivate an account to stop access. A deactivated account can be deleted: it is removed, or anonymised when findings and notes still refer to it, so history stays attributed."
         actions={can("users.create") && <Button variant="primary" onClick={() => setCreating(true)}><Plus size={18} aria-hidden /> New user</Button>}
       />
 
@@ -179,6 +179,7 @@ function UserSheet({ userId, onClose }: { userId: string | null; onClose: () => 
   const [pending, setPending] = useState<Action | null>(null);
   const [temp, setTemp] = useState<string | null>(null);
   const [roleId, setRoleId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const user = q.data;
   const isSelf = user?.id === me?.id;
 
@@ -251,10 +252,24 @@ function UserSheet({ userId, onClose }: { userId: string | null; onClose: () => 
                 </div>
               </section>
             )}
+            {can("users.delete") && !isSelf && (
+              <section aria-labelledby="del-h" className="space-y-3">
+                <h3 id="del-h" className="text-lg">Delete account</h3>
+                {user.is_active ? (
+                  <p className="m-0 text-muted">Deactivate this account first. Only a deactivated account can be deleted.</p>
+                ) : (
+                  <>
+                    <p className="m-0 text-muted">Removes the account for good. If findings, notes or evidence still refer to it, the account stays as an anonymous “Deleted user” so the history keeps its shape.</p>
+                    <Button variant="danger" onClick={() => setDeleting(true)}>Delete account…</Button>
+                  </>
+                )}
+              </section>
+            )}
           </div>
         )}
       </Sheet>
 
+      {user && <DeleteUserDialog open={deleting} user={user} onClose={() => setDeleting(false)} onDeleted={() => { setDeleting(false); refresh(); close(); }} />}
       <ConfirmDialog
         open={!!pending && !!user}
         title={pending ? ACTIONS[pending].title : ""}
@@ -276,5 +291,48 @@ function Item({ k, v }: { k: string; v: React.ReactNode }) {
       <dt className="label">{k}</dt>
       <dd className="m-0 mt-0.5">{v}</dd>
     </div>
+  );
+}
+
+const HISTORY_LIMIT = 6;
+
+/** Shows what deleting does to the user's records, then asks for the account's email as confirmation. */
+function DeleteUserDialog({ open, user, onClose, onDeleted }: { open: boolean; user: User; onClose: () => void; onDeleted: () => void }) {
+  const [typed, setTyped] = useState("");
+  const impact = useQuery({ queryKey: ["user-impact", user.id], queryFn: () => api<DeletionImpact>("GET", `/users/${user.id}/deletion-impact`), enabled: open, staleTime: 0 });
+  const del = useMutation({
+    mutationFn: () => api("DELETE", `/users/${user.id}`, { confirm_email: typed.trim() }),
+    onSuccess: onDeleted,
+  });
+  const close = () => { setTyped(""); del.reset(); onClose(); };
+  const i = impact.data;
+  const history = i ? Object.entries(i.history).slice(0, HISTORY_LIMIT) : [];
+  const matches = typed.trim().toLowerCase() === user.email.toLowerCase();
+
+  return (
+    <Modal open={open} onClose={close} title="Delete account">
+      <form className="flex flex-col gap-5 p-6" onSubmit={(e: FormEvent) => { e.preventDefault(); if (matches && i && i.blockers.length === 0) del.mutate(); }}>
+        <p className="m-0">You are about to delete <strong className="font-medium">{user.display_name}</strong> ({user.email}). This cannot be undone.</p>
+        {impact.isPending && <LoadingRows rows={2} />}
+        {impact.isError && <ErrorState error={impact.error} onRetry={() => void impact.refetch()} />}
+        {i && i.blockers.length > 0 && <Alert tone="error"><ul className="m-0 list-disc pl-5">{i.blockers.map((b) => <li key={b}>{b}</li>)}</ul></Alert>}
+        {i && (
+          <ul className="m-0 list-disc flex flex-col gap-1 pl-5 text-[15px]">
+            <li>{i.removes.memberships} engagement membership{i.removes.memberships === 1 ? "" : "s"} and {i.removes.saved_import_mappings} saved import mapping{i.removes.saved_import_mappings === 1 ? "" : "s"} are removed.</li>
+            <li>Unassigned: {i.clears.engagements_led} engagement{i.clears.engagements_led === 1 ? "" : "s"} led, {i.clears.findings_assigned} open finding{i.clears.findings_assigned === 1 ? "" : "s"} as pentester, {i.clears.findings_to_fix} as remediation owner.</li>
+            {i.mode === "remove" ? <li>Nothing else refers to this account, so it is removed completely.</li> : <li>The account becomes an anonymous “Deleted user” with no name, email or sign-in, because {history.map(([k, n]) => `${n} ${k.toLowerCase()}`).join(", ")}{Object.keys(i.history).length > HISTORY_LIMIT ? " and more" : ""} still refer to it.</li>}
+            <li>The audit log keeps the account’s email for the record.</li>
+          </ul>
+        )}
+        <Field label="Type the account's email to confirm" error={fieldError(del.error, "confirm_email")}>
+          {(p) => <TextInput {...p} autoComplete="off" autoFocus value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={user.email} />}
+        </Field>
+        <ErrorNote error={del.error && !Object.keys((del.error as { fields?: object }).fields ?? {}).length ? del.error : null} />
+        <div className="flex flex-wrap justify-end gap-3">
+          <Button onClick={close}>Cancel</Button>
+          <Button type="submit" variant="danger" loading={del.isPending} disabled={!matches || !i || i.blockers.length > 0}>Delete account</Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

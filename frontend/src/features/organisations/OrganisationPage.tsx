@@ -8,8 +8,10 @@ import { api, upload } from "../../api/client";
 import { ASSET_TYPES, ENVIRONMENTS, type Asset, type Contact, type EngagementRow, type Organisation, type Page } from "../../api/types";
 import {
   Alert, Badge, Button, ConfirmDialog, EmptyState, EngagementStatus, ErrorNote, ErrorState, NotFoundOrError, Field, fieldError, formatDay, label,
-  LoadingRows, Modal, Select, TabPanel, Tabs, TextInput,
+  LoadingRows, Modal, TabPanel, Tabs, TextInput,
 } from "../../design/ui";
+import { AssetEditor } from "../assets/AssetEditor";
+import { OnboardingBadge } from "../assets/AssetsPage";
 import { OrgAvatar, OrganisationForm } from "./OrganisationsPage";
 
 type Tab = "assets" | "contacts" | "engagements";
@@ -149,7 +151,7 @@ function AssetsTab({ org }: { org: Organisation }) {
             <tbody>
               {q.data.map((a) => (
                 <tr key={a.id}>
-                  <td><span className="block font-medium">{a.name}{a.archived && <span className="ml-2 text-[13px] font-normal text-muted">Archived</span>}</span><span className="block break-all text-[14px] text-muted">{a.identifier || "No identifier"}</span></td>
+                  <td><span className="block font-medium">{a.name}{a.archived && <span className="ml-2 text-[13px] font-normal text-muted">Archived</span>}</span><span className="block break-all text-[14px] text-muted">{a.identifiers.length ? a.identifiers.map((i) => i.value).join(", ") : "No identifier"}</span>{a.onboarding_status === "pending" && <OnboardingBadge a={a} />}</td>
                   <td>{label(ASSET_TYPES, a.type)}</td>
                   <td>{label(ENVIRONMENTS, a.environment)}</td>
                   <td><Criticality n={a.criticality} /></td>
@@ -162,7 +164,7 @@ function AssetsTab({ org }: { org: Organisation }) {
             {q.data.map((a) => (
               <li key={a.id} className="space-y-2 p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0"><p className="m-0 font-medium">{a.name}{a.archived && <span className="ml-2 text-[13px] font-normal text-muted">Archived</span>}</p><p className="m-0 break-all text-[14px] text-muted">{a.identifier || "No identifier"}</p></div>
+                  <div className="min-w-0"><p className="m-0 font-medium">{a.name}{a.archived && <span className="ml-2 text-[13px] font-normal text-muted">Archived</span>}</p><p className="m-0 break-all text-[14px] text-muted">{a.identifiers.length ? a.identifiers.map((i) => i.value).join(", ") : "No identifier"}</p></div>
                   <Criticality n={a.criticality} />
                 </div>
                 <p className="m-0 text-[14px] text-muted">{label(ASSET_TYPES, a.type)} · {label(ENVIRONMENTS, a.environment)}</p>
@@ -172,7 +174,7 @@ function AssetsTab({ org }: { org: Organisation }) {
           </ul>
         </>
       )}
-      {editing && <AssetForm key={editing === "new" ? "new" : editing.id} org={org} asset={editing === "new" ? undefined : editing} onClose={() => setEditing(null)} />}
+      {editing && <AssetEditor key={editing === "new" ? "new" : editing.id} org={{ id: org.id, name: org.name }} asset={editing === "new" ? undefined : editing} onClose={() => setEditing(null)} />}
       <ConfirmDialog
         open={!!toggling}
         title={toggling?.archived ? "Unarchive asset" : "Archive asset"}
@@ -199,40 +201,6 @@ function AssetActions({ a, onEdit, onToggle }: { a: Asset; onEdit: () => void; o
       {can("assets.update") && !a.archived && <Button size="sm" onClick={onEdit}>Edit</Button>}
       {can("assets.archive") && <Button size="sm" onClick={onToggle}>{a.archived ? "Unarchive" : "Archive"}</Button>}
     </div>
-  );
-}
-
-function AssetForm({ org, asset, onClose }: { org: Organisation; asset?: Asset; onClose: () => void }) {
-  const qc = useQueryClient();
-  const [f, setF] = useState({ name: asset?.name ?? "", type: asset?.type ?? "web_app", identifier: asset?.identifier ?? "", environment: asset?.environment ?? "prod", criticality: asset?.criticality ?? 3, tags: (asset?.tags ?? []).join(", ") });
-  const save = useMutation({
-    mutationFn: () => {
-      const body = { ...f, criticality: Number(f.criticality), tags: f.tags.split(",").map((t) => t.trim()).filter(Boolean) };
-      return asset ? api("PATCH", `/assets/${asset.id}`, body) : api("POST", "/assets", { ...body, organisation: org.id });
-    },
-    onSuccess: () => { void qc.invalidateQueries({ queryKey: ["org-assets", org.id] }); onClose(); },
-  });
-  const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
-  return (
-    <Modal open onClose={onClose} title={asset ? "Edit asset" : "New asset"}>
-      <form className="space-y-5 p-6" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate(); }}>
-        <ErrorNote error={noFieldErrors(save.error)} />
-        <Field label="Name" error={fieldError(save.error, "name")}>{(p) => <TextInput {...p} required autoFocus maxLength={160} value={f.name} onChange={set("name")} />}</Field>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Type" error={fieldError(save.error, "type")}>{(p) => <Select {...p} value={f.type} onChange={set("type")}>{ASSET_TYPES.map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>}</Field>
-          <Field label="Environment" error={fieldError(save.error, "environment")}>{(p) => <Select {...p} value={f.environment} onChange={set("environment")}>{ENVIRONMENTS.map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>}</Field>
-        </div>
-        <Field label="Identifier" hint="URL, hostname, IP range or repository. Unique per organisation and type." error={fieldError(save.error, "identifier")}>{(p) => <TextInput {...p} maxLength={500} value={f.identifier} onChange={set("identifier")} />}</Field>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Criticality" hint="1 is lowest, 5 is business critical." error={fieldError(save.error, "criticality")}>{(p) => <Select {...p} value={f.criticality} onChange={set("criticality")}>{[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}</Select>}</Field>
-          <Field label="Tags" hint="Comma separated" error={fieldError(save.error, "tags")}>{(p) => <TextInput {...p} value={f.tags} onChange={set("tags")} />}</Field>
-        </div>
-        <div className="flex flex-wrap justify-end gap-3">
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="primary" loading={save.isPending} disabled={!f.name.trim()}>{asset ? "Save changes" : "Create asset"}</Button>
-        </div>
-      </form>
-    </Modal>
   );
 }
 

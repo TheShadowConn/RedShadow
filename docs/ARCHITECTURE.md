@@ -17,10 +17,18 @@ only entry point. Frontend is a Vite build served by Nginx. No microservices.
 
 ## Implemented in Phase 2
 
-- `apps/accounts`: User (never hard-deleted), TOTP MFA, session authentication, restricted-session model, bootstrap command.
+- `apps/accounts`: User (deleted accounts are removed or anonymised, see ADR-0021), TOTP MFA, session authentication, restricted-session model, bootstrap command.
 - `apps/rbac`: permission catalogue (`catalogue.py`, single source for seed, tests and docs/RBAC_PERMISSION_MATRIX.md), roles, resolver (`authz.py`), anti-escalation (`guards.py`), `ScopedModelViewSet`.
 - `apps/audit`: hash-chained append-only log, `verify_audit`.
 - Frontend: `src/design` (tokens, components, ui, Logo), `src/api`, `src/features/{auth,users,roles,account,home}`, `src/app`.
+
+## Assets, imports and user deletion (2026-11-18)
+
+- `apps/organisations/identifiers.py` (pure functions: kinds, normalisation, kind detection, cell splitting) and `assets.py` (identifier, onboarding, delete and merge logic under the organisation row lock). `AssetIdentifier` enforces one owner per identifier per organisation (ADR-0018).
+- `apps/imports`: `ImportJob.kind` is `findings` or `assets`. `asset_import.py` holds the asset row validator and the `Matcher` shared by the check and the commit (ADR-0019). `services.py` gained corrected-file re-upload, retry, delete and attempt history (ADR-0020); every read of a job's rows goes through `ImportJob.rows_now`.
+- `apps/accounts/user_services.py`: `deletion_impact` and `delete_user`, removing or anonymising the account (ADR-0021).
+- Frontend: `features/assets/` (Assets page, shared `AssetEditor` with live identifier check, used by the organisation page too); `features/imports/` handles both kinds; `features/users/` has the delete dialog.
+- Schema: [SCHEMA.md](SCHEMA.md). API: [API.md](API.md). User guide: [ASSETS_AND_IMPORTS.md](ASSETS_AND_IMPORTS.md).
 
 ## Conventions for later phases
 
@@ -30,4 +38,4 @@ only entry point. Frontend is a Vite build served by Nginx. No microservices.
 
 ## Decision records
 
-ADRs live in `docs/adr/`. Phase 1: 0001, 0002, 0005, 0007, 0008, 0011. Phase 2: 0003 RBAC model, 0004 audit chain, 0009 design adaptation, 0010 session and MFA.
+ADRs live in `docs/adr/`. Phase 1: 0001, 0002, 0005, 0007, 0008, 0011. Phase 2: 0003 RBAC model, 0004 audit chain, 0009 design adaptation, 0010 session and MFA. Later: 0012 to 0017 (engagements, findings, audit, calendar, import, dashboards), 0018 asset identifiers, 0019 onboarding and asset import, 0020 import attempts, 0021 user deletion.

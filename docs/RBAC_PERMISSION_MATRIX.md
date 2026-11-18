@@ -10,6 +10,7 @@ engagement the user can reach (all-engagement roles, or membership from Phase 3)
 | `users.create` | platform | yes | - | - | - | Create users |
 | `users.update` | platform | yes | - | - | - | Edit users, reset passwords and MFA, revoke sessions |
 | `users.deactivate` | platform | yes | - | - | - | Deactivate and reactivate users |
+| `users.delete` | platform | yes | - | - | - | Delete deactivated users (removed, or anonymised when history refers to them) |
 | `roles.view` | platform | yes | - | - | - | View roles and the permission catalogue |
 | `roles.manage` | platform | yes | - | - | - | Create, edit and delete roles |
 | `roles.assign` | platform | yes | - | - | - | Assign roles to users |
@@ -23,6 +24,8 @@ engagement the user can reach (all-engagement roles, or membership from Phase 3)
 | `assets.create` | platform | yes | - | - | - | Create assets |
 | `assets.update` | platform | yes | - | - | - | Edit assets |
 | `assets.archive` | platform | yes | - | - | - | Archive assets |
+| `assets.delete` | platform | yes | - | - | - | Delete assets that no engagement or finding uses, and merge duplicate assets |
+| `assets.import` | platform | yes | - | - | - | Import assets from CSV and onboard imported assets |
 | `engagements.view` | engagement | yes | yes | yes | yes | View engagements |
 | `engagements.create` | platform | yes | - | - | - | Create engagements |
 | `engagements.update` | platform | yes | - | - | - | Edit engagement details, scope and dates |

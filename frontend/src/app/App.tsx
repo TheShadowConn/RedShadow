@@ -12,6 +12,7 @@ import { OverviewPage } from "../features/home/OverviewPage";
 import { Shell, useFixerLanding } from "./Shell";
 
 const AboutPage = lazy(() => import("../features/about/AboutPage").then((m) => ({ default: m.AboutPage })));
+const AssetsPage = lazy(() => import("../features/assets/AssetsPage").then((m) => ({ default: m.AssetsPage })));
 const AccountPage = lazy(() => import("../features/account/AccountPage").then((m) => ({ default: m.AccountPage })));
 const ImportPage = lazy(() => import("../features/imports/ImportPage").then((m) => ({ default: m.ImportPage })));
 const ImportsPage = lazy(() => import("../features/imports/ImportsPage").then((m) => ({ default: m.ImportsPage })));
@@ -81,6 +82,7 @@ function Gate() {
         <Route path="retests/:id" element={<RetestPage />} />
         <Route path="engagements" element={<EngagementsPage />} />
         <Route path="engagements/:id" element={<EngagementPage />} />
+        <Route path="assets" element={<AssetsPage />} />
         <Route path="organisations" element={<OrganisationsPage />} />
         <Route path="organisations/:id" element={<OrganisationPage />} />
         <Route path="findings" element={<FindingsPage />} />
