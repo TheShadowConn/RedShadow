@@ -6,12 +6,12 @@ from apps.rbac.viewsets import ScopedModelViewSet
 
 from . import user_services
 from .models import User
-from .serializers import UserCreateSerializer, UserSerializer, UserUpdateSerializer
+from .serializers import UserCreateSerializer, UserDeleteSerializer, UserSerializer, UserUpdateSerializer
 
 
 class UserViewSet(ScopedModelViewSet):
     serializer_class = UserSerializer
-    http_method_names = ["get", "post", "patch", "head", "options"]
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     permission_map = {
         "list": "users.view",
         "retrieve": "users.view",
@@ -22,10 +22,12 @@ class UserViewSet(ScopedModelViewSet):
         "reset_password": "users.update",
         "reset_mfa": "users.update",
         "revoke_sessions": "users.update",
+        "destroy": "users.delete",
+        "deletion_impact": "users.delete",
     }
 
     def get_queryset(self):
-        qs = User.objects.select_related("role").order_by("email")
+        qs = User.objects.select_related("role").filter(deleted_at__isnull=True).order_by("email")
         term = self.request.query_params.get("search", "").strip()
         if term:
             qs = qs.filter(email__icontains=term) | qs.filter(display_name__icontains=term)
@@ -43,6 +45,15 @@ class UserViewSet(ScopedModelViewSet):
             request, request.user, self.get_object(), data.get("display_name"), data.get("role")
         )
         return Response(UserSerializer(user).data)
+
+    def destroy(self, request, *args, **kwargs):
+        data = self._validated(UserDeleteSerializer, request)
+        result = user_services.delete_user(request, request.user, self.get_object(), data["confirm_email"])
+        return Response(result)
+
+    @action(detail=True, methods=["get"], url_path="deletion-impact")
+    def deletion_impact(self, request, pk=None):
+        return Response(user_services.deletion_impact(self.get_object()))
 
     @action(detail=True, methods=["post"])
     def deactivate(self, request, pk=None):

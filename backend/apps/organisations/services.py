@@ -10,6 +10,7 @@ from apps.core.changes import apply_changes
 from apps.core.errors import Conflict
 from apps.engagements.models import OPEN_STATUSES, Engagement
 
+from . import assets
 from .models import Asset, Contact, Organisation
 
 ORG_FIELDS = ("name", "industry", "notes")
@@ -123,34 +124,29 @@ def delete_contact(request, actor, contact: Contact) -> None:
 
 
 def create_asset(request, actor, org: Organisation, data: dict) -> Asset:
+    """Create an onboarded asset. ``data`` may carry ``identifiers`` (a list) or the old ``identifier`` text."""
     try:
-        with transaction.atomic():
-            org = Organisation.objects.select_for_update().get(pk=org.pk)
-            _assert_org_writable(org)
-            asset = Asset.objects.create(organisation=org, **{f: data[f] for f in ASSET_FIELDS if f in data})
-            audit.record("asset.created", request=request, entity=asset, metadata={"organisation": org.name})
+        return assets.create_asset(request, actor, org, data)
     except IntegrityError:
-        raise ValidationError(
-            {"identifier": ["This organisation already has an asset of this type with this identifier."]}
-        ) from None
-    return asset
+        raise ValidationError({"identifiers": ["One of these identifiers already belongs to another asset."]}) from None
 
 
 def update_asset(request, actor, asset: Asset, data: dict) -> Asset:
     try:
         with transaction.atomic():
+            assets._lock_org(asset.organisation_id)
             asset = Asset.objects.select_for_update().select_related("organisation").get(pk=asset.pk)
             _assert_org_writable(asset.organisation)
             if asset.is_archived:
                 raise Conflict("This asset is archived. Unarchive it to make changes.")
-            changes = apply_changes(asset, data, ASSET_FIELDS)
+            changes = apply_changes(asset, data, tuple(f for f in ASSET_FIELDS if f != "identifier"))
             if changes:
                 asset.save()
+            changes.update(assets.update_identifier_field(asset, data.get("identifier")))
+            if changes:
                 audit.record("asset.updated", request=request, entity=asset, changes=changes)
     except IntegrityError:
-        raise ValidationError(
-            {"identifier": ["This organisation already has an asset of this type with this identifier."]}
-        ) from None
+        raise ValidationError({"identifier": ["This identifier already belongs to another asset."]}) from None
     return asset
 
 

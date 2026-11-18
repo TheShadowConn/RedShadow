@@ -5,22 +5,35 @@ from apps.core.serializers import StrictSerializer
 from apps.engagements.models import Engagement
 from apps.engagements.selectors import scope_engagements
 from apps.findings.selectors import scope_findings
+from apps.organisations.models import Organisation
+from apps.organisations.selectors import scope_organisations
 
-from .mapping import suggest
-from .models import ImportJob, ImportMapping, ImportRow
+from . import services
+from .mapping import suggest, suggest_assets
+from .models import ImportAttempt, ImportJob, ImportMapping, ImportRow
 
 
 class ImportJobSerializer(serializers.ModelSerializer):
     engagement = serializers.SerializerMethodField()
+    organisation = serializers.SerializerMethodField()
     uploaded_by = serializers.SerializerMethodField()
     suggested_mapping = serializers.SerializerMethodField()
     file_available = serializers.SerializerMethodField()
+    can_delete = serializers.SerializerMethodField()
+    can_reupload = serializers.SerializerMethodField()
+    can_retry = serializers.SerializerMethodField()
 
     class Meta:
         model = ImportJob
         fields = [
             "id",
+            "kind",
             "engagement",
+            "organisation",
+            "attempt",
+            "can_delete",
+            "can_reupload",
+            "can_retry",
             "original_name",
             "file_size",
             "file_sha256",
@@ -46,14 +59,29 @@ class ImportJobSerializer(serializers.ModelSerializer):
 
     def get_engagement(self, obj):
         e = obj.engagement
-        return {"id": e.pk, "ref": e.ref, "name": e.name}
+        return {"id": e.pk, "ref": e.ref, "name": e.name} if e else None
+
+    def get_organisation(self, obj):
+        o = obj.organisation
+        return {"id": o.pk, "name": o.name} if o else None
+
+    def get_can_delete(self, obj):
+        return obj.status in services.FAILED_OR_STUCK
+
+    def get_can_reupload(self, obj):
+        return services.can_reupload(obj)
+
+    def get_can_retry(self, obj):
+        return obj.status == "failed" and bool(obj.storage_key)
 
     def get_uploaded_by(self, obj):
         u = obj.uploaded_by
         return {"id": u.pk, "display_name": u.display_name}
 
     def get_suggested_mapping(self, obj):
-        return suggest(obj.headers) if obj.status == "parsed" else {}
+        if obj.status != "parsed":
+            return {}
+        return suggest_assets(obj.headers) if obj.kind == "assets" else suggest(obj.headers)
 
     def get_file_available(self, obj):
         return bool(obj.storage_key)
@@ -65,10 +93,13 @@ class ImportRowSerializer(serializers.ModelSerializer):
     duplicate_of = serializers.SerializerMethodField()
     title = serializers.SerializerMethodField()
     severity = serializers.SerializerMethodField()
+    asset = serializers.SerializerMethodField()
 
     class Meta:
         model = ImportRow
-        fields = ["id", "row_number", "status", "title", "severity", "cells", "errors", "duplicate_of", "finding"]
+        fields = [
+            "id", "row_number", "status", "title", "severity", "cells", "errors", "duplicate_of", "finding", "asset",
+        ]  # fmt: skip
         read_only_fields = fields
 
     def _visible(self, finding_ids):
@@ -85,7 +116,22 @@ class ImportRowSerializer(serializers.ModelSerializer):
         return dict(zip(headers, obj.raw, strict=False))
 
     def get_title(self, obj):
-        return obj.mapped.get("title", "")
+        return obj.mapped.get("title") or obj.mapped.get("name", "")
+
+    def get_asset(self, obj):
+        """For an asset row: what the import does with it, and the asset it created or joined."""
+        m = obj.mapped
+        if "identifiers" not in m:
+            return None
+        asset_id = obj.asset_id or m.get("asset_id")
+        return {
+            "action": m.get("action", ""),
+            "identifiers": [{"kind": i["kind"], "value": i["value"]} for i in m["identifiers"]],
+            "new_identifiers": m.get("new_identifiers", 0),
+            "type": m.get("type"),
+            "asset": {"id": asset_id, "name": m.get("asset_name") or m.get("name", "")} if asset_id else None,
+            "target_line": m.get("target_line"),
+        }
 
     def get_severity(self, obj):
         return obj.mapped.get("severity", "")
@@ -106,8 +152,34 @@ class ImportRowSerializer(serializers.ModelSerializer):
 
 
 class UploadSerializer(StrictSerializer):
+    kind = serializers.ChoiceField(choices=["findings"], required=False)
     engagement = ScopedPrimaryKeyField(scope=lambda user: scope_engagements(user, "imports.create"), model=Engagement)
     file = serializers.FileField(allow_empty_file=False)
+
+
+class AssetUploadSerializer(StrictSerializer):
+    kind = serializers.ChoiceField(choices=["assets"])
+    organisation = ScopedPrimaryKeyField(scope=scope_organisations, model=Organisation)
+    file = serializers.FileField(allow_empty_file=False)
+
+
+class ReuploadSerializer(StrictSerializer):
+    file = serializers.FileField(allow_empty_file=False)
+
+
+class AttemptSerializer(serializers.ModelSerializer):
+    uploaded_by = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ImportAttempt
+        fields = [
+            "number", "original_name", "file_sha256", "file_size", "counts", "outcome", "error", "uploaded_by",
+            "created_at", "finished_at",
+        ]  # fmt: skip
+        read_only_fields = fields
+
+    def get_uploaded_by(self, obj):
+        return {"id": obj.uploaded_by_id, "display_name": obj.uploaded_by.display_name}
 
 
 class MappingSerializer(StrictSerializer):

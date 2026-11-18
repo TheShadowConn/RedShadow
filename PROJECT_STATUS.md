@@ -18,6 +18,14 @@ Updated: 2026-11-13. Development is local only (no Git repository, by user decis
 | 11 | Mobile and design refinement | Done, awaiting your review |
 | 12 | Security testing and hardening | Done (ZAP scan not run), awaiting your review |
 
+## Assets, identifiers, import management and user deletion (2026-11-18)
+
+- Assets page, many identifiers per asset (normalised, one owner per organisation), merge, delete, bulk archive, onboarding.
+- Asset CSV import matched by identifier, created not onboarded. Corrected-file re-upload, retry, history and deletion of failed imports for both import kinds.
+- User deletion (remove or anonymise) with confirmation and safeguards.
+- Identifiers shown in the engagement scope list and PDF reports.
+- Details: `docs/ASSETS_AND_IMPORTS.md`, `docs/SCHEMA.md`, `docs/API.md`, ADR-0018 to 0021.
+
 ## Phase 11 and 12 results (2026-11-13): design refinement, security and hardening
 
 **Phase 11**

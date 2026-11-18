@@ -143,6 +143,7 @@ class EngagementAssetSerializer(serializers.ModelSerializer):
     def get_asset(self, obj):
         a = obj.asset
         return {"id": a.pk, "name": a.name, "type": a.type, "identifier": a.identifier,
+                "identifiers": [i.value for i in a.identifiers.all()],
                 "environment": a.environment, "criticality": a.criticality, "archived": a.is_archived}  # fmt: skip
 
 

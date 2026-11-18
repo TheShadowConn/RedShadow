@@ -65,6 +65,10 @@ The comparison is general. Check any tool against your own needs.
 - **Audit**: hash-chained, append-only log enforced by the database, verified nightly and on demand.
 - **Security**: Argon2, TOTP two-step verification, session controls, rate limits, hardened containers.
 
+## Assets and imports
+
+Assets can have several identifiers (IP address, hostname, domain, URL ...). Each identifier belongs to one asset per organisation, so the same system is never created twice. Import assets from CSV without onboarding them first: rows are matched by identifier, new assets arrive not onboarded, and a Super Admin onboards them later. Failed or partly failed imports can be corrected and re-uploaded into the same import, retried, or deleted, and deactivated users can be deleted with safeguards.
+
 ## Quick start
 
 Requirements: Docker with Compose v2.
@@ -91,6 +95,7 @@ Nginx in front, a Django REST API behind it, PostgreSQL for data, Redis and Cele
 - Operations: [docs/DOCKER_SETUP.md](docs/DOCKER_SETUP.md), [docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md), [docs/RUNBOOKS.md](docs/RUNBOOKS.md)
 - Security: [docs/SECURITY.md](docs/SECURITY.md), [docs/ASVS_L2_CHECKLIST.md](docs/ASVS_L2_CHECKLIST.md), [SECURITY.md](SECURITY.md)
 - Permissions: [docs/RBAC_PERMISSION_MATRIX.md](docs/RBAC_PERMISSION_MATRIX.md)
+- Assets, identifiers, imports and deleting users: [docs/ASSETS_AND_IMPORTS.md](docs/ASSETS_AND_IMPORTS.md), [docs/SCHEMA.md](docs/SCHEMA.md), [docs/API.md](docs/API.md)
 - Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
 
 ## Status

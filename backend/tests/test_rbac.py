@@ -293,6 +293,11 @@ COVERED_ROUTES = {
     "report-template-logo",
     # Phase 10: covered by tests/test_dashboards.py and the MATRIX rows above
     "dashboard-admin", "dashboard-pentester", "dashboard-remediation", "dashboard-vendor",
+    # Assets, identifiers, onboarding, import management, user deletion: tests/test_assets.py, tests/test_asset_imports.py,
+    # tests/test_import_management.py, tests/test_user_delete.py
+    "asset-summary", "asset-usage", "asset-identifiers", "asset-identifier-detail", "asset-check-identifiers",
+    "asset-onboard", "asset-onboard-many", "asset-archive-many", "asset-merge", "import-reupload", "import-retry", "import-history",
+    "import-asset-template", "user-deletion-impact",
     "finding-notes", "finding-evidence", "finding-remove-evidence", "finding-template-list", "finding-template-detail",
 }  # fmt: skip
 

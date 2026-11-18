@@ -44,7 +44,8 @@ export function ScopeTab({ eng }: { eng: Engagement }) {
               <li key={l.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
                 <div className="min-w-0">
                   <p className="m-0 font-medium">{l.asset.name} <Badge tone={l.in_scope ? "ok" : "fail"}>{l.in_scope ? "In scope" : "Out of scope"}</Badge></p>
-                  <p className="m-0 break-all text-[14px] text-muted">{label(ASSET_TYPES, l.asset.type)} · {label(ENVIRONMENTS, l.asset.environment)}{l.asset.identifier && ` · ${l.asset.identifier}`}</p>
+                  <p className="m-0 break-all text-[14px] text-muted">{label(ASSET_TYPES, l.asset.type)} · {label(ENVIRONMENTS, l.asset.environment)}</p>
+                  {l.asset.identifiers.length > 0 && <p className="m-0 mt-1 flex flex-wrap gap-x-3 gap-y-1">{l.asset.identifiers.map((v) => <span key={v} className="mono break-all text-[13px] text-muted">{v}</span>)}</p>}
                 </div>
                 {writable && (
                   <div className="flex gap-2">
@@ -69,13 +70,14 @@ function LinkAsset({ eng, linked, onClose, onDone }: { eng: Engagement; linked: 
   const [notes, setNotes] = useState("");
   const assets = useQuery({ queryKey: ["org-assets", eng.organisation.id, false], queryFn: () => api<Asset[]>("GET", `/organisations/${eng.organisation.id}/assets?archived=false`) });
   const save = useMutation({ mutationFn: () => api("POST", `/engagements/${eng.id}/assets`, { asset: assetId, in_scope: inScope, notes }), onSuccess: () => { onDone(); onClose(); } });
-  const options = assets.data?.filter((a) => !linked.has(a.id)) ?? [];
+  const options = assets.data?.filter((a) => !linked.has(a.id) && a.onboarding_status === "onboarded") ?? [];
+  const waiting = assets.data?.filter((a) => a.onboarding_status === "pending").length ?? 0;
   return (
     <Modal open onClose={onClose} title="Add asset to scope">
       <form className="space-y-5 p-6" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate(); }}>
         <ErrorNote error={noFieldErrors(save.error)} />
         <ErrorNote error={assets.error} />
-        <Field label="Asset" error={fieldError(save.error, "asset")} hint={assets.data && options.length === 0 ? "Every active asset of this organisation is already linked." : undefined}>
+        <Field label="Asset" error={fieldError(save.error, "asset")} hint={assets.data && options.length === 0 ? "Every onboarded asset of this organisation is already linked." : waiting > 0 ? `${waiting} imported asset${waiting === 1 ? " is" : "s are"} not onboarded yet and cannot be added until onboarded.` : undefined}>
           {(p) => <Select {...p} required value={assetId} onChange={(e) => setAssetId(e.target.value)}><option value="" disabled>Choose an asset</option>{options.map((a) => <option key={a.id} value={a.id}>{a.name} ({label(ASSET_TYPES, a.type)})</option>)}</Select>}
         </Field>
         <label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={inScope} onChange={(e) => setInScope(e.target.checked)} /> In scope (untick to record it as explicitly out of scope)</label>

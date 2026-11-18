@@ -82,17 +82,61 @@ export const ASSET_TYPES = [
 ] as const;
 export const ENVIRONMENTS = [["prod", "Production"], ["staging", "Staging"], ["dev", "Development"]] as const;
 
+export const IDENTIFIER_KINDS = [
+  ["ip", "IP address"], ["cidr", "Network range"], ["hostname", "Hostname"], ["domain", "Domain"], ["url", "URL"],
+  ["mac", "MAC address"], ["cloud_id", "Cloud resource ID"], ["repo", "Repository"], ["package", "App or package ID"], ["other", "Other"],
+] as const;
+
+export type AssetIdentifier = {
+  id: string;
+  kind: string;
+  kind_label: string;
+  value: string;
+  normalized: string;
+  is_primary: boolean;
+  source: "manual" | "import" | "legacy";
+  created_at: string;
+};
+
 export type Asset = {
   id: string;
   organisation: string;
   organisation_name: string;
   name: string;
   type: string;
+  /** Display copy of the primary identifier. The list in `identifiers` is the real data. */
   identifier: string;
+  identifiers: AssetIdentifier[];
   environment: string;
   criticality: number;
   tags: string[];
   archived: boolean;
+  archived_at: string | null;
+  onboarding_status: "onboarded" | "pending";
+  origin: "manual" | "import";
+  onboarded_at: string | null;
+  engagement_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AssetSummary = { total: number; onboarded: number; pending: number; archived: number };
+export type AssetUsage = { engagements: number; findings: number; identifiers: number };
+export type IdentifierCheck = {
+  index: number;
+  status: "free" | "owned" | "invalid";
+  kind?: string;
+  value?: string;
+  normalized?: string;
+  message?: string;
+  asset?: { id: string; name: string };
+};
+export type DeletionImpact = {
+  blockers: string[];
+  removes: { memberships: number; saved_import_mappings: number };
+  clears: { engagements_led: number; findings_assigned: number; findings_to_fix: number };
+  history: Record<string, number>;
+  mode: "remove" | "anonymise";
 };
 
 export const ENGAGEMENT_TYPES = [
@@ -153,7 +197,7 @@ export type Member = {
 
 export type ScopeLink = {
   id: string;
-  asset: { id: string; name: string; type: string; identifier: string; environment: string; criticality: number; archived: boolean };
+  asset: { id: string; name: string; type: string; identifier: string; identifiers: string[]; environment: string; criticality: number; archived: boolean };
   in_scope: boolean;
   notes: string;
 };
@@ -381,9 +425,45 @@ export const IMPORT_STATUSES = [
   ["previewed", "Ready to import"], ["importing", "Importing"], ["completed", "Completed"], ["failed", "Failed"], ["cancelled", "Cancelled"],
 ] as const;
 
+export const ASSET_IMPORT_FIELDS = [
+  ["name", "Name", "Optional: the first identifier is used when empty"],
+  ["type", "Asset type", "Optional: guessed from the identifiers when empty"],
+  ["environment", "Environment", "prod, staging or dev. Empty means production"],
+  ["criticality", "Criticality", "1 to 5, or low, medium, high, critical"],
+  ["tags", "Tags", "Separated by semicolons"],
+  ["ip", "IP address", "One or more per cell"],
+  ["hostname", "Hostname", "One or more per cell"],
+  ["domain", "Domain", "One or more per cell"],
+  ["url", "URL", "Full URLs, one or more per cell"],
+  ["mac", "MAC address", ""],
+  ["cloud_id", "Cloud resource ID", "ARN, account or subscription ID"],
+  ["repo", "Repository", ""],
+  ["identifiers", "Other identifiers", "Mixed values: the type of each is detected"],
+] as const;
+export const ASSET_IDENTIFIER_FIELDS = ["ip", "hostname", "domain", "url", "mac", "cloud_id", "repo", "identifiers"];
+
+export type ImportAttempt = {
+  number: number;
+  original_name: string;
+  file_sha256: string;
+  file_size: number;
+  counts: ImportJob["counts"];
+  outcome: "in_progress" | "completed" | "failed" | "cancelled" | "superseded";
+  error: string;
+  uploaded_by: { id: string; display_name: string };
+  created_at: string;
+  finished_at: string | null;
+};
+
 export type ImportJob = {
   id: string;
-  engagement: { id: string; ref: string; name: string };
+  kind: "findings" | "assets";
+  engagement: { id: string; ref: string; name: string } | null;
+  organisation: { id: string; name: string } | null;
+  attempt: number;
+  can_delete: boolean;
+  can_reupload: boolean;
+  can_retry: boolean;
   original_name: string;
   file_size: number;
   file_sha256: string;
@@ -395,7 +475,10 @@ export type ImportJob = {
   mapping: { column_map?: Record<string, string>; value_map?: { severity?: Record<string, string> } };
   mode: string;
   duplicates: string;
-  counts: { total?: number; valid?: number; invalid?: number; duplicate?: number; imported?: number; skipped?: number };
+  counts: {
+    total?: number; valid?: number; invalid?: number; duplicate?: number; imported?: number; skipped?: number;
+    created?: number; merged?: number; to_create?: number; to_merge?: number;
+  };
   error: string;
   uploaded_by: { id: string; display_name: string };
   suggested_mapping: Record<string, string>;
@@ -416,6 +499,14 @@ export type ImportRow = {
   errors: Array<{ field: string; code: string; message: string }>;
   duplicate_of: { line?: number; finding?: { id: string; ref: string; title: string }; hidden?: boolean } | null;
   finding: { id: string; ref: string } | null;
+  asset: {
+    action: "create" | "merge" | "merge_in_file" | "known" | "known_in_file" | "";
+    identifiers: Array<{ kind: string; value: string }>;
+    new_identifiers: number;
+    type: string | null;
+    asset: { id: string; name: string } | null;
+    target_line: number | null;
+  } | null;
 };
 
 export type SavedMapping = { id: string; name: string; column_map: Record<string, string>; value_map: Record<string, Record<string, string>>; created_at: string };

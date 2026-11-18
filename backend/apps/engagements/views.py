@@ -201,7 +201,12 @@ class EngagementViewSet(ScopedModelViewSet):
         eng = self.get_object()
         if not has_engagement_perm(request.user, eng.pk, "assets.view"):
             raise PermissionDenied("You do not have permission to view assets.")
-        qs = EngagementAsset.objects.filter(engagement=eng).select_related("asset").order_by("asset__name")
+        qs = (
+            EngagementAsset.objects.filter(engagement=eng)
+            .select_related("asset")
+            .prefetch_related("asset__identifiers")
+            .order_by("asset__name")
+        )
         return Response(EngagementAssetSerializer(qs, many=True).data)
 
     @assets.mapping.post

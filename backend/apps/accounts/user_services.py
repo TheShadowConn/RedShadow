@@ -8,6 +8,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.audit import service as audit
+from apps.core.errors import Conflict
 from apps.rbac import guards
 from apps.rbac.models import Role
 
@@ -140,3 +141,115 @@ def revoke_sessions(request, actor: User, user: User) -> None:
     with transaction.atomic():
         _bump(user)
         audit.record("user.sessions_revoked", request=request, entity=user)
+
+
+# deletion
+
+OPEN_FINDING_STATUSES = ("draft", "open", "in_progress", "pending_verification", "reopened")
+# Rows removed together with the account. Everything else that points at the user is history.
+_CLEANED = {"engagementmembership", "importmapping", "recoverycode"}
+
+
+def _history_references(user: User) -> dict[str, int]:
+    """Rows that still point at the user after the clean-up: findings, notes, evidence, engagements ..."""
+    found: dict[str, int] = {}
+    for rel in User._meta.get_fields(include_hidden=True):  # most foreign keys use related_name="+"
+        if not (rel.auto_created and not rel.concrete and rel.one_to_many):
+            continue
+        model = rel.related_model
+        if model._meta.model_name in _CLEANED:
+            continue
+        n = model._base_manager.filter(**{rel.field.name: user}).count()
+        if n:
+            name = str(model._meta.verbose_name_plural).capitalize()
+            found[name] = found.get(name, 0) + n
+    return found
+
+
+def deletion_impact(user: User) -> dict:
+    """What deleting the account would do. Shown in the confirmation dialog, and used by delete_user."""
+    from apps.engagements.models import Engagement, EngagementMembership
+    from apps.findings.models import Finding, RetestRound
+    from apps.imports.models import ImportJob, ImportMapping
+
+    blockers = []
+    active_rounds = RetestRound.objects.filter(assessor=user, status__in=RetestRound.ACTIVE).count()
+    if active_rounds:
+        blockers.append(f"{active_rounds} retest round(s) are assigned to this user. Reassign or cancel them first.")
+    working = ImportJob.objects.filter(uploaded_by=user, status__in=ImportJob.WORKING).count()
+    if working:
+        blockers.append(f"{working} import(s) by this user are still running.")
+    if user.is_active:
+        blockers.append("Deactivate the account first. Deleting is only possible for deactivated accounts.")
+    refs = _history_references(user)
+    return {
+        "blockers": blockers,
+        "removes": {
+            "memberships": EngagementMembership.objects.filter(user=user).count(),
+            "saved_import_mappings": ImportMapping.objects.filter(owner=user).count(),
+        },
+        "clears": {
+            "engagements_led": Engagement.objects.filter(lead=user)
+            .exclude(status__in=("completed", "cancelled"))
+            .count(),
+            "findings_assigned": Finding.objects.filter(
+                assigned_pentester=user, status__in=OPEN_FINDING_STATUSES
+            ).count(),
+            "findings_to_fix": Finding.objects.filter(remediation_owner=user, status__in=OPEN_FINDING_STATUSES).count(),
+        },
+        "history": refs,
+        "mode": "anonymise" if refs else "remove",
+    }
+
+
+def delete_user(request, actor: User, user: User, confirm_email: str) -> dict:
+    """Delete a deactivated account.
+
+    The account is removed outright when nothing refers to it. When findings, notes, evidence or
+    engagements do, the row stays as an anonymous tombstone (no name, e-mail or credentials) so history
+    keeps its shape. Open work assigned to the user is unassigned. The audit log keeps the old e-mail.
+    """
+    from apps.engagements.models import Engagement, EngagementMembership
+    from apps.findings.models import Finding
+    from apps.imports.models import ImportMapping
+
+    action = "user.delete_denied"
+    guards.assert_not_self(request, actor, user, action)
+    guards.assert_outranks(request, actor, user, action)
+    guards.assert_not_last_super_admin(request, user, action)
+    if user.deleted_at:
+        raise Conflict("This account was already deleted.")
+    if normalize_email(confirm_email) != user.email:
+        raise ValidationError({"confirm_email": ["Type the account's email address to confirm."]})
+    with transaction.atomic():
+        user = User.objects.select_for_update().select_related("role").get(pk=user.pk)
+        impact = deletion_impact(user)
+        if impact["blockers"]:
+            raise Conflict(" ".join(impact["blockers"]))
+        before = _snapshot(user)
+        EngagementMembership.objects.filter(user=user).delete()
+        ImportMapping.objects.filter(owner=user).delete()
+        user.recovery_codes.all().delete()
+        Engagement.objects.filter(lead=user).update(lead=None)
+        Finding.objects.filter(assigned_pentester=user, status__in=OPEN_FINDING_STATUSES).update(
+            assigned_pentester=None, version=F("version") + 1
+        )
+        Finding.objects.filter(remediation_owner=user, status__in=OPEN_FINDING_STATUSES).update(
+            remediation_owner=None, version=F("version") + 1
+        )
+        history = _history_references(user)
+        metadata = {"mode": "anonymise" if history else "remove", "cleared": impact["clears"], "history": history}
+        audit.record("user.deleted", request=request, entity=user, changes={"before": before}, metadata=metadata)
+        if history:
+            tombstone_id = str(user.pk)
+            user.email = f"deleted-{tombstone_id}@deleted.invalid"
+            user.display_name = "Deleted user"
+            user.set_unusable_password()
+            user.mfa_enabled, user.mfa_secret_enc, user.mfa_last_step = False, "", 0
+            user.is_active, user.deleted_at = False, timezone.now()
+            user.must_change_password = False
+            user.session_version += 1
+            user.save()
+        else:
+            user.delete()
+    return metadata

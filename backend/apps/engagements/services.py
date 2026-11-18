@@ -312,6 +312,10 @@ def link_asset(request, actor, eng: Engagement, asset: Asset, in_scope: bool, no
             raise ValidationError({"asset": ["This asset does not belong to the engagement's organisation."]})
         if asset.is_archived:
             raise ValidationError({"asset": ["This asset is archived."]})
+        if asset.onboarding_status != "onboarded":
+            raise ValidationError(
+                {"asset": ["This asset is not onboarded yet. Onboard it before adding it to an engagement."]}
+            )
         try:
             with transaction.atomic():
                 link = EngagementAsset.objects.create(engagement=eng, asset=asset, in_scope=in_scope, notes=notes)

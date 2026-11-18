@@ -35,11 +35,15 @@ class RowValidator:
         self.width = len(headers)
         self.severity_map = {norm(k): v for k, v in (value_map.get("severity") or {}).items()}
         self.assets = {}
-        for link in EngagementAsset.objects.filter(engagement=engagement, in_scope=True).select_related("asset"):
+        links = EngagementAsset.objects.filter(engagement=engagement, in_scope=True).select_related("asset")
+        for link in links.prefetch_related("asset__identifiers"):
             if link.asset.archived_at is None:
                 self.assets.setdefault(asset_key(link.asset.name), link.asset.pk)
                 if link.asset.identifier.strip():
                     self.assets.setdefault(asset_key(link.asset.identifier), link.asset.pk)
+                for i in link.asset.identifiers.all():  # every identifier finds the asset, as typed or normalised
+                    self.assets.setdefault(asset_key(i.value), link.asset.pk)
+                    self.assets.setdefault(asset_key(i.normalized), link.asset.pk)
         self.cwes = set(CWE.objects.values_list("pk", flat=True)) if "cwe" in self.index else set()
 
     def cell(self, raw: list[str], field: str) -> str:
@@ -117,7 +121,8 @@ class RowValidator:
                     errors,
                     "asset",
                     "unknown_asset",
-                    f"No in-scope asset of this engagement has the name, IP address or URL {asset_text!r}.",
+                    f"No in-scope asset of this engagement has the name, IP address or URL {asset_text!r}. "
+                    "A hostname or other identifier of the asset matches too.",
                 )
             else:
                 out["asset_id"] = str(found)

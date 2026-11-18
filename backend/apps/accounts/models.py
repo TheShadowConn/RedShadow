@@ -9,7 +9,8 @@ from . import crypto
 
 
 class User(BaseModel, AbstractBaseUser):
-    """Platform user. Never hard-deleted: deactivation keeps audit and finding attribution."""
+    """Platform user. Deleting removes the row only when nothing refers to it; otherwise the account is
+    anonymised (``deleted_at``) so audit and finding attribution stay intact."""
 
     email = models.CharField(max_length=254)  # stored lower-case; unique case-insensitively
     display_name = models.CharField(max_length=120)
@@ -24,6 +25,9 @@ class User(BaseModel, AbstractBaseUser):
     locked_until = models.DateTimeField(null=True, blank=True)
     last_password_change = models.DateTimeField(null=True, blank=True)
     deactivated_at = models.DateTimeField(null=True, blank=True)
+    # Set when an administrator deletes the account. The row stays as an anonymous tombstone when
+    # findings, notes or evidence still point at it, so history keeps its shape.
+    deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS: list[str] = []
