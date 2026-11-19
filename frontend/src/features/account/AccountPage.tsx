@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
 import { useAuth } from "../../api/auth";
-import { Alert, Badge, PageHeader } from "../../design/ui";
+import { api } from "../../api/client";
+import { Alert, Badge, Button, ConfirmDialog, PageHeader } from "../../design/ui";
 import { MfaEnrol, PasswordForm } from "../auth/RestrictionFlow";
 
 export function AccountPage() {
@@ -35,6 +37,12 @@ export function AccountPage() {
           <PasswordForm onDone={() => { setSaved(true); void refresh(); }} />
         </section>
 
+        <section className="card card-pad" aria-labelledby="so-h">
+          <h2 id="so-h" className="mb-3 text-xl">Sign out everywhere</h2>
+          <p className="mt-0 mb-5 text-muted">Ends every session of this account, on every device, including this one. Use it if you left yourself signed in somewhere.</p>
+          <SignOutEverywhere />
+        </section>
+
         <section className="card card-pad" aria-labelledby="mfa-h">
           <div className="mb-5 flex items-center justify-between gap-3">
             <h2 id="mfa-h" className="text-xl">Two-step verification</h2>
@@ -60,6 +68,17 @@ export function AccountPage() {
           </dl>
         </section>
       </div>
+    </>
+  );
+}
+
+function SignOutEverywhere() {
+  const [confirm, setConfirm] = useState(false);
+  const send = useMutation({ mutationFn: () => api("POST", "/auth/sessions/revoke", {}), onSuccess: () => { window.location.assign("/"); } });
+  return (
+    <>
+      <Button variant="danger" onClick={() => setConfirm(true)}>Sign out everywhere</Button>
+      <ConfirmDialog open={confirm} title="Sign out everywhere" body="Every session of your account ends, including this one. You sign in again afterwards." confirmLabel="Sign out" danger busy={send.isPending} error={send.error} onConfirm={() => send.mutate()} onClose={() => setConfirm(false)} />
     </>
   );
 }

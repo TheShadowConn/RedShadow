@@ -9,7 +9,7 @@ import { SEVERITIES, type Cwe, type Engagement, type EngagementRow, type Finding
 import { Alert, Button, ErrorNote, Field, fieldError, LoadingRows, NotFoundOrError, Select, TextInput } from "../../design/ui";
 import { CvssBuilder } from "./CvssBuilder";
 import { CwePicker } from "./CwePicker";
-import { Markdown, isConflict, noFieldErrors } from "./shared";
+import { Markdown, SeverityScale, isConflict, noFieldErrors } from "./shared";
 
 type Form = {
   engagement: string; template: string; title: string; severity: string; cvss_vector: string; cwe: Cwe | null; asset: string; endpoint: string;
@@ -159,6 +159,7 @@ export function FindingEditor() {
 
         <section className="card card-pad space-y-5">
           <h2 className="text-lg">Severity</h2>
+          <SeverityScale />
           <CvssBuilder value={form.cvss_vector} onChange={(v) => set("cvss_vector", v)} />
           {fieldError(save.error, "cvss_vector") && <span className="field-error" role="alert">{fieldError(save.error, "cvss_vector")}</span>}
           {!form.cvss_vector && (

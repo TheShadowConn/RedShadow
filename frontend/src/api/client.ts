@@ -46,13 +46,17 @@ async function send(method: string, path: string, body: Body, retried = false): 
   return res;
 }
 
-export async function api<T>(method: "GET" | "POST" | "PATCH" | "DELETE", path: string, body?: Body): Promise<T> {
+/** When the server last answered a request. The server's idle clock restarts on every request. */
+export let lastApiAt = Date.now();
+
+export async function api<T>(method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE", path: string, body?: Body): Promise<T> {
   let res: Response;
   try {
     res = await send(method, path, body);
   } catch {
     throw new ApiError("Cannot reach the server. Check your connection.", 0, "network");
   }
+  lastApiAt = Date.now();
   if (res.status === 204) return undefined as T;
   const requestId = res.headers.get("X-Request-ID");
   let data: unknown = null;

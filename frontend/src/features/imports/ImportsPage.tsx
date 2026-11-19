@@ -230,7 +230,7 @@ export function ReuploadPanel({ job, onDone }: { job: ImportJob; onDone: () => v
     onSettled: () => setProgress(null),
   });
   return (
-    <section className="card card-pad flex flex-col gap-3" aria-labelledby="reupload-h">
+    <section className="card card-pad flex flex-col gap-4" aria-labelledby="reupload-h">
       <h2 id="reupload-h" className="text-xl">Upload a corrected file</h2>
       <p className="m-0 text-muted">Fix the rows in your spreadsheet and upload the whole file again. It goes into this same import as attempt {job.attempt + 1}, with the same columns. Rows that were already imported are recognised and skipped, so nothing is created twice.</p>
       <ErrorNote error={send.error} />

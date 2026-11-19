@@ -206,3 +206,72 @@ class TestAdoptCustomRole:
         )
         assert user.role_id == legacy.pk and user.session_version == 2
         assert Role.objects.filter(name="External Vendor").count() == 1
+
+
+@pytest.mark.django_db
+class TestVendorSweep:
+    """Section B: every finding sub-route and every engagement-level read, probed as the wrong vendor."""
+
+    def test_every_finding_subroute_is_404_for_another_vendor(self, w, v1c, v2c, p1c):
+        f = make(v1c, w.eng_a, title="Vendor one secret")
+        internal = make(p1c, w.eng_a, title="Internal only")
+        probes = [
+            ("get", "/activity", None), ("get", "/history", None), ("get", "/notes", None),
+            ("get", "/evidence", None), ("get", "/cvss", None),
+            ("post", "/false-positive", {"version": 1, "reason": "not a real issue"}),
+            ("post", "/duplicate", {"version": 1, "duplicate_of": internal["id"]}),
+            ("post", "/transition", {"to": "closed", "version": 1}),
+            ("delete", "", None),
+        ]
+        for verb, tail, data in probes:
+            r = getattr(v2c, verb)(furl(f, tail), *([data] if data else []), **({"format": "json"} if data else {}))
+            assert r.status_code in (400, 403, 404), (verb, tail, r.status_code)
+        assert Finding.objects.get(pk=f["id"]).status == "draft"
+
+    def test_duplicate_target_of_another_vendor_is_not_confirmed(self, w, v1c, v2c):
+        mine = publish(v1c, make(v1c, w.eng_a, title="Mine"))
+        theirs = publish(v2c, make(v2c, w.eng_a, title="Theirs"))
+        r = v1c.post(furl(mine, "/duplicate"), {"version": mine["version"], "duplicate_of": theirs["id"]}, format="json")
+        assert r.status_code in (400, 403, 404)
+        assert Finding.objects.get(pk=mine["id"]).duplicate_of_id is None
+
+    def test_engagement_level_reads_do_not_leak(self, w, v1c, v2c, p1c):
+        make(p1c, w.eng_a, title="Internal only")
+        other = v2c.get(f"{API}/engagements/{w.eng_b.pk}")
+        assert other.status_code == 404
+        for tail in ("/history", "/costs", "/notes", "/documents"):
+            assert v2c.get(f"{API}/engagements/{w.eng_b.pk}{tail}").status_code in (403, 404), tail
+        for tail in ("/history", "/costs"):
+            assert v1c.get(f"{API}/engagements/{w.eng_a.pk}{tail}").status_code == 403, tail
+        for verb, path, data in (
+            ("post", f"/engagements/{w.eng_a.pk}/members", {"user": str(w.p3.pk)}),
+            ("post", f"/engagements/{w.eng_a.pk}/join", {}),
+            ("post", f"/engagements/{w.eng_a.pk}/lead", {"lead": str(w.v1.pk), "version": 1}),
+            ("post", f"/engagements/{w.eng_a.pk}/delete", {"version": 1, "confirm_ref": w.eng_a.ref}),
+            ("post", f"/engagements/{w.eng_a.pk}/status", {"status": "completed", "version": 1}),
+        ):
+            assert getattr(v1c, verb)(f"{API}{path}", data, format="json").status_code == 403, path
+
+    def test_global_lists_are_scoped(self, w, v1c, v2c, p1c):
+        mine = make(v2c, w.eng_a, title="Vendor two")
+        make(p1c, w.eng_a, title="Internal")
+        for path in ("/retest-rounds", "/reports", "/imports", "/audit/events"):
+            r = v1c.get(f"{API}{path}")
+            assert r.status_code in (200, 403), path
+            assert str(mine["id"]) not in r.content.decode(), path
+
+    def test_calendar_shows_only_member_engagements(self, w, v1c, v2c):
+        from datetime import timedelta
+
+        qs = f"start={w.today - timedelta(days=5)}&end={w.today + timedelta(days=30)}"
+        mine = v1c.get(f"{API}/calendar/events?{qs}")
+        assert mine.status_code == 200 and str(w.eng_b.pk) in mine.content.decode()
+        theirs = v2c.get(f"{API}/calendar/events?{qs}")
+        assert theirs.status_code == 200 and str(w.eng_b.pk) not in theirs.content.decode()
+
+    def test_vendor_cannot_widen_own_scope(self, w, v1c):
+        m = EngagementMembership.objects.get(engagement=w.eng_a, user=w.v1)
+        r = v1c.patch(f"{API}/engagements/{w.eng_a.pk}/members/{w.v1.pk}", {"finding_scope": "all"}, format="json")
+        assert r.status_code == 403
+        m.refresh_from_db()
+        assert m.finding_scope == ""

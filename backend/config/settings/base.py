@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "apps.imports",
     "apps.reports",
     "apps.dashboards",
+    "apps.notifications",
 ]
 
 TEMPLATES = [
@@ -76,7 +77,7 @@ SLA_DAYS = {
     "low": int(os.environ.get("SLA_DAYS_LOW", "180")),
 }
 # Shown on the About page. Set through compose env (APP_VERSION, BUILD_ID, BUILD_DATE).
-APP_VERSION = os.environ.get("APP_VERSION", "1.2.0")
+APP_VERSION = os.environ.get("APP_VERSION", "1.3.0")
 BUILD_ID = os.environ.get("BUILD_ID", "dev")
 BUILD_DATE = os.environ.get("BUILD_DATE", "")
 
@@ -88,6 +89,18 @@ ATTACHMENT_RETENTION_DAYS = int(os.environ.get("ATTACHMENT_RETENTION_DAYS", "30"
 TLS_ON = os.environ.get("TLS_MODE", "selfsigned") != "off"
 
 # Sessions: server-side, HttpOnly, rotated on login. Idle timeout slides with each request.
+# Optional email for notifications. Off while EMAIL_HOST is empty. The password is read from a file, never from .env.
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+EMAIL_ENABLED = bool(EMAIL_HOST)
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() != "false"
+DEFAULT_FROM_EMAIL = os.environ.get("EMAIL_FROM", "redshadow@localhost")
+_email_pw_file = os.environ.get("EMAIL_HOST_PASSWORD_FILE", "")
+EMAIL_HOST_PASSWORD = open(_email_pw_file).read().strip() if _email_pw_file else ""  # noqa: SIM115
+EMAIL_TIMEOUT = 10
+APP_BASE_URL = os.environ.get("APP_BASE_URL", "").rstrip("/")
+
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
 SESSION_COOKIE_NAME = "rs_session"
 SESSION_COOKIE_HTTPONLY = True
@@ -152,6 +165,12 @@ CELERY_BEAT_SCHEDULE = {
     },
     "reports-cleanup-daily": {"task": "reports.cleanup", "schedule": 86400.0, "options": {"queue": "maintenance"}},
     "findings-sla-sweep-hourly": {"task": "findings.sla_sweep", "schedule": 3600.0},
+    "findings-due-soon-hourly": {"task": "findings.due_soon_sweep", "schedule": 3600.0},
+    "notifications-prune-daily": {
+        "task": "notifications.prune",
+        "schedule": 86400.0,
+        "options": {"queue": "maintenance"},
+    },
     "findings-expire-risk-acceptance-hourly": {"task": "findings.expire_risk_acceptance", "schedule": 3600.0},
     "cleanup-sessions-daily": {"task": "accounts.cleanup_sessions", "schedule": 86400.0},
     "purge-deleted-attachments-daily": {

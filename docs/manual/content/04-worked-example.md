@@ -29,4 +29,4 @@ This chapter follows one engagement from setup to closure. The same data appears
 
 ![The Acme engagement, overview tab](04-engagement-overview.png)
 
-The following chapters show each of these steps for the role that performs it. Read your own chapter first, then Chapter 9 (verification and retests) and Chapter 10 (audit) to see how the pieces fit together.
+Chapter 15 sets the whole flow out in one place, from organisation to closed engagement. The following chapters show each of these steps for the role that performs it. Read your own chapter first, then Chapter 9 (verification and retests) and Chapter 10 (audit) to see how the pieces fit together.

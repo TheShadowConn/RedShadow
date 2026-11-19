@@ -59,3 +59,15 @@ New `deleted_at` (nullable, indexed). Set only on an anonymised tombstone; see A
 ## rbac_permission (catalogue additions)
 
 `users.delete`, `assets.delete`, `assets.import`, all platform scope, granted to Super Admin only. Synced by `seed_rbac` after migrate. See [RBAC_PERMISSION_MATRIX.md](RBAC_PERMISSION_MATRIX.md).
+
+## engagements_engagement (changed, 1.3.0)
+
+New `deleted_at` (nullable, indexed) and `deleted_by_id` (nullable, set null). `Engagement.objects` hides soft-deleted rows; `Engagement.all_objects` shows them. Reference numbers are never reused. Migration `engagements/0006`.
+
+## notifications_notification (new, 1.3.0)
+
+`recipient_id` (cascade), `actor_id` (set null), `kind`, `title`, `body`, `link` (in-app path), `engagement_id` (plain UUID), `dedupe_key`, `read_at`, timestamps. Index `(recipient, read_at, -created_at)`. Read rows older than 90 days are pruned daily (`notifications.prune`). Migrations `notifications/0001` to `0003`.
+
+## notifications_notificationpreference (new, 1.3.0)
+
+One row per user who changed settings: `user_id` (one to one, cascade), `muted` (JSON list of group names), `email_enabled` (default false).

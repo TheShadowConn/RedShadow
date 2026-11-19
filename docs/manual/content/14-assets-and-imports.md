@@ -19,7 +19,7 @@ One asset can have several **identifiers**: an IP address, a hostname, a domain,
 
 ## Importing assets
 
-Choose **Imports**, then **Import assets**, pick the organisation and the CSV file. A template is available for download.
+Choose **Imports**, then **Import assets**, pick the organisation and the CSV file. A template is available for download. It has five plain columns: **Name**, **Asset type**, **Environment**, **Criticality** and **Identifiers**. Put every address of an asset in the Identifiers cell, separated by semicolons (for example `10.0.0.5; web01.acme.test`); RedShadow works out what each one is.
 
 1. **Match the columns.** Map at least one identifier column. A cell can hold several values separated by semicolons. Name and type are optional.
 2. **Check.** Each row is matched against the organisation's assets by identifier, never by name: *New asset* (will be created, not onboarded), *Add identifiers* (an existing asset gains identifiers it lacks; nothing else about it changes), *Already known* (skipped) or *Error* (invalid value, archived asset, or identifiers of two different assets). Rows of one file that share an identifier join the same asset.

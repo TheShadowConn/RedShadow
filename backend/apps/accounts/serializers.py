@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import serializers
 
 from apps.core.serializers import StrictSerializer
@@ -44,6 +45,7 @@ def me_payload(user: User, state) -> dict:
         },
         "mfa_enabled": user.mfa_enabled,
         "must_change_password": user.must_change_password,
+        "session_idle_seconds": settings.SESSION_COOKIE_AGE,
         "restriction": restriction(user, state),
         # UX hints only. The backend enforces every permission on every request.
         "permissions": sorted(user_permissions(user)),

@@ -13,6 +13,7 @@ from apps.accounts.models import User
 from apps.audit import service as audit
 from apps.core.errors import Conflict
 from apps.engagements.models import Engagement
+from apps.notifications import services as inbox
 from apps.rbac.authz import engagement_permissions, has_engagement_perm
 
 from . import services
@@ -84,6 +85,9 @@ def create_round(request, actor, eng: Engagement, assessor, finding_ids: list, n
             services._record_activity(f, actor, "retest_requested", text, f.status, f.status)
         audit.record("retest_round.created", request=request, entity=rnd, engagement=engagement,
                      metadata={"assessor": assessor.email, "findings": [f.ref for f in findings]})  # fmt: skip
+        inbox.notify([assessor], "retest.assigned", f"Retest {rnd.ref} assigned to you",
+                     body=f"{len(findings)} finding(s) in {engagement.ref}", link="/retests", actor=actor,
+                     engagement=engagement)
     return rnd
 
 
@@ -104,6 +108,8 @@ def assign_round(request, actor, rnd: RetestRound, assessor: User, version) -> R
         r.save()
         audit.record("retest_round.assigned", request=request, entity=r, engagement=r.engagement,
                      changes={"assessor": [old.email, assessor.email]})  # fmt: skip
+        inbox.notify([assessor], "retest.assigned", f"Retest {r.ref} assigned to you", body=r.engagement.ref,
+                     link="/retests", actor=actor, engagement=r.engagement)
     return r
 
 

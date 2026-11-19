@@ -41,6 +41,7 @@ class TestCreateAndRefs:
             "type": "api",
             "start_date": "2026-03-10",
             "end_date": "2026-03-01",
+            "lead": str(w.p1.pk),
         }
         assert admin_client.post(f"{API}/engagements", body, format="json").status_code == 400
         body["end_date"] = "2026-03-20"
@@ -104,6 +105,7 @@ class TestCreateAndRefs:
             "type": "api",
             "start_date": "2026-03-01",
             "end_date": "2026-03-20",
+            "lead": str(w.p1.pk),
         }
         assert admin_client.post(f"{API}/engagements", body, format="json").status_code == 409
 

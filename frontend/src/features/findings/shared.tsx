@@ -2,10 +2,25 @@ import { Circle, Diamond, Info, OctagonAlert, TriangleAlert, type LucideIcon } f
 import ReactMarkdown from "react-markdown";
 
 import { ApiError } from "../../api/client";
-import { FINDING_STATUSES, SEVERITIES } from "../../api/types";
+import { FINDING_STATUSES, SEVERITIES, SEVERITY_BANDS } from "../../api/types";
 import { Badge, label } from "../../design/ui";
 
 const SEV_ICON: Record<string, LucideIcon> = { critical: OctagonAlert, high: TriangleAlert, medium: Diamond, low: Circle, info: Info };
+
+/** The CVSS score ranges behind each severity. Shown wherever severity is chosen. */
+export function SeverityScale() {
+  return (
+    <div className="rounded-md border border-line p-4">
+      <p className="m-0 text-[14px] font-medium">Severity scale (CVSS base score)</p>
+      <ul className="m-0 mt-3 grid list-none grid-cols-2 gap-x-4 gap-y-2 p-0 sm:grid-cols-3 lg:grid-cols-5">
+        {SEVERITY_BANDS.map(([sev, range]) => (
+          <li key={sev} className="flex flex-col items-start gap-1"><SeverityBadge severity={sev} /><span className="mono text-[13px] text-muted">{range}</span></li>
+        ))}
+      </ul>
+      <p className="m-0 mt-3 text-[13px] text-muted">With a CVSS vector the severity is set from the score automatically. Without one you choose it yourself.</p>
+    </div>
+  );
+}
 
 export function SeverityBadge({ severity, score }: { severity: string; score?: string | null }) {
   const Icon = SEV_ICON[severity] ?? Info;

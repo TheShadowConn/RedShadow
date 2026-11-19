@@ -59,6 +59,30 @@ NOTE_TRIGGER="$(docker compose -p "$DRILL" exec -T db psql -U redshadow_admin -d
 REPORT_TEMPLATE="$(docker compose -p "$DRILL" exec -T db psql -U redshadow_admin -d redshadow -tAc "SELECT count(*) FROM reports_reporttemplate WHERE is_default")"
 [ "$NOTE_TRIGGER" = "1" ] && [ "$REPORT_TEMPLATE" = "1" ]
 echo "finding-note append-only trigger and the default report template survived the restore"
+# Finding data in the restored copy: seed a finding and a note there (the drill project is thrown away), then prove
+# the append-only trigger still refuses an UPDATE and a DELETE by the application role.
+FORG=00000000-0000-4000-8000-0000000e0001; FENG=00000000-0000-4000-8000-0000000e0002
+FFND=00000000-0000-4000-8000-0000000e0003; FNOTE=00000000-0000-4000-8000-0000000e0004
+docker compose -p "$DRILL" exec -T db psql -U redshadow_admin -d redshadow -v ON_ERROR_STOP=1 >/dev/null <<SQL
+INSERT INTO organisations_organisation (id, created_at, updated_at, name, slug, industry, notes)
+    VALUES ('$FORG', now(), now(), 'Finding drill org', 'finding-drill-org', '', '');
+INSERT INTO engagements_engagement (id, created_at, updated_at, ref, organisation_id, name, type, status, status_before_archive,
+    start_date, end_date, scope, out_of_scope, objectives, methodology, rules_of_engagement, version)
+    VALUES ('$FENG', now(), now(), 'RS-E-2000-9998', '$FORG', 'Finding drill', 'web', 'planned', '',
+    '2000-01-01', '2000-01-02', '', '', '', '', '', 1);
+INSERT INTO findings_finding (id, created_at, updated_at, ref, title, description, technical_details, poc, recommendation,
+    "references", severity, cvss_version, cvss_vector, endpoint, status, discovered_at, dedupe_hash, source, version,
+    engagement_id, reported_by_id, risk_acceptance_reason)
+    VALUES ('$FFND', now(), now(), 'RS-F-DRILL1', 'Drill finding', 'd', '', '', 'r', '[]', 'low', '', '', '', 'draft',
+    '2000-01-01', 'drillhash', 'manual', 1, '$FENG', (SELECT id FROM accounts_user LIMIT 1), '');
+INSERT INTO findings_findingnote (id, created_at, updated_at, kind, body, author_id, finding_id)
+    VALUES ('$FNOTE', now(), now(), 'technical', 'original', (SELECT id FROM accounts_user LIMIT 1), '$FFND');
+SQL
+UPD="$(docker compose -p "$DRILL" exec -T db psql -U redshadow_admin -d redshadow -tA -c "SET ROLE redshadow_app; UPDATE findings_findingnote SET body = 'tampered' WHERE id = '$FNOTE'" 2>&1 || true)"
+DEL="$(docker compose -p "$DRILL" exec -T db psql -U redshadow_admin -d redshadow -tA -c "SET ROLE redshadow_app; DELETE FROM findings_findingnote WHERE id = '$FNOTE'" 2>&1 || true)"
+BODY="$(docker compose -p "$DRILL" exec -T db psql -U redshadow_admin -d redshadow -tAc "SELECT body FROM findings_findingnote WHERE id = '$FNOTE'")"
+grep -q "append-only" <<<"$UPD" && grep -q "append-only" <<<"$DEL" && [ "$BODY" = "original" ]
+echo "restored finding and note: the append-only trigger still refuses UPDATE and DELETE"
 READY="$(curl -fsSk "https://localhost:18443/api/v1/health/ready")"
 [ "$GOT" = "drill-ok" ] && [ "$MEDIA" = "drill-media" ] && grep -q '"status":"ok"' <<<"$READY"
 echo "restored db row, media file and readiness verified"

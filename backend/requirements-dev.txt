@@ -3,3 +3,4 @@ pytest>=8,<9
 pytest-django>=4.8,<5
 ruff>=0.6
 pypdf>=5
+drf-spectacular>=0.28,<1

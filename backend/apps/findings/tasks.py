@@ -1,6 +1,7 @@
 """Hourly SLA and risk-acceptance sweeps. Each finding is handled in its own transaction and both
 tasks are idempotent, so a crashed or repeated run is harmless."""
 
+import datetime
 import logging
 
 from celery import shared_task
@@ -30,6 +31,17 @@ def sla_sweep() -> int:
         engagement__archived_at__isnull=True,
     )  # fmt: skip
     return _sweep(due, services.system_flag_sla_breach)
+
+
+@shared_task(name="findings.due_soon_sweep")
+def due_soon_sweep() -> int:
+    """Notify the people on findings due within the next 3 days (once per finding and due date)."""
+    today = timezone.localdate()
+    soon = Finding.objects.filter(
+        status__in=lifecycle.OVERDUE_STATUSES, due_date__gte=today,
+        due_date__lte=today + datetime.timedelta(days=services.DUE_SOON_DAYS), engagement__archived_at__isnull=True,
+    )  # fmt: skip
+    return _sweep(soon, services.system_notify_due_soon)
 
 
 @shared_task(name="findings.expire_risk_acceptance")

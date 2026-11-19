@@ -278,3 +278,26 @@ class TestRoles:
         r = admin_client.get("/api/v1/permissions")
         assert r.status_code == 200 and any(p["code"] == "findings.view" for p in r.json())
         assert admin_client.post("/api/v1/permissions", {}, format="json").status_code == 405
+
+
+@pytest.mark.django_db
+class TestAccountHygiene:
+    def test_sign_out_everywhere_ends_all_sessions(self, admin_client, admin):
+        from tests.conftest import signed_in
+
+        other = signed_in(admin)
+        assert other.get("/api/v1/auth/me").status_code == 200
+        assert admin_client.post("/api/v1/auth/sessions/revoke", {}, format="json").status_code == 204
+        assert admin_client.get("/api/v1/auth/me").status_code == 401
+        assert other.get("/api/v1/auth/me").status_code == 401
+
+    def test_me_reports_idle_limit_and_mfa_filter(self, admin_client, admin):
+        from tests.conftest import make_user
+
+        assert admin_client.get("/api/v1/auth/me").json()["session_idle_seconds"] > 0
+        make_user("nomfa@example.com", "pentester")
+        rows = admin_client.get("/api/v1/users?mfa=missing").json()["results"]
+        assert "nomfa@example.com" in {r["email"] for r in rows}
+        assert all(not r["mfa_enabled"] for r in rows)
+        enabled = admin_client.get("/api/v1/users?mfa=enabled").json()["results"]
+        assert all(r["mfa_enabled"] for r in enabled)

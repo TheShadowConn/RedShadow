@@ -11,6 +11,7 @@ from apps.accounts.models import User
 from apps.audit import service as audit
 from apps.core.changes import apply_changes
 from apps.core.errors import Conflict
+from apps.notifications import services as inbox
 from apps.organisations.models import Asset
 from apps.rbac.authz import engagement_permissions, has_engagement_perm, role_permission_codes, user_permissions
 from apps.rbac.guards import deny
@@ -110,6 +111,8 @@ def _ensure_member(request, actor, eng: Engagement, user: User) -> None:
         audit.record("engagement.member_added", request=request, entity=eng, engagement=eng,
                      metadata={"user": user.email, "via": "lead"})  # fmt: skip
         _bump_sessions(user.pk)
+        inbox.notify([user], "engagement.added", f"You were added to {eng.ref}", body=eng.name,
+                     link=inbox.eng_link(eng), actor=actor, engagement=eng)
 
 
 def _check_lead(user) -> None:
@@ -138,6 +141,41 @@ def create_engagement(request, actor, data: dict) -> Engagement:
         )  # fmt: skip
         if lead is not None:
             _ensure_member(request, actor, eng, lead)
+            inbox.notify([lead], "engagement.lead", f"You are the lead of {eng.ref}", body=eng.name,
+                         link=inbox.eng_link(eng), actor=actor, engagement=eng)
+    return eng
+
+
+def clone_engagement(request, actor, src: Engagement, data: dict) -> Engagement:
+    """New Planned engagement with the same organisation, type, text, team and live in-scope assets.
+    Findings, notes, documents and costs are not copied."""
+    src = Engagement.objects.select_related("organisation").get(pk=src.pk)
+    fields = {f: getattr(src, f) for f in DETAIL_FIELDS if f not in ("name", "start_date", "end_date")}
+    with transaction.atomic():
+        eng = create_engagement(
+            request, actor,
+            {**fields, "organisation": src.organisation, "name": data["name"], "start_date": data["start_date"],
+             "end_date": data["end_date"], "lead": data["lead"]},
+        )  # fmt: skip
+        added = []
+        for m in EngagementMembership.objects.filter(engagement=src, user__is_active=True).select_related("user"):
+            _, created = EngagementMembership.objects.get_or_create(
+                engagement=eng, user=m.user,
+                defaults={"role_override": m.role_override, "finding_scope": m.finding_scope, "added_by": actor},
+            )
+            if created:
+                added.append(m.user)
+                _bump_sessions(m.user_id)
+        links = EngagementAsset.objects.filter(
+            engagement=src, asset__archived_at__isnull=True, asset__onboarding_status="onboarded"
+        ).select_related("asset")
+        EngagementAsset.objects.bulk_create(
+            [EngagementAsset(engagement=eng, asset=ln.asset, in_scope=ln.in_scope, notes=ln.notes) for ln in links]
+        )
+        audit.record("engagement.cloned", request=request, entity=eng, engagement=eng,
+                     metadata={"source": src.ref, "members": len(added), "assets": len(links)})  # fmt: skip
+        inbox.notify(added, "engagement.added", f"You were added to {eng.ref}", body=eng.name,
+                     link=inbox.eng_link(eng), actor=actor, engagement=eng)
     return eng
 
 
@@ -158,6 +196,9 @@ def update_engagement(request, actor, eng: Engagement, data: dict, version: int)
             eng.version += 1
             eng.save()
             audit.record("engagement.updated", request=request, entity=eng, engagement=eng, changes=changes)
+            inbox.notify(inbox.engagement_people(eng), "engagement.updated", f"{eng.ref} was updated",
+                         body="Changed: " + ", ".join(sorted(changes)), link=inbox.eng_link(eng), actor=actor,
+                         engagement=eng)
     return eng
 
 
@@ -175,6 +216,9 @@ def change_status(request, actor, eng: Engagement, to_status: str, version: int)
         eng.save()
         audit.record("engagement.status_changed", request=request, entity=eng, engagement=eng,
                      changes={"status": [old, to_status]})  # fmt: skip
+        now_status = to_status.replace("_", " ")
+        inbox.notify(inbox.engagement_people(eng), "engagement.status", f"{eng.ref} is now {now_status}",
+                     body=eng.name, link=inbox.eng_link(eng), actor=actor, engagement=eng)
     return eng
 
 
@@ -190,6 +234,8 @@ def archive_engagement(request, actor, eng: Engagement, version: int) -> Engagem
         eng.version += 1
         eng.save()
         audit.record("engagement.archived", request=request, entity=eng, engagement=eng)
+        inbox.notify(inbox.engagement_people(eng), "engagement.archived", f"{eng.ref} was archived", body=eng.name,
+                     link=inbox.eng_link(eng), actor=actor, engagement=eng)
     return eng
 
 
@@ -207,6 +253,102 @@ def unarchive_engagement(request, actor, eng: Engagement, version: int) -> Engag
         eng.save()
         audit.record("engagement.unarchived", request=request, entity=eng, engagement=eng)
     return eng
+
+
+@refusals_audited
+def change_lead(request, actor, eng: Engagement, lead: User, version: int) -> Engagement:
+    """Super Admin (``engagements.update``) swaps the lead at any time while the engagement is not archived."""
+    with transaction.atomic():
+        eng = _lock(eng)
+        if "engagements.update" not in user_permissions(actor):
+            _refuse("engagement.lead_denied", "You do not have permission to change the lead.", eng)
+        _assert_writable(eng)
+        _check_version(eng, version)
+        _check_lead(lead)
+        if eng.lead_id == lead.pk:
+            raise Conflict("This user is already the lead.")
+        old = eng.lead
+        eng.lead = lead
+        eng.version += 1
+        eng.save()
+        _ensure_member(request, actor, eng, lead)
+        audit.record("engagement.lead_changed", request=request, entity=eng, engagement=eng,
+                     changes={"lead": [old.email if old else None, lead.email]})  # fmt: skip
+        inbox.notify([lead], "engagement.lead", f"You are now the lead of {eng.ref}", body=eng.name,
+                     link=inbox.eng_link(eng), actor=actor, engagement=eng)
+        inbox.notify([old], "engagement.lead_removed", f"You are no longer the lead of {eng.ref}", body=eng.name,
+                     link=inbox.eng_link(eng), actor=actor, engagement=eng)
+    return eng
+
+
+@refusals_audited
+def delete_engagement(request, actor, eng: Engagement, version: int, confirm_ref: str, reason: str = "") -> None:
+    """Soft delete (separate from archive). Findings, evidence and history stay in the database;
+    the engagement disappears from every scoped read. Always audited, the audit trail is never touched."""
+    from apps.findings.models import Finding
+
+    with transaction.atomic():
+        eng = _lock(eng)
+        if "engagements.delete" not in user_permissions(actor):
+            _refuse("engagement.delete_denied", "You do not have permission to delete engagements.", eng)
+        _check_version(eng, version)
+        if confirm_ref.strip() != eng.ref:
+            raise ValidationError({"confirm_ref": ["Type the engagement reference exactly to confirm."]})
+        findings = Finding.all_objects.filter(engagement=eng).count()
+        eng.deleted_at = timezone.now()
+        eng.deleted_by = actor
+        eng.version += 1
+        eng.save(update_fields=["deleted_at", "deleted_by", "version", "updated_at"])
+        audit.record(
+            "engagement.deleted", request=request, entity=eng, engagement=eng,
+            metadata={"ref": eng.ref, "name": eng.name, "organisation": eng.organisation.name,
+                      "status": eng.status, "findings": findings, "reason": reason.strip() or None},
+        )  # fmt: skip
+        inbox.notify(inbox.engagement_people(eng), "engagement.deleted", f"{eng.ref} was deleted", body=eng.name,
+                     actor=actor, engagement=eng)
+        for user_id in EngagementMembership.objects.filter(engagement=eng).values_list("user_id", flat=True):
+            _bump_sessions(user_id)
+
+
+@refusals_audited
+def restore_engagement(request, actor, eng: Engagement) -> Engagement:
+    """Undo a delete. Findings, team and history return with it."""
+    with transaction.atomic():
+        eng = Engagement.all_objects.select_for_update(of=("self",)).select_related("organisation").get(pk=eng.pk)
+        if "engagements.delete" not in user_permissions(actor):
+            _refuse("engagement.restore_denied", "You do not have permission to restore engagements.", eng)
+        if eng.deleted_at is None:
+            raise Conflict("This engagement is not deleted.")
+        if eng.organisation.is_archived:
+            raise Conflict("The organisation is archived. Unarchive it first.")
+        eng.deleted_at = None
+        eng.deleted_by = None
+        eng.version += 1
+        eng.save(update_fields=["deleted_at", "deleted_by", "version", "updated_at"])
+        audit.record("engagement.restored", request=request, entity=eng, engagement=eng,
+                     metadata={"ref": eng.ref, "name": eng.name})  # fmt: skip
+        inbox.notify(inbox.engagement_people(eng), "engagement.restored", f"{eng.ref} was restored", body=eng.name,
+                     link=inbox.eng_link(eng), actor=actor, engagement=eng)
+        for user_id in EngagementMembership.objects.filter(engagement=eng).values_list("user_id", flat=True):
+            _bump_sessions(user_id)
+    return eng
+
+
+@refusals_audited
+def join_engagement(request, actor, eng: Engagement) -> EngagementMembership:
+    """The signed-in user adds themself to the team (own role, no override). Needs manage_members here."""
+    with transaction.atomic():
+        eng = _lock(eng)
+        _require_engagement_perm(request, actor, eng, "engagements.manage_members", "engagement.member_denied")
+        _assert_writable(eng)
+        try:
+            with transaction.atomic():
+                member = EngagementMembership.objects.create(engagement=eng, user=actor, added_by=actor)
+        except IntegrityError:
+            raise Conflict("You are already a member of this engagement.") from None
+        audit.record("engagement.member_added", request=request, entity=eng, engagement=eng,
+                     metadata={"user": actor.email, "via": "self"})  # fmt: skip
+    return member
 
 
 # members
@@ -250,6 +392,8 @@ def add_member(request, actor, eng: Engagement, user: User, role_override, findi
                       "finding_scope": finding_scope or None},
         )  # fmt: skip
         _bump_sessions(user.pk)
+        inbox.notify([user], "engagement.added", f"You were added to {eng.ref}", body=eng.name,
+                     link=inbox.eng_link(eng), actor=actor, engagement=eng)
     return member
 
 
@@ -299,6 +443,8 @@ def remove_member(request, actor, eng: Engagement, member: EngagementMembership)
         member.delete()
         audit.record("engagement.member_removed", request=request, entity=eng, engagement=eng, metadata={"user": email})
         _bump_sessions(user_id)
+        inbox.notify([member.user], "engagement.removed", f"You were removed from {eng.ref}", body=eng.name,
+                     actor=actor, engagement=eng)
 
 
 # scope assets

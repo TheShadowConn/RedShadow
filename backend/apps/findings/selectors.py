@@ -51,7 +51,7 @@ def scope_findings(user):
         if "findings.view" not in perms:
             return Finding.objects.none()
         return Finding.objects.filter(
-            _clause(user, None, "findings.view_draft" in perms, role.finding_scope)
+            _clause(user, None, "findings.view_draft" in perms, role.finding_scope), engagement__deleted_at__isnull=True
         )
     groups: dict[tuple[bool, str], list] = {}
     cache: dict = {}
@@ -69,7 +69,7 @@ def scope_findings(user):
     q = Q()
     for (can_draft, mode), ids in groups.items():
         q |= _clause(user, ids, can_draft, mode)
-    return Finding.objects.filter(q)
+    return Finding.objects.filter(q, engagement__deleted_at__isnull=True)
 
 
 def with_severity_rank(qs):

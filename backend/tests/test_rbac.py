@@ -259,7 +259,7 @@ def test_rbac_matrix(role_key, method, path, body, expected, admin):
 # (MATRIX above or the admin/auth suites). A new route fails this test until it is added.
 COVERED_ROUTES = {
     "about",  # tests/test_about.py
-    "auth-csrf", "auth-login", "auth-logout", "auth-me", "auth-password-change",
+    "auth-csrf", "auth-login", "auth-logout", "auth-me", "auth-password-change", "auth-sessions-revoke",
     "auth-mfa-setup", "auth-mfa-confirm", "auth-mfa-verify",
     "user-list", "user-detail", "user-deactivate", "user-reactivate", "user-reset-password",
     "user-reset-mfa", "user-revoke-sessions", "role-list", "role-detail", "permission-list",
@@ -272,6 +272,10 @@ COVERED_ROUTES = {
     "engagement-assets", "engagement-update-asset-link", "engagement-notes", "engagement-history",
     # Engagement costs: covered by tests/test_costs.py
     "engagement-costs", "engagement-update-cost",
+    # Section A (lead, delete, join): covered by tests/test_engagement_lifecycle.py
+    "engagement-change-lead", "engagement-delete-engagement", "engagement-join", "engagement-restore", "engagement-clone",
+    # Section E: own notifications only, covered by tests/test_notifications.py
+    "notification-list", "notification-unread-count", "notification-read", "notification-read-all", "notification-settings",
     # Phase 3B: covered by tests/test_files.py
     "engagement-documents", "organisation-logo", "attachment-list", "attachment-detail", "attachment-download",
     # Phase 4A: covered by tests/test_findings.py and the MATRIX rows above

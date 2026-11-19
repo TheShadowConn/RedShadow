@@ -28,6 +28,28 @@ function Tile({ to, n, title, hint, tone }: { to: string; n: number | string; ti
   );
 }
 
+/** Total engagement cost. Currencies are never converted into each other, so each gets its own line. */
+function CostTile({ costs }: { costs: NonNullable<Dashboard["costs"]> }) {
+  const [first, ...rest] = costs.totals;
+  return (
+    <Link to="/engagements" className="card card-pad block min-w-0 transition-colors hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+      <span className="block text-[14px] text-muted">Total engagement cost</span>
+      {first ? (
+        <>
+          <span className="mt-1 block break-words text-[26px] leading-tight font-semibold tabular-nums">{money(first.total, first.currency)}</span>
+          {rest.map((t) => <span key={t.currency} className="mt-1 block break-words text-[15px] font-medium tabular-nums">{money(t.total, t.currency)}</span>)}
+          <span className="mt-2 block text-[14px] text-muted">{costs.totals.reduce((n, t) => n + t.lines, 0)} cost lines</span>
+        </>
+      ) : (
+        <>
+          <span className="mt-1 block text-[34px] leading-none font-semibold tabular-nums">0</span>
+          <span className="mt-2 block text-[14px] text-muted">No cost recorded yet</span>
+        </>
+      )}
+    </Link>
+  );
+}
+
 function Panel({ title, children, wide, action }: { title: string; children: ReactNode; wide?: boolean; action?: ReactNode }) {
   return (
     <section className={`card card-pad ${wide ? "lg:col-span-2" : ""}`}>
@@ -92,13 +114,14 @@ function Body({ d }: { d: Dashboard }) {
   const empty = f.total === 0 && d.engagements.total === 0;
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+      <div className={`grid grid-cols-2 gap-4 ${kind === "admin" && d.costs ? "lg:grid-cols-3 xl:grid-cols-6" : "lg:grid-cols-5"}`}>
         {kind === "admin" && <>
           <Tile to={`/findings?status=${ACTIVE}`} n={f.open} title="Open findings" hint={`${f.total} in total`} />
           <Tile to="/remediation" n={f.overdue} title="Overdue" hint="Past the fix date" tone="fail" />
           <Tile to="/remediation" n={f.due_soon} title="Due in 7 days" tone="warn" />
           <Tile to="/verification" n={f.pending_verification} title="To verify" hint="Waiting for a retest" />
           <Tile to="/engagements" n={d.engagements.by_status.in_progress ?? 0} title="Engagements running" hint={`${d.engagements.total} active`} />
+          {d.costs && <CostTile costs={d.costs} />}
         </>}
         {kind === "pentester" && <>
           <Tile to={`/findings?assigned=me&status=${ACTIVE}`} n={d.mine?.open ?? 0} title="My open findings" hint={`${f.open} across my engagements`} />
