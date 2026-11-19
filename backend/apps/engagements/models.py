@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import Q
 
-from apps.core.models import BaseModel
+from apps.core.models import BaseModel, SoftDeleteModel
 
 OPEN_STATUSES = ("planned", "scheduled", "in_progress", "reporting")
 
@@ -13,7 +13,9 @@ class EngagementCounter(models.Model):
     last = models.PositiveIntegerField(default=0)
 
 
-class Engagement(BaseModel):
+class Engagement(SoftDeleteModel, BaseModel):
+    """``objects`` hides soft-deleted engagements; ``all_objects`` shows them (audit and DBA only)."""
+
     TYPES = [
         ("web", "Web"), ("api", "API"), ("mobile", "Mobile"),
         ("internal_network", "Internal network"), ("external_network", "External network"),
@@ -43,6 +45,7 @@ class Engagement(BaseModel):
     version = models.PositiveIntegerField(default=1)
     archived_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.PROTECT, related_name="+")
+    deleted_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     assets = models.ManyToManyField("organisations.Asset", through="EngagementAsset", related_name="engagements")
 
     class Meta:
@@ -146,5 +149,6 @@ class EngagementCost(BaseModel):
 
     def audit_label(self) -> str:
         return f"{self.amount} {self.currency}"
+
 
 CATEGORY_CODES = [code for code, _ in EngagementCost.CATEGORIES]

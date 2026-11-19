@@ -41,7 +41,7 @@ class EngagementListSerializer(serializers.ModelSerializer):
         model = Engagement
         fields = [
             "id", "ref", "organisation", "name", "type", "status", "start_date", "end_date",
-            "lead", "overdue", "version", "archived_at", "created_at", "updated_at",
+            "lead", "overdue", "version", "archived_at", "deleted_at", "created_at", "updated_at",
         ]  # fmt: skip
         read_only_fields = fields
 
@@ -73,17 +73,16 @@ class _EngagementDetailFields(StrictSerializer):
     objectives = serializers.CharField(required=False, allow_blank=True, max_length=50000)
     methodology = serializers.CharField(required=False, allow_blank=True, max_length=50000)
     rules_of_engagement = serializers.CharField(required=False, allow_blank=True, max_length=50000)
-    lead = ScopedPrimaryKeyField(
-        scope=lambda user: User.objects.filter(is_active=True), model=User, required=False, allow_null=True
-    )
 
 
 class EngagementCreateSerializer(_EngagementDetailFields):
     organisation = ScopedPrimaryKeyField(scope=scope_organisations, model=Organisation)
+    lead = ScopedPrimaryKeyField(scope=lambda user: User.objects.filter(is_active=True), model=User)
 
 
 class EngagementUpdateSerializer(_EngagementDetailFields):
     version = serializers.IntegerField(min_value=1)
+    lead = ScopedPrimaryKeyField(scope=lambda user: User.objects.filter(is_active=True), model=User, required=False)
 
     def validate(self, attrs):
         if "version" not in attrs:
@@ -93,6 +92,22 @@ class EngagementUpdateSerializer(_EngagementDetailFields):
 
 class VersionSerializer(StrictSerializer):
     version = serializers.IntegerField(min_value=1)
+
+
+class CloneSerializer(StrictSerializer):
+    name = serializers.CharField(max_length=200)
+    start_date = serializers.DateField()
+    end_date = serializers.DateField()
+    lead = ScopedPrimaryKeyField(scope=lambda user: User.objects.filter(is_active=True), model=User)
+
+
+class LeadSerializer(VersionSerializer):
+    lead = ScopedPrimaryKeyField(scope=lambda user: User.objects.filter(is_active=True), model=User)
+
+
+class DeleteSerializer(VersionSerializer):
+    confirm_ref = serializers.CharField(max_length=20)
+    reason = serializers.CharField(max_length=500, required=False, allow_blank=True)
 
 
 class StatusSerializer(VersionSerializer):

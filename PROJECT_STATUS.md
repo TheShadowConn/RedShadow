@@ -18,6 +18,16 @@ Updated: 2026-11-13. Development is local only (no Git repository, by user decis
 | 11 | Mobile and design refinement | Done, awaiting your review |
 | 12 | Security testing and hardening | Done (ZAP scan not run), awaiting your review |
 
+## Release 1.3.0: engagement lifecycle, notifications, account hygiene (2026-11-19)
+
+- Engagement delete (Super Admin, soft, typed confirmation, audited), restore, clone; lead required and changeable; Add myself on the Team tab.
+- External Vendor isolation re-audited across every route (no leak found); sweep tests added.
+- Notifications: bell, own-rows API, due-soon and overdue sweeps, mute groups, opt-in email, daily prune.
+- Sign out everywhere, idle warning, users-without-MFA filter.
+- Severity and CVSS bands shown in the UI and the manual; simpler five-column asset template; import screen spacing and wrapping fixed; Administration dashboard shows total engagement cost.
+- Manual chapter 15 states the full workflow. OpenAPI schema generated with `make schema`. Backup drill extended (finding and note append-only check; not yet run end to end).
+- Not done: Playwright smoke tests, typed frontend client, full 390 px and light-theme pass. Details: ADR-0022 and the release notes.
+
 ## Assets, identifiers, import management and user deletion (2026-11-18)
 
 - Assets page, many identifiers per asset (normalised, one owner per organisation), merge, delete, bulk archive, onboarding.

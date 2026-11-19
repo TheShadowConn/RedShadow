@@ -23,6 +23,7 @@ Select a user to open the detail panel.
 - **Deactivate** and **Reactivate**: accounts are never deleted, so history stays attributed to a name.
 - **Reset password**: shows a new temporary password once.
 - **Reset two-step verification**: use when a person lost their device and recovery codes.
+- Tick **Active users without two-step verification** above the list to find accounts that have not set it up.
 - **Revoke sessions**: signs the person out of every device.
 
 > **Note:** Safety rules protect the platform. Nobody can change their own role or deactivate themselves. A role can only be granted by someone who holds every permission in it. The last active Super Admin cannot be removed.
@@ -63,6 +64,16 @@ Open **Organisations** and select **New organisation**. Add the name and industr
 2. Choose the **organisation**, the **type** (web, API, mobile, internal network, external network, cloud, red team, social engineering, code review, wireless or other), the **start** and **end dates** and the **lead**.
 3. Fill in **scope**, **out of scope**, **objectives**, **methodology** and **rules of engagement**.
 4. Select **Create**. The reference, for example `RS-E-2026-0001`, is assigned for you.
+
+The **lead is required**. The lead is added to the team and notified.
+
+### Change the lead, archive or delete
+
+- **Change lead** (Super Admin): choose another active user at any time while the engagement is not archived. The new lead joins the team and both people are notified. The previous lead stays on the team until you remove them.
+- **Add myself** on the Team tab adds the signed-in user to the team.
+- **Archive** makes a completed or cancelled engagement read-only. **Unarchive** undoes it.
+- **Delete** (Super Admin only) is separate from archive. The engagement and its findings disappear from every screen for all users. You type the engagement reference to confirm and may add a reason. The audit log records the deletion. Use Archive when in doubt. To undo a delete open **Engagements**, choose **Show: Deleted** and select **Restore**: the engagement returns with its findings, team and history.
+- **Clone** (anyone who can create engagements) opens a dialog for a name, dates and a lead. The new Planned engagement copies the organisation, type, scope text, team and in-scope assets. Findings, notes, documents and costs are not copied.
 
 ### Run an engagement
 

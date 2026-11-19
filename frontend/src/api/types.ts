@@ -7,6 +7,7 @@ export type Me = {
   role: { id: string; name: string; all_engagements: boolean; finding_scope: string; mfa_required: boolean };
   mfa_enabled: boolean;
   must_change_password: boolean;
+  session_idle_seconds?: number;
   restriction: Restriction;
   /** UX hints only. The backend enforces every permission. */
   permissions: string[];
@@ -175,6 +176,7 @@ export type EngagementRow = {
   overdue: boolean;
   version: number;
   archived_at: string | null;
+  deleted_at?: string | null;
 };
 
 export type Engagement = EngagementRow & {
@@ -225,6 +227,11 @@ export type HistoryEvent = {
   changes: Record<string, unknown>;
   outcome: string;
 };
+
+/** CVSS base score bands. Same rule as backend `apps/findings/cvss.py` (`BANDS`). */
+export const SEVERITY_BANDS = [
+  ["critical", "9.0 to 10.0"], ["high", "7.0 to 8.9"], ["medium", "4.0 to 6.9"], ["low", "0.1 to 3.9"], ["info", "0.0"],
+] as const;
 
 export const SEVERITIES = [["critical", "Critical"], ["high", "High"], ["medium", "Medium"], ["low", "Low"], ["info", "Info"]] as const;
 
@@ -601,3 +608,14 @@ export type CostLine = {
 };
 export type CostTotal = { currency: string; total: string; lines: number };
 export type EngagementCosts = { totals: CostTotal[]; items: CostLine[] };
+
+export type AppNotification = {
+  id: string;
+  kind: string;
+  title: string;
+  body: string;
+  link: string;
+  actor: string | null;
+  read: boolean;
+  created_at: string;
+};

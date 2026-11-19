@@ -14,6 +14,7 @@ urlpatterns = [
     path("api/v1/", include("apps.imports.urls")),
     path("api/v1/", include("apps.reports.urls")),
     path("api/v1/", include("apps.dashboards.urls")),
+    path("api/v1/", include("apps.notifications.urls")),
 ]
 
 handler404 = "apps.core.errors.not_found"

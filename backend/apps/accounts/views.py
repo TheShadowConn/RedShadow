@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 
 from apps.audit import service as audit
 
-from . import services
+from . import services, user_services
 from .permissions import IsAuthenticatedSession
 from .serializers import LoginSerializer, MfaCodeSerializer, PasswordChangeSerializer, me_payload
 from .session import (
@@ -118,3 +118,14 @@ class MfaVerifyView(APIView):
         user = request.user
         state = SessionState(mfa_verified=True)
         return Response(me_payload(user, state))
+
+
+class SessionsRevokeView(APIView):
+    """Sign out everywhere: every session of the caller ends, this one included."""
+
+    permission_classes = [IsAuthenticatedSession]
+
+    def post(self, request):
+        user_services.revoke_sessions(request, request.user, request.user)
+        services.end_session(request)
+        return Response(status=204)

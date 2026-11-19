@@ -1,13 +1,13 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Pencil } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { ArrowLeft, Copy, Pencil, Trash2, UserCog } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { useAuth } from "../../api/auth";
 import { ApiError, api } from "../../api/client";
-import { ENGAGEMENT_TYPES, TRANSITIONS, type Engagement } from "../../api/types";
+import { ENGAGEMENT_TYPES, TRANSITIONS, type Engagement, type Page, type User } from "../../api/types";
 import {
-  Alert, Button, ConfirmDialog, EngagementStatus, ErrorNote, NotFoundOrError, formatDay, label, LoadingRows, Modal, TabPanel, Tabs,
+  Alert, Button, ConfirmDialog, EngagementStatus, ErrorNote, Field, fieldError, NotFoundOrError, formatDay, label, LoadingRows, Modal, Select, TabPanel, Tabs, Textarea, TextInput,
 } from "../../design/ui";
 import { FindingsList } from "../findings/FindingsList";
 import { EngagementFields } from "./EngagementsPage";
@@ -31,6 +31,9 @@ export function EngagementPage() {
   const [editing, setEditing] = useState(false);
   const [moving, setMoving] = useState<string | null>(null);
   const [archiving, setArchiving] = useState(false);
+  const [leadOpen, setLeadOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [cloning, setCloning] = useState(false);
 
   const q = useQuery({ queryKey: ["engagement", id], queryFn: () => api<Engagement>("GET", `/engagements/${id}`) });
   const refresh = () => { void qc.invalidateQueries({ queryKey: ["engagement", id] }); void qc.invalidateQueries({ queryKey: ["engagements"] }); void qc.invalidateQueries({ queryKey: ["history", id] }); };
@@ -82,7 +85,10 @@ export function EngagementPage() {
           {can("calendar.view") && !archived && <Link to={`/calendar?engagement=${eng.id}&date=${eng.start_date}`} className="btn btn-secondary">Open in calendar</Link>}
           {nextStatuses.map((s) => <Button key={s} variant={s === "cancelled" ? "danger" : "secondary"} onClick={() => { move.reset(); setMoving(s); }}>{STATUS_VERB[s]}</Button>)}
           {can("engagements.update") && !archived && <Button onClick={() => setEditing(true)}><Pencil size={18} aria-hidden /> Edit</Button>}
+          {can("engagements.update") && !archived && <Button onClick={() => setLeadOpen(true)}><UserCog size={18} aria-hidden /> Change lead</Button>}
+          {can("engagements.create") && <Button onClick={() => setCloning(true)}><Copy size={18} aria-hidden /> Clone</Button>}
           {can("engagements.archive") && <Button onClick={() => { archive.reset(); setArchiving(true); }}>{archived ? "Unarchive" : "Archive"}</Button>}
+          {can("engagements.delete") && <Button variant="danger" onClick={() => setDeleting(true)}><Trash2 size={18} aria-hidden /> Delete</Button>}
         </div>
       </header>
       {archived && <div className="mb-6"><Alert tone="warn">This engagement is archived and read-only. Unarchive it to make changes.</Alert></div>}
@@ -104,6 +110,9 @@ export function EngagementPage() {
         {active === "history" && <HistoryTab eng={eng} />}
       </TabPanel>
 
+      {leadOpen && <ChangeLead eng={eng} onClose={() => setLeadOpen(false)} onSaved={refresh} />}
+      {cloning && <CloneEngagement eng={eng} onClose={() => setCloning(false)} />}
+      {deleting && <DeleteEngagement eng={eng} onClose={() => setDeleting(false)} />}
       {editing && <EditEngagement key={eng.version} eng={eng} onClose={() => setEditing(false)} onSaved={refresh} />}
       <ConfirmDialog
         open={!!moving}
@@ -157,6 +166,89 @@ function Overview({ eng }: { eng: Engagement }) {
 
 function Fact({ k, v }: { k: string; v: string }) {
   return <div><dt className="label">{k}</dt><dd className="m-0 mt-0.5">{v}</dd></div>;
+}
+
+function ChangeLead({ eng, onClose, onSaved }: { eng: Engagement; onClose: () => void; onSaved: () => void }) {
+  const { can } = useAuth();
+  const qc = useQueryClient();
+  const [lead, setLead] = useState("");
+  const users = useQuery({ queryKey: ["users", ""], queryFn: () => api<Page<User>>("GET", "/users?page_size=100&search="), enabled: can("users.view") });
+  const save = useMutation({
+    mutationFn: () => api<Engagement>("POST", `/engagements/${eng.id}/lead`, { lead, version: eng.version }),
+    onSuccess: () => { onSaved(); void qc.invalidateQueries({ queryKey: ["eng-members", eng.id] }); onClose(); },
+  });
+  const candidates = users.data?.results.filter((u) => u.is_active && u.id !== eng.lead?.id) ?? [];
+  const general = save.error && !Object.keys((save.error as { fields?: object }).fields ?? {}).length ? save.error : null;
+  return (
+    <Modal open onClose={onClose} title="Change lead">
+      <form className="space-y-5 p-6" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate(); }}>
+        <ErrorNote error={general} />
+        <p className="m-0 text-muted">Current lead: <span className="text-ink">{eng.lead?.display_name ?? "Unassigned"}</span>. The new lead is added to the team. The previous lead stays on the team until removed.</p>
+        <Field label="New lead" error={fieldError(save.error, "lead")}>
+          {(p) => <Select {...p} required value={lead} onChange={(e) => setLead(e.target.value)}><option value="" disabled>Choose a user</option>{candidates.map((u) => <option key={u.id} value={u.id}>{u.display_name} ({u.role.name})</option>)}</Select>}
+        </Field>
+        <div className="flex flex-wrap justify-end gap-3"><Button onClick={onClose}>Cancel</Button><Button type="submit" variant="primary" loading={save.isPending} disabled={!lead}>Change lead</Button></div>
+      </form>
+    </Modal>
+  );
+}
+
+function CloneEngagement({ eng, onClose }: { eng: Engagement; onClose: () => void }) {
+  const { can } = useAuth();
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const today = new Date().toISOString().slice(0, 10);
+  const [f, setF] = useState({ name: `${eng.name} (copy)`, start_date: today, end_date: today, lead: eng.lead?.id ?? "" });
+  const users = useQuery({ queryKey: ["users", ""], queryFn: () => api<Page<User>>("GET", "/users?page_size=100&search="), enabled: can("users.view") });
+  const save = useMutation({
+    mutationFn: () => api<Engagement>("POST", `/engagements/${eng.id}/clone`, f),
+    onSuccess: (e) => { void qc.invalidateQueries({ queryKey: ["engagements"] }); navigate(`/engagements/${e.id}`); },
+  });
+  const set = (k: string) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
+  const general = save.error && !Object.keys((save.error as { fields?: object }).fields ?? {}).length ? save.error : null;
+  return (
+    <Modal open onClose={onClose} title="Clone engagement">
+      <form className="space-y-5 p-6" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate(); }}>
+        <ErrorNote error={general} />
+        <p className="m-0 text-muted">Creates a new Planned engagement with the same organisation, type, scope text, team and in-scope assets. Findings, notes, documents and costs are not copied.</p>
+        <Field label="Name" error={fieldError(save.error, "name")}>{(p) => <TextInput {...p} required maxLength={200} value={f.name} onChange={set("name")} />}</Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Start date" error={fieldError(save.error, "start_date")}>{(p) => <TextInput {...p} type="date" required value={f.start_date} onChange={set("start_date")} />}</Field>
+          <Field label="End date" error={fieldError(save.error, "end_date")}>{(p) => <TextInput {...p} type="date" required value={f.end_date} onChange={set("end_date")} />}</Field>
+        </div>
+        <Field label="Lead" hint="Required." error={fieldError(save.error, "lead")}>
+          {(p) => <Select {...p} required value={f.lead} onChange={set("lead")}><option value="" disabled>Choose a lead</option>{users.data?.results.filter((u) => u.is_active).map((u) => <option key={u.id} value={u.id}>{u.display_name}</option>)}</Select>}
+        </Field>
+        <div className="flex flex-wrap justify-end gap-3"><Button onClick={onClose}>Cancel</Button><Button type="submit" variant="primary" loading={save.isPending} disabled={!f.name.trim() || !f.lead}>Clone engagement</Button></div>
+      </form>
+    </Modal>
+  );
+}
+
+function DeleteEngagement({ eng, onClose }: { eng: Engagement; onClose: () => void }) {
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const [confirm, setConfirm] = useState("");
+  const [reason, setReason] = useState("");
+  const del = useMutation({
+    mutationFn: () => api("POST", `/engagements/${eng.id}/delete`, { version: eng.version, confirm_ref: confirm, reason }),
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ["engagements"] }); navigate("/engagements"); },
+  });
+  return (
+    <Modal open onClose={onClose} title="Delete engagement">
+      <form className="space-y-5 p-6" onSubmit={(e: FormEvent) => { e.preventDefault(); del.mutate(); }}>
+        <Alert tone="error">Deleting removes this engagement, its findings and evidence from every screen for all users. Use Archive to keep it read-only instead. The deletion is recorded in the audit log and cannot be undone from the app.</Alert>
+        <ErrorNote error={del.error} />
+        <Field label={`Type ${eng.ref} to confirm`} error={fieldError(del.error, "confirm_ref")}>
+          {(p) => <TextInput {...p} autoComplete="off" value={confirm} onChange={(e) => setConfirm(e.target.value)} />}
+        </Field>
+        <Field label="Reason (optional)" hint="Saved in the audit entry." error={fieldError(del.error, "reason")}>
+          {(p) => <Textarea {...p} rows={2} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />}
+        </Field>
+        <div className="flex flex-wrap justify-end gap-3"><Button onClick={onClose}>Cancel</Button><Button type="submit" variant="danger" loading={del.isPending} disabled={confirm.trim() !== eng.ref}>Delete engagement</Button></div>
+      </form>
+    </Modal>
+  );
 }
 
 function EditEngagement({ eng, onClose, onSaved }: { eng: Engagement; onClose: () => void; onSaved: () => void }) {

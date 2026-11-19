@@ -31,6 +31,11 @@ class UserViewSet(ScopedModelViewSet):
         term = self.request.query_params.get("search", "").strip()
         if term:
             qs = qs.filter(email__icontains=term) | qs.filter(display_name__icontains=term)
+        mfa = self.request.query_params.get("mfa")
+        if mfa == "missing":
+            qs = qs.filter(is_active=True, mfa_enabled=False)
+        elif mfa == "enabled":
+            qs = qs.filter(mfa_enabled=True)
         return qs
 
     def create(self, request, *args, **kwargs):

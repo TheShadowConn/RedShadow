@@ -69,6 +69,10 @@ The comparison is general. Check any tool against your own needs.
 
 Assets can have several identifiers (IP address, hostname, domain, URL ...). Each identifier belongs to one asset per organisation, so the same system is never created twice. Import assets from CSV without onboarding them first: rows are matched by identifier, new assets arrive not onboarded, and a Super Admin onboards them later. Failed or partly failed imports can be corrected and re-uploaded into the same import, retried, or deleted, and deactivated users can be deleted with safeguards.
 
+## Engagements, notifications and accounts (1.3.0)
+
+Engagements have a required lead that a Super Admin can change at any time, can be cloned, archived (read-only, reversible) or deleted (separate Super Admin action, soft delete, audited, restorable from the Deleted view). A bell in the header lists assignments, status changes, due dates and overdue findings; users choose what they receive, and email is opt-in and off unless the server sets `EMAIL_HOST`. Users can sign out everywhere and are warned before an idle session ends. The severity scale (Critical 9.0 to 10.0, High 7.0 to 8.9, Medium 4.0 to 6.9, Low 0.1 to 3.9, Info 0.0) is shown where severity is chosen. The user manual has a chapter on the whole workflow from organisation to closed engagement.
+
 ## Quick start
 
 Requirements: Docker with Compose v2.
@@ -95,6 +99,7 @@ Nginx in front, a Django REST API behind it, PostgreSQL for data, Redis and Cele
 - Operations: [docs/DOCKER_SETUP.md](docs/DOCKER_SETUP.md), [docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md), [docs/RUNBOOKS.md](docs/RUNBOOKS.md)
 - Security: [docs/SECURITY.md](docs/SECURITY.md), [docs/ASVS_L2_CHECKLIST.md](docs/ASVS_L2_CHECKLIST.md), [SECURITY.md](SECURITY.md)
 - Permissions: [docs/RBAC_PERMISSION_MATRIX.md](docs/RBAC_PERMISSION_MATRIX.md)
+- Engagement lifecycle and notifications: [docs/adr/0022-engagement-lifecycle-and-notifications.md](docs/adr/0022-engagement-lifecycle-and-notifications.md), [docs/API.md](docs/API.md), OpenAPI schema `docs/openapi.json` (`make schema`)
 - Assets, identifiers, imports and deleting users: [docs/ASSETS_AND_IMPORTS.md](docs/ASSETS_AND_IMPORTS.md), [docs/SCHEMA.md](docs/SCHEMA.md), [docs/API.md](docs/API.md)
 - Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
 

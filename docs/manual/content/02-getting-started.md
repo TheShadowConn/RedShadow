@@ -23,6 +23,16 @@ While RedShadow loads a page, a list or a saved change, you see the eclipse "O" 
 - After **5 failed attempts** in a row the account is locked for 15 minutes. The error message is the same for a wrong password and an unknown account, on purpose.
 - An administrator can sign you out everywhere by revoking sessions, and changing your role or engagement access signs you out so the new access applies at once.
 
+## Notifications
+
+The **bell** beside the theme switch shows how many notifications are unread. Select it to read them, open the item they refer to, or **Mark all read**. You are told when you are added to or removed from an engagement, made or replaced as lead, when an engagement changes status, when a finding is assigned to you or changes status or gets a new timeline entry, and when a retest is assigned to you. You are never notified about your own actions. Findings that are due within 3 days, and findings that have become overdue, also notify the people on them (once each).
+
+Select the **gear** in the bell panel to choose which groups you receive: engagement changes, assignments, finding updates, due dates and overdue, retests. If your administrator has set up email, you can also tick **Also email me assignments, due dates and retests**.
+
+### Idle warning and signing out everywhere
+
+Two minutes before an idle session ends, a box in the corner warns you. Select **Stay signed in** to keep working. On **Account**, **Sign out everywhere** ends every session of your account on every device, including the one you are using.
+
 ## Finding your way around
 
 ![The overview page of a Super Admin](02-admin-dashboard.png)

@@ -27,6 +27,10 @@ export function EngagementsPage() {
   if (f.type) qs.set("type", f.type);
   if (f.organisation) qs.set("organisation", f.organisation);
   if (f.overdue) qs.set("overdue", "true");
+  const deletedView = f.archived === "deleted";
+  if (deletedView) { qs.delete("archived"); qs.set("deleted", "true"); }
+  const qc = useQueryClient();
+  const restore = useMutation({ mutationFn: (id: string) => api("POST", `/engagements/${id}/restore`, {}), onSuccess: () => void qc.invalidateQueries({ queryKey: ["engagements"] }) });
   const list = useQuery({ queryKey: ["engagements", qs.toString()], queryFn: () => api<Page<EngagementRow>>("GET", `/engagements?${qs}`), placeholderData: (p) => p });
   const filtered = !!(f.search || f.status || f.type || f.organisation || f.overdue);
 
@@ -61,6 +65,7 @@ export function EngagementsPage() {
             <option value="false">Not archived</option>
             <option value="true">Archived</option>
             <option value="all">All</option>
+            {can("engagements.delete") && <option value="deleted">Deleted</option>}
           </Select>
           <label className="flex min-h-11 items-center gap-2 text-[15px]"><input type="checkbox" checked={f.overdue} onChange={(e) => update({ overdue: e.target.checked })} /> Overdue only</label>
         </div>
@@ -74,7 +79,18 @@ export function EngagementsPage() {
             action={filtered ? <Button onClick={() => { setF({ search: "", status: "", type: "", organisation: "", archived: "false", overdue: false }); setPage(1); }}>Clear filters</Button> : undefined}
           />
         )}
-        {list.data && list.data.results.length > 0 && (
+        {deletedView && <div className="p-4"><ErrorNote error={restore.error} /></div>}
+        {deletedView && list.data && list.data.results.length > 0 && (
+          <ul className="m-0 list-none divide-y divide-line p-0">
+            {list.data.results.map((e) => (
+              <li key={e.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+                <span className="min-w-0"><span className="block font-medium">{e.name}</span><span className="block text-[14px] text-muted"><span className="mono">{e.ref}</span> · {e.organisation.name} · deleted {e.deleted_at ? formatDay(e.deleted_at.slice(0, 10)) : ""}</span></span>
+                <Button loading={restore.isPending && restore.variables === e.id} onClick={() => restore.mutate(e.id)}>Restore</Button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {!deletedView && list.data && list.data.results.length > 0 && (
           <>
             <table className="data-table hidden lg:table">
               <thead><tr><th>Engagement</th><th>Organisation</th><th>Type</th><th>Dates</th><th>Lead</th><th>Status</th><th><span className="sr-only">Open</span></th></tr></thead>
@@ -139,7 +155,7 @@ function CreateEngagement({ onClose, onCreated }: { onClose: () => void; onCreat
   const orgs = useQuery({ queryKey: ["organisations", "", "false"], queryFn: () => api<Page<Organisation>>("GET", "/organisations?page_size=100&archived=false") });
   const users = useQuery({ queryKey: ["users", ""], queryFn: () => api<Page<User>>("GET", "/users?page_size=100&search="), enabled: can("users.view") });
   const save = useMutation({
-    mutationFn: () => api<Engagement>("POST", "/engagements", { ...f, lead: f.lead || null }),
+    mutationFn: () => api<Engagement>("POST", "/engagements", f),
     onSuccess: (e) => { void qc.invalidateQueries({ queryKey: ["engagements"] }); onClose(); onCreated(e); },
   });
   const set = (k: string) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
@@ -153,14 +169,14 @@ function CreateEngagement({ onClose, onCreated }: { onClose: () => void; onCreat
         </Field>
         <EngagementFields f={f} set={set} error={save.error} />
         {can("users.view") && (
-          <Field label="Lead" hint="Optional. Add the lead to the team after creating." error={fieldError(save.error, "lead")}>
-            {(p) => <Select {...p} value={f.lead} onChange={set("lead")}><option value="">No lead</option>{users.data?.results.filter((u) => u.is_active).map((u) => <option key={u.id} value={u.id}>{u.display_name}</option>)}</Select>}
+          <Field label="Lead" hint="Required. The lead is added to the team." error={fieldError(save.error, "lead")}>
+            {(p) => <Select {...p} required value={f.lead} onChange={set("lead")}><option value="" disabled>Choose a lead</option>{users.data?.results.filter((u) => u.is_active).map((u) => <option key={u.id} value={u.id}>{u.display_name}</option>)}</Select>}
           </Field>
         )}
         <p className="m-0 text-[13px] text-muted">A reference like RS-E-{new Date().getFullYear()}-0001 is assigned automatically.</p>
         <div className="flex flex-wrap justify-end gap-3">
           <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="primary" loading={save.isPending} disabled={!f.organisation || !f.name.trim()}>Create engagement</Button>
+          <Button type="submit" variant="primary" loading={save.isPending} disabled={!f.organisation || !f.name.trim() || !f.lead}>Create engagement</Button>
         </div>
       </form>
     </Modal>

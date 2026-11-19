@@ -20,12 +20,13 @@ function StatusBadge({ user }: { user: User }) {
 export function UsersPage() {
   const { can } = useAuth();
   const [search, setSearch] = useState("");
+  const [noMfa, setNoMfa] = useState(false);
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
 
   const users = useQuery({
-    queryKey: ["users", search],
-    queryFn: () => api<Page<User>>("GET", `/users?page_size=100&search=${encodeURIComponent(search)}`),
+    queryKey: ["users", search, noMfa],
+    queryFn: () => api<Page<User>>("GET", `/users?page_size=100&search=${encodeURIComponent(search)}${noMfa ? "&mfa=missing" : ""}`),
   });
 
   return (
@@ -42,6 +43,7 @@ export function UsersPage() {
             <Search size={18} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted" aria-hidden />
             <TextInput aria-label="Search users" placeholder="Search by name or email" className="pl-11" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
+          <label className="mt-3 flex min-h-11 items-center gap-2 text-[15px]"><input type="checkbox" checked={noMfa} onChange={(e) => setNoMfa(e.target.checked)} /> Active users without two-step verification</label>
         </div>
 
         {users.isPending && <LoadingRows />}

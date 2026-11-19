@@ -50,6 +50,16 @@ RedShadow combines two ideas.
 ### Severity, CVSS and CWE
 
 - Enter a **CVSS vector** (versions 3.1 and 4.0) and RedShadow calculates the base score and sets the severity. You cannot enter a score by hand, and you cannot set a severity that conflicts with the vector.
+- The base score decides the severity like this. The scale is also shown on the finding form.
+
+| Severity | CVSS base score |
+|---|---|
+| Critical | 9.0 to 10.0 |
+| High | 7.0 to 8.9 |
+| Medium | 4.0 to 6.9 |
+| Low | 0.1 to 3.9 |
+| Info | 0.0 |
+
 - Without a vector, choose the severity yourself: **Critical, High, Medium, Low** or **Info**.
 - Choose a **CWE** weakness from the built-in list of common weaknesses by typing a number or a name such as `89` or `injection`.
 

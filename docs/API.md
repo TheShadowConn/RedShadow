@@ -41,7 +41,7 @@ Base path `/api/v1`. Session cookie plus CSRF header, error envelope `{"error": 
 | `POST /imports/{id}/retry` | `imports.create` | Re-run a failed job with the same file and mapping. 409 when not failed or the file was purged. |
 | `DELETE /imports/{id}` | `imports.create` | 204 for a failed or cancelled job. 409 otherwise, and always when it created records. |
 | `GET /imports/{id}/history` | `imports.view` | Attempts, newest first: file, checksum, counts, outcome, error. |
-| `GET /imports/asset-template.csv` | `imports.view` | Example file for asset imports. |
+| `GET /imports/asset-template.csv` | `imports.view` | Five-column example file: Name, Asset type, Environment, Criticality, Identifiers (several per cell, separated by semicolons; the kind of each is detected). |
 
 ## Users
 
@@ -53,3 +53,43 @@ Base path `/api/v1`. Session cookie plus CSRF header, error envelope `{"error": 
 ## Audit actions added
 
 `asset.created` (now with identifiers), `asset.identifier_added`, `asset.identifier_updated`, `asset.identifier_removed`, `asset.onboarded`, `asset.deleted`, `asset.merged`, `import.reuploaded`, `import.retried`, `import.deleted`, `import.delete_denied`, `import.reupload_denied`, `import.retry_denied`, `user.deleted`, `user.delete_denied`. Asset imports record `import.committed` with `created_not_onboarded`, `merged_into_existing`, `skipped`, `invalid`.
+
+## Engagement lifecycle (Section A, 2026-11-19)
+
+| Method and path | Permission | Purpose |
+|---|---|---|
+| `POST /engagements` | `engagements.create` | `lead` is now required (active user). |
+| `PATCH /engagements/{id}` | `engagements.update` | `lead` may change but never be null. |
+| `POST /engagements/{id}/lead` | `engagements.update` | `{lead, version}`. Super Admin changes the lead at any time while not archived. The new lead joins the team. 409 when already the lead. Audit `engagement.lead_changed`. |
+| `POST /engagements/{id}/delete` | `engagements.delete` | `{version, confirm_ref, reason?}`. Soft delete, separate from archive: the engagement and its findings disappear from every scoped read, rows stay in the database. 204. 400 when `confirm_ref` is not the engagement reference. Audit `engagement.deleted` (ref, name, organisation, status, finding count, reason); denial audits `engagement.delete_denied`. `DELETE /engagements/{id}` still answers 405. |
+| `POST /engagements/{id}/join` | `engagements.manage_members` | The signed-in user adds themself to the team with their own role. 409 if already a member. Audit `engagement.member_added` with `via: self`. |
+
+New audit actions: `engagement.lead_changed`, `engagement.lead_denied`, `engagement.deleted`, `engagement.delete_denied`.
+
+## Notifications (Section E, 2026-11-19)
+
+Every signed-in user, own rows only (no role permission; queries are filtered to the caller; another user's id answers 404).
+
+| Method and path | Purpose |
+|---|---|
+| `GET /notifications` | Paginated, newest first. `?unread=true`. Fields `id, kind, title, body, link, actor, read, created_at`. |
+| `GET /notifications/unread-count` | `{count}` |
+| `POST /notifications/{id}/read` | Mark one read. |
+| `POST /notifications/read-all` | `{marked}` |
+
+Created in the same transaction as the change, never for the actor. Kinds: `engagement.added`, `engagement.removed`, `engagement.lead`, `engagement.lead_removed`, `engagement.updated`, `engagement.status`, `engagement.archived`, `engagement.deleted`, `finding.assigned`, `finding.status` (reporter and assignees), `finding.activity`, `retest.assigned`. Team-only technical notes never notify. Notifications carry only a reference and title, and are deleted with their user.
+
+## Release 1.3.0 additions (2026-11-19)
+
+| Method and path | Permission | Purpose |
+|---|---|---|
+| `GET /engagements?deleted=true` | `engagements.delete` | Deleted engagements (others get an empty list). Rows carry `deleted_at`. |
+| `POST /engagements/{id}/restore` | `engagements.delete` | Undo a delete. Findings, team and history return. 409 when the organisation is archived or the engagement is not deleted. Audit `engagement.restored`. |
+| `POST /engagements/{id}/clone` | `engagements.create` | `{name, start_date, end_date, lead}`. New Planned engagement with the same organisation, type, text, team and live in-scope assets. Findings, notes, documents and costs are not copied. Audit `engagement.cloned`. |
+| `GET` and `PUT /notifications/settings` | any signed-in user | `{muted: [group], email_enabled}`. Groups: `engagement`, `assignments`, `findings`, `deadlines`, `retests`. Response adds `email_available` and `groups[]`. Email is sent only for assignments, deadlines and retests, only when the server has `EMAIL_HOST` set and the user opted in. |
+| `POST /auth/sessions/revoke` | any signed-in user | Sign out everywhere: ends every session of the caller, this one included. 204. Audit `user.sessions_revoked`. |
+| `GET /users?mfa=missing` or `enabled` | `users.view` | Filter by two-step verification. `missing` lists active users without it. |
+
+`GET /auth/me` adds `session_idle_seconds`. New notification kinds: `finding.due_soon` (finding due within 3 days, once per due date), `finding.overdue` (first breach), `engagement.restored`. A deleted engagement now also hides its findings, evidence, retests and reports from every scoped read.
+
+The OpenAPI schema is generated with `make schema` into `docs/openapi.json` (drf-spectacular, dev-only settings `config.settings.schema`; not part of the runtime image).

@@ -11,16 +11,12 @@ class InvalidVector(ValueError):
     pass
 
 
+# CVSS base score bands, highest first: (lowest score of the band, severity). Shown in the UI and the manual.
+BANDS = [(Decimal("9.0"), "critical"), (Decimal("7.0"), "high"), (Decimal("4.0"), "medium"), (Decimal("0.1"), "low")]
+
+
 def severity_for(score: Decimal) -> str:
-    if score >= Decimal("9.0"):
-        return "critical"
-    if score >= Decimal("7.0"):
-        return "high"
-    if score >= Decimal("4.0"):
-        return "medium"
-    if score > Decimal("0"):
-        return "low"
-    return "info"
+    return next((name for floor, name in BANDS if score >= floor), "info")
 
 
 def score_vector(vector: str) -> tuple[str, Decimal, str]:

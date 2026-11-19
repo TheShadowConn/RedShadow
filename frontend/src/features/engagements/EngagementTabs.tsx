@@ -1,6 +1,6 @@
 import { useRef, useState, type DragEvent, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, FileText, Plus, Trash2, UploadCloud } from "lucide-react";
+import { Download, FileText, Plus, Trash2, UploadCloud, UserPlus } from "lucide-react";
 
 import { useAuth } from "../../api/auth";
 import { api, upload } from "../../api/client";
@@ -98,12 +98,21 @@ export function TeamTab({ eng }: { eng: Engagement }) {
   const refresh = () => { void qc.invalidateQueries({ queryKey: ["eng-members", eng.id] }); void qc.invalidateQueries({ queryKey: ["history", eng.id] }); };
   const remove = useMutation({ mutationFn: (m: Member) => api("DELETE", `/engagements/${eng.id}/members/${m.user.id}`), onSuccess: () => { refresh(); setRemoving(null); } });
   const writable = eng.permissions.includes("engagements.manage_members") && !eng.archived_at;
+  const { me } = useAuth();
+  const isMember = !!me && !!q.data?.some((m) => m.user.id === me.id);
+  const join = useMutation({ mutationFn: () => api("POST", `/engagements/${eng.id}/join`, {}), onSuccess: refresh });
 
   return (
     <div className="space-y-4">
       {eng.archived_at && <ReadOnlyNote />}
+      <ErrorNote error={join.error} />
       <div className="card overflow-hidden">
-        {writable && <div className="flex justify-end border-b border-line p-4"><Button variant="primary" onClick={() => setAdding(true)}><Plus size={18} aria-hidden /> Add member</Button></div>}
+        {writable && (
+          <div className="flex flex-wrap justify-end gap-3 border-b border-line p-4">
+            {q.data && !isMember && <Button onClick={() => join.mutate()} loading={join.isPending}><UserPlus size={18} aria-hidden /> Add myself</Button>}
+            <Button variant="primary" onClick={() => setAdding(true)}><Plus size={18} aria-hidden /> Add member</Button>
+          </div>
+        )}
         {q.isPending && <LoadingRows rows={3} />}
         {q.isError && <ErrorState error={q.error} onRetry={() => void q.refetch()} />}
         {q.data && q.data.length === 0 && <EmptyState title="No team members" body="Only members and users who can see every engagement can open this engagement." />}

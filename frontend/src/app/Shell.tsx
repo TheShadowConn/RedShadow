@@ -9,6 +9,8 @@ import { Logo, Mark } from "../design/Logo";
 import { Sheet } from "../design/ui";
 import { IntegrityBanner } from "../features/audit/IntegrityBanner";
 import { CommandPalette, SearchButton } from "./CommandPalette";
+import { IdleWarning } from "./IdleWarning";
+import { NotificationBell } from "./NotificationBell";
 import { useSignOut } from "../features/auth/RestrictionFlow";
 
 type Item = { to: string; label: string; short?: string; icon: LucideIcon; perm?: string; end?: boolean };
@@ -118,19 +120,23 @@ export function Shell() {
         </div>
       </aside>
 
+      <IdleWarning />
       <div className="flex min-w-0 flex-col pb-16 md:pb-0">
         <IntegrityBanner />
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-line bg-ground px-4 md:px-8">
           <Logo height={24} className="text-ink md:hidden" />
           <SearchButton onOpen={() => setSearch(true)} />
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-            className="btn btn-secondary btn-icon"
-          >
-            {theme === "dark" ? <Sun size={20} aria-hidden /> : <Moon size={20} aria-hidden />}
-          </button>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <button
+              type="button"
+              onClick={toggle}
+              aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+              className="btn btn-secondary btn-icon"
+            >
+              {theme === "dark" ? <Sun size={20} aria-hidden /> : <Moon size={20} aria-hidden />}
+            </button>
+          </div>
         </header>
         <main id="main" className="mx-auto w-full max-w-[1200px] flex-1 p-4 md:p-8">
           <Suspense fallback={<Loader block />}>

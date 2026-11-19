@@ -12,23 +12,26 @@ from apps.audit.models import AuditEvent
 from apps.files import services as file_services
 from apps.files.models import Attachment
 from apps.files.serializers import AttachmentSerializer, UploadSerializer
-from apps.rbac.authz import has_engagement_perm
+from apps.rbac.authz import has_engagement_perm, user_permissions
 from apps.rbac.viewsets import ScopedModelViewSet
 
 from . import selectors, services
-from .models import EngagementAsset, EngagementCost, EngagementMembership
+from .models import Engagement, EngagementAsset, EngagementCost, EngagementMembership
 from .serializers import (
     AssetLinkCreateSerializer,
     AssetLinkUpdateSerializer,
+    CloneSerializer,
     CostCreateSerializer,
     CostSerializer,
     CostUpdateSerializer,
+    DeleteSerializer,
     EngagementAssetSerializer,
     EngagementCreateSerializer,
     EngagementListSerializer,
     EngagementSerializer,
     EngagementUpdateSerializer,
     HistorySerializer,
+    LeadSerializer,
     MemberCreateSerializer,
     MemberSerializer,
     MemberUpdateSerializer,
@@ -66,6 +69,11 @@ class EngagementViewSet(ScopedModelViewSet):
         "destroy": "engagements.delete",  # engagements are never hard-deleted: answers 405
         "archive": "engagements.archive",
         "unarchive": "engagements.archive",
+        "change_lead": "engagements.update",
+        "delete_engagement": "engagements.delete",
+        "restore": "engagements.delete",
+        "clone": "engagements.create",
+        "join": "engagements.manage_members",
         "change_status": "engagements.update_status",
         "members": "engagements.view",
         "add_member": "engagements.manage_members",
@@ -93,6 +101,14 @@ class EngagementViewSet(ScopedModelViewSet):
         return {**super().get_serializer_context(), "request": self.request}
 
     def get_queryset(self):
+        deleted_view = self.action == "restore" or (
+            self.action == "list" and self.request.query_params.get("deleted") == "true"
+        )
+        if deleted_view:
+            if "engagements.delete" not in user_permissions(self.request.user):
+                return Engagement.all_objects.none()
+            deleted = Engagement.all_objects.filter(deleted_at__isnull=False)
+            return selectors.with_overdue(deleted).select_related("organisation", "lead").order_by("-deleted_at")
         qs = selectors.with_overdue(selectors.scope_engagements(self.request.user)).select_related(
             "organisation", "lead"
         )
@@ -144,6 +160,36 @@ class EngagementViewSet(ScopedModelViewSet):
         return Response(
             self._detail(services.unarchive_engagement(request, request.user, self.get_object(), data["version"]))
         )
+
+    @action(detail=True, methods=["post"], url_path="lead")
+    def change_lead(self, request, pk=None):
+        data = _validated(LeadSerializer, request)
+        eng = services.change_lead(request, request.user, self.get_object(), data["lead"], data["version"])
+        return Response(self._detail(eng))
+
+    @action(detail=True, methods=["post"], url_path="delete")
+    def delete_engagement(self, request, pk=None):
+        data = _validated(DeleteSerializer, request)
+        services.delete_engagement(
+            request, request.user, self.get_object(), data["version"], data["confirm_ref"], data.get("reason", "")
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=["post"], url_path="clone")
+    def clone(self, request, pk=None):
+        data = _validated(CloneSerializer, request)
+        eng = services.clone_engagement(request, request.user, self.get_object(), data)
+        return Response(self._detail(eng), status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"], url_path="restore")
+    def restore(self, request, pk=None):
+        eng = services.restore_engagement(request, request.user, self.get_object())
+        return Response(self._detail(eng))
+
+    @action(detail=True, methods=["post"], url_path="join")
+    def join(self, request, pk=None):
+        member = services.join_engagement(request, request.user, self.get_object())
+        return Response(MemberSerializer(member).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"], url_path="status")
     def change_status(self, request, pk=None):

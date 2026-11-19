@@ -97,7 +97,7 @@ export function Alert({ tone, children }: { tone: "error" | "warn" | "ok"; child
   return (
     <div className={cx("alert", `alert-${tone}`)} role={tone === "error" ? "alert" : "status"}>
       <Icon size={20} className="mt-0.5 flex-none" aria-hidden />
-      <div className="min-w-0">{children}</div>
+      <div className="min-w-0 flex-1 [overflow-wrap:anywhere]">{children}</div>
     </div>
   );
 }

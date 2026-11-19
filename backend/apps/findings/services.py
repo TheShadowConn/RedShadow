@@ -16,6 +16,7 @@ from apps.core.changes import apply_changes
 from apps.core.errors import Conflict
 from apps.engagements.models import EngagementAsset
 from apps.files.models import Attachment
+from apps.notifications import services as inbox
 from apps.rbac.authz import engagement_permissions, has_engagement_perm, user_permissions
 
 from . import cvss, lifecycle
@@ -27,6 +28,7 @@ CONTENT_FIELDS = (
     "endpoint", "discovered_at",
 )  # fmt: skip
 TEXT_FIELDS = {"description", "technical_details", "poc", "recommendation"}
+DUE_SOON_DAYS = 3
 ASSIGN_FIELDS = ("assigned_pentester", "remediation_owner")
 EDITABLE_STATUSES = lifecycle.EDITABLE_STATUSES
 PUBLISH_REQUIRED = ("title", "description", "recommendation")
@@ -230,6 +232,8 @@ def create_finding(request, actor, eng, data: dict) -> Finding:
         audit.record("finding.created", request=request, entity=f, engagement=eng,
                      metadata={"severity": f.severity, "cvss_score": str(f.cvss_score) if f.cvss_score else None,
                                "asset": asset.name if asset else None})  # fmt: skip
+        inbox.notify([f.assigned_pentester, f.remediation_owner], "finding.assigned", f"{f.ref} was assigned to you",
+                     body=f.title, link=inbox.finding_link(f), actor=actor, engagement=eng)
     return f
 
 
@@ -291,6 +295,9 @@ def update_finding(request, actor, finding: Finding, data: dict, version) -> Fin
             f.version += 1
             f.save()
             audit.record("finding.updated", request=request, entity=f, engagement=eng, changes=_audit_changes(changes))
+            assigned = [getattr(f, k) for k in ASSIGN_FIELDS if k in changes]
+            inbox.notify(assigned, "finding.assigned", f"{f.ref} was assigned to you", body=f.title,
+                         link=inbox.finding_link(f), actor=actor, engagement=eng)
     return f
 
 
@@ -442,6 +449,11 @@ def _execute(request, actor, f, rule, note, expiry, duplicate_of, retest_item=No
     _record_activity(f, actor, rule.activity, note, old, target, evidence_ids)
     audit.record(f"finding.{rule.name}", request=request, actor_label="" if actor else "system", entity=f,
                  engagement=f.engagement, changes=_audit_changes(changes), metadata=meta)  # fmt: skip
+    move = f"{old.replace('_', ' ')} to {target.replace('_', ' ')}"
+    inbox.notify(
+        inbox.finding_people(f), "finding.status", f"{f.ref}: {move}", body=f.title,
+        link=inbox.finding_link(f), actor=actor, engagement=f.engagement,
+    )  # fmt: skip
     return f
 
 
@@ -473,7 +485,23 @@ def system_flag_sla_breach(finding: Finding) -> bool:
         audit.record("finding.sla_breached", actor_label="system", entity=f, engagement=f.engagement,
                      metadata={"due_date": f.due_date.isoformat(), "severity": f.severity,
                                "status": f.status})  # fmt: skip
+        inbox.notify(inbox.finding_people(f), "finding.overdue", f"{f.ref} is overdue", body=f.title,
+                     link=inbox.finding_link(f), engagement=f.engagement, dedupe_key=f"{f.pk}:overdue")
         return True
+
+
+def system_notify_due_soon(finding: Finding) -> bool:
+    """Beat task entry: tell the people on a finding it is due within 3 days. Once per finding and due date."""
+    f = finding
+    today = timezone.localdate()
+    if f.due_date is None or f.status not in lifecycle.OVERDUE_STATUSES or not (
+        today <= f.due_date <= today + datetime.timedelta(days=DUE_SOON_DAYS)
+    ):
+        return False
+    return bool(inbox.notify(
+        inbox.finding_people(f), "finding.due_soon", f"{f.ref} is due {f.due_date.isoformat()}", body=f.title,
+        link=inbox.finding_link(f), engagement=f.engagement, dedupe_key=f"{f.pk}:{f.due_date.isoformat()}",
+    ))  # fmt: skip
 
 
 def publish_finding(request, actor, finding: Finding, version) -> Finding:
@@ -511,6 +539,8 @@ def add_activity(request, actor, finding: Finding, action: str, note: str, evide
         entry = _record_activity(f, actor, action, note, f.status, f.status, evidence_ids)
         audit.record("finding.activity_added", request=request, entity=f, engagement=f.engagement,
                      metadata={"action": action, "activity_id": str(entry.pk), "length": len(note)})  # fmt: skip
+        inbox.notify(inbox.finding_people(f), "finding.activity", f"New update on {f.ref}", body=f.title,
+                     link=inbox.finding_link(f), actor=actor, engagement=f.engagement)
     return entry
 
 

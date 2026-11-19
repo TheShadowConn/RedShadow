@@ -10,7 +10,7 @@ import {
 import {
   Alert, Badge, Button, ConfirmDialog, EmptyState, ErrorNote, ErrorState, formatBytes, formatDate, LoadingRows, NotFoundOrError, Pager, Select, TextInput,
 } from "../../design/ui";
-import { isConflict } from "../findings/shared";
+import { SeverityScale, isConflict } from "../findings/shared";
 import { ImportStatus, KindBadge, ReuploadPanel, targetName } from "./ImportsPage";
 
 const STEPS = ["File", "Columns", "Check", "Import", "Done"];
@@ -61,29 +61,31 @@ export function ImportPage() {
           </li>
         ))}
       </ol>
-      <ErrorNote error={cancel.error && !isConflict(cancel.error) ? cancel.error : null} />
+      <div className="flex min-w-0 flex-col gap-6">
+        <ErrorNote error={cancel.error && !isConflict(cancel.error) ? cancel.error : null} />
 
-      {WORKING.includes(job.status) && <Working job={job} />}
-      {job.status === "parsed" && <MapStep job={job} initial={job.suggested_mapping} onDone={refresh} />}
-      {job.status === "previewed" && remap && <MapStep job={job} initial={job.mapping.column_map ?? {}} onDone={() => { setRemap(false); refresh(); }} onBack={() => setRemap(false)} />}
-      {job.status === "previewed" && !remap && <PreviewStep job={job} onDone={refresh} onChangeColumns={() => setRemap(true)} />}
-      {job.status === "completed" && <DoneStep job={job} onDone={refresh} />}
-      {job.status === "failed" && (
-        <div className="flex flex-col gap-4">
-          <Alert tone="error"><p className="m-0 font-medium">This import did not finish.</p><p className="m-0 mt-1">{job.error || "Something went wrong."}</p><p className="m-0 mt-1 text-[14px]">Nothing was created. Retry runs it again with the same file, upload a corrected file if the file is the problem, or delete the import.</p></Alert>
-          <ErrorNote error={retry.error && !isConflict(retry.error) ? retry.error : null} />
-          {isConflict(retry.error) && <Alert tone="error">{(retry.error as Error).message}</Alert>}
-          <div className="flex flex-wrap gap-3">
-            {job.can_retry && <Button variant="primary" loading={retry.isPending} onClick={() => retry.mutate()}><RotateCcw size={16} aria-hidden /> Retry</Button>}
-            {job.can_delete && <Button variant="danger" onClick={() => { remove.reset(); setDeleting(true); }}><Trash2 size={16} aria-hidden /> Delete import</Button>}
-            <Link to="/imports" className="btn btn-secondary">Back to imports</Link>
+        {WORKING.includes(job.status) && <Working job={job} />}
+        {job.status === "parsed" && <MapStep job={job} initial={job.suggested_mapping} onDone={refresh} />}
+        {job.status === "previewed" && remap && <MapStep job={job} initial={job.mapping.column_map ?? {}} onDone={() => { setRemap(false); refresh(); }} onBack={() => setRemap(false)} />}
+        {job.status === "previewed" && !remap && <PreviewStep job={job} onDone={refresh} onChangeColumns={() => setRemap(true)} />}
+        {job.status === "completed" && <DoneStep job={job} onDone={refresh} />}
+        {job.status === "failed" && (
+          <div className="flex flex-col gap-4">
+            <Alert tone="error"><p className="m-0 font-medium">This import did not finish.</p><p className="m-0 mt-1">{job.error || "Something went wrong."}</p><p className="m-0 mt-1 text-[14px]">Nothing was created. Retry runs it again with the same file, upload a corrected file if the file is the problem, or delete the import.</p></Alert>
+            <ErrorNote error={retry.error && !isConflict(retry.error) ? retry.error : null} />
+            {isConflict(retry.error) && <Alert tone="error">{(retry.error as Error).message}</Alert>}
+            <div className="flex flex-wrap gap-3">
+              {job.can_retry && <Button variant="primary" loading={retry.isPending} onClick={() => retry.mutate()}><RotateCcw size={16} aria-hidden /> Retry</Button>}
+              {job.can_delete && <Button variant="danger" onClick={() => { remove.reset(); setDeleting(true); }}><Trash2 size={16} aria-hidden /> Delete import</Button>}
+              <Link to="/imports" className="btn btn-secondary">Back to imports</Link>
+            </div>
+            {job.can_reupload && <ReuploadPanel job={job} onDone={refresh} />}
           </div>
-          {job.can_reupload && <ReuploadPanel job={job} onDone={refresh} />}
-        </div>
-      )}
-      {job.status === "cancelled" && <div className="card"><EmptyState title="Import cancelled" body="Nothing was imported and the uploaded file was deleted." action={<span className="flex flex-wrap justify-center gap-3">{job.can_delete && <Button variant="danger" onClick={() => { remove.reset(); setDeleting(true); }}>Delete import</Button>}<Link to="/imports" className="btn btn-primary">Back to imports</Link></span>} /></div>}
-      {job.status === "previewed" && !remap && job.can_reupload && (job.counts.invalid ?? 0) > 0 && <div className="mt-6"><ReuploadPanel job={job} onDone={refresh} /></div>}
-      {job.attempt > 1 && <div className="mt-6"><History job={job} /></div>}
+        )}
+        {job.status === "cancelled" && <div className="card"><EmptyState title="Import cancelled" body="Nothing was imported and the uploaded file was deleted." action={<span className="flex flex-wrap justify-center gap-3">{job.can_delete && <Button variant="danger" onClick={() => { remove.reset(); setDeleting(true); }}>Delete import</Button>}<Link to="/imports" className="btn btn-primary">Back to imports</Link></span>} /></div>}
+        {job.status === "previewed" && !remap && job.can_reupload && (job.counts.invalid ?? 0) > 0 && <ReuploadPanel job={job} onDone={refresh} />}
+        {job.attempt > 1 && <History job={job} />}
+      </div>
       <ConfirmDialog open={deleting} title="Delete import" body={`${job.original_name} is deleted with its rows, its history and the uploaded file. Nothing it was meant to create exists, so no findings or assets are affected. This cannot be undone.`} confirmLabel="Delete import" danger busy={remove.isPending} error={remove.error} onConfirm={() => remove.mutate()} onClose={() => setDeleting(false)} />
     </>
   );
@@ -223,7 +225,7 @@ function PreviewStep({ job, onDone, onChangeColumns }: { job: ImportJob; onDone:
             {shown.map((r) => (
               <li key={r.id} className="flex flex-col gap-1.5 p-4">
                 <p className="m-0 flex flex-wrap items-center gap-2"><span className="mono text-[14px] text-muted">Line {r.row_number}</span><RowBadge status={r.status} /><span className="font-medium break-words">{r.title || r.cells[job.mapping.column_map?.title ?? job.mapping.column_map?.name ?? ""] || "(no title)"}</span></p>
-                {r.errors.map((e, i) => <p key={i} className="m-0 text-[15px] text-fail"><span className="font-medium">{e.field}:</span> {e.message}</p>)}
+                {r.errors.map((e, i) => <p key={i} className="m-0 text-[15px] text-fail [overflow-wrap:anywhere]"><span className="font-medium">{e.field}:</span> {e.message}</p>)}
                 {r.asset && r.status !== "invalid" && (
                   <div className="flex flex-col gap-1 text-[15px]">
                     <p className="m-0 text-muted">{ACTION_TEXT[r.asset.action] ?? r.asset.action}{r.asset.asset && <> <Link to={`/assets?asset=${r.asset.asset.id}`} className="text-accent hover:underline">{r.asset.asset.name}</Link></>}{r.asset.target_line ? ` (line ${r.asset.target_line})` : ""}</p>
@@ -231,7 +233,7 @@ function PreviewStep({ job, onDone, onChangeColumns }: { job: ImportJob; onDone:
                   </div>
                 )}
                 <RowDetails row={r} headers={job.headers} />
-                {r.duplicate_of && <p className="m-0 text-[15px] text-muted">{r.duplicate_of.finding ? <>Same as <Link to={`/findings/${r.duplicate_of.finding.id}`} className="text-accent hover:underline">{r.duplicate_of.finding.ref}</Link> {r.duplicate_of.finding.title}</> : r.duplicate_of.hidden ? "Same as an existing finding you cannot see." : `Same as line ${r.duplicate_of.line} of this file.`}</p>}
+                {r.duplicate_of && <p className="m-0 text-[15px] text-muted [overflow-wrap:anywhere]">{r.duplicate_of.finding ? <>Same as <Link to={`/findings/${r.duplicate_of.finding.id}`} className="text-accent hover:underline">{r.duplicate_of.finding.ref}</Link> {r.duplicate_of.finding.title}</> : r.duplicate_of.hidden ? "Same as an existing finding you cannot see." : `Same as line ${r.duplicate_of.line} of this file.`}</p>}
               </li>
             ))}
           </ul>
@@ -286,6 +288,7 @@ function SeverityWords({ job, onDone }: { job: ImportJob; onDone: () => void }) 
     <section className="card card-pad flex flex-col gap-4">
       <h2 className="text-xl">Severity words not recognised</h2>
       <p className="m-0 text-muted">Say what each word means, then check the rows again. Informational, Moderate and Crit are understood already.</p>
+      <SeverityScale />
       <ErrorNote error={send.error && !isConflict(send.error) ? send.error : null} />
       <div className="grid gap-3 md:grid-cols-2">
         {words.map((w) => (

@@ -532,3 +532,15 @@ class TestHistoryAndEndpoints:
         publish(p1c, f)
         admin_client.delete(furl(f))
         assert verify_chain().ok
+
+
+@pytest.mark.django_db
+def test_severity_bands_boundaries():
+    from decimal import Decimal
+
+    from apps.findings.cvss import severity_for
+
+    cases = {"10.0": "critical", "9.0": "critical", "8.9": "high", "7.0": "high", "6.9": "medium", "4.0": "medium",
+             "3.9": "low", "0.1": "low", "0.0": "info"}  # fmt: skip
+    for score, severity in cases.items():
+        assert severity_for(Decimal(score)) == severity, score

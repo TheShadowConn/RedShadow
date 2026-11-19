@@ -229,39 +229,13 @@ class ImportJobViewSet(ScopedModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="asset-template.csv", url_name="asset-template")
     def asset_template(self, request):
-        header = [label for _, label, _ in mapping_rules.ASSET_FIELDS]
+        # Five plain columns. Identifiers holds IPs, hostnames, URLs and so on, several per cell separated by
+        # semicolons; the kind of each is detected. Other asset columns exist but the template does not need them.
+        header = ["Name", "Asset type", "Environment", "Criticality", "Identifiers"]
         examples = [
-            [
-                "Acme shop",
-                "Web application",
-                "prod",
-                "5",
-                "pci;public",
-                "",
-                "",
-                "acme.test",
-                "https://shop.acme.test",
-                "",
-                "",
-                "",
-                "",
-            ],
-            [
-                "Web 01",
-                "Host",
-                "prod",
-                "high",
-                "",
-                "10.0.0.5; 10.0.1.5",
-                "web01.acme.test",
-                "",
-                "",
-                "00:1A:2B:3C:4D:5E",
-                "",
-                "",
-                "",
-            ],
-            ["", "", "staging", "", "", "", "", "", "", "", "", "https://git.acme.test/shop/api.git", ""],
+            ["Acme shop", "Web application", "prod", "high", "https://shop.acme.test"],
+            ["Web 01", "Host", "prod", "medium", "10.0.0.5; web01.acme.test"],
+            ["Acme API", "Web application", "staging", "", "https://api.staging.acme.test"],
         ]
         handle, _, _ = write_csv(header, examples)
         response = FileResponse(
