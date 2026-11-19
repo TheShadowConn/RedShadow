@@ -33,7 +33,7 @@ VERSION = os.environ.get("APP_VERSION", "1.3.0")
 TODAY = datetime.date.today()
 OUT = Path(os.environ.get("MANUAL_OUT", HERE / "RedShadow-User-Manual.pdf"))
 
-TAGLINE = "Offensive Security, under control."
+TAGLINE = "Offensive Security, Under Control."
 TAGLINE_STYLE = os.environ.get("TAGLINE_STYLE", "title")  # "logo" (small, under the wordmark) or "title" (subtitle)
 
 ROLE_KEYS = ["super_admin", "pentester", "remediation", "external_vendor"]
