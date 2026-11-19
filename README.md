@@ -2,7 +2,7 @@
 
 ![RedShadow Social Preview](docs/brand/social-preview.png)
 
-**Offensive Security, under control.**
+**Offensive Security, Under Control.**
 
 **Website:** https://theshadowconn.github.io/RedShadow/
 

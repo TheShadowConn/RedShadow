@@ -26,7 +26,7 @@ export function AuthLayout({ title, lead, children }: { title: string; lead?: st
         <OMark />
         <img src="/brand/redshadow-eclipse-white.svg" alt="RedShadow" className="relative z-10 h-9 w-auto self-start" />
         <div className="relative z-10 max-w-md">
-          <p className="m-0 text-[40px] leading-[1.1] font-semibold tracking-[-0.03em]">Offensive security, managed with discipline.</p>
+          <p className="m-0 text-[40px] leading-[1.1] font-semibold tracking-[-0.03em]">Offensive Security, Under Control.</p>
           <ul className="m-0 mt-8 list-none space-y-3 p-0">
             {POINTS.map(({ icon: Icon, text }) => (
               <li key={text} className="flex gap-4 rounded-[10px] bg-[rgb(20_4_8/0.34)] px-4 py-3 text-[17px] leading-snug">
