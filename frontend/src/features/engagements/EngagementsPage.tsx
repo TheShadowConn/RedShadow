@@ -10,6 +10,7 @@ import {
   Button, EmptyState, EngagementStatus, ErrorNote, ErrorState, Field, fieldError, formatDay, label, LoadingRows, Modal, PageHeader,
   Pager, Select, Textarea, TextInput,
 } from "../../design/ui";
+import { ScenarioProgress } from "./ScenariosTab";
 
 const PAGE_SIZE = 25;
 
@@ -93,7 +94,7 @@ export function EngagementsPage() {
         {!deletedView && list.data && list.data.results.length > 0 && (
           <>
             <table className="data-table hidden lg:table">
-              <thead><tr><th>Engagement</th><th>Organisation</th><th>Type</th><th>Dates</th><th>Lead</th><th>Status</th><th><span className="sr-only">Open</span></th></tr></thead>
+              <thead><tr><th>Engagement</th><th>Organisation</th><th>Type</th><th>Dates</th><th>Lead</th><th>Progress</th><th>Status</th><th><span className="sr-only">Open</span></th></tr></thead>
               <tbody>
                 {list.data.results.map((e) => (
                   <tr key={e.id} onClick={() => nav(`/engagements/${e.id}`)}>
@@ -102,6 +103,7 @@ export function EngagementsPage() {
                     <td>{label(ENGAGEMENT_TYPES, e.type)}</td>
                     <td className="whitespace-nowrap text-muted">{formatDay(e.start_date)} to {formatDay(e.end_date)}</td>
                     <td>{e.lead?.display_name ?? <span className="text-muted">Unassigned</span>}</td>
+                    <td><ScenarioProgress s={e.scenarios} compact /></td>
                     <td><EngagementStatus status={e.status} archived={!!e.archived_at} overdue={e.overdue} /></td>
                     <td className="text-muted"><ChevronRight size={18} aria-hidden /></td>
                   </tr>
@@ -115,6 +117,7 @@ export function EngagementsPage() {
                     <span className="flex items-start justify-between gap-3"><span className="min-w-0 font-medium">{e.name}</span><EngagementStatus status={e.status} archived={!!e.archived_at} overdue={e.overdue} /></span>
                     <span className="block text-[14px] text-muted"><span className="mono">{e.ref}</span> · {e.organisation.name}</span>
                     <span className="block text-[14px] text-muted">{formatDay(e.start_date)} to {formatDay(e.end_date)}</span>
+                    {!!e.scenarios?.total && <span className="block pt-1"><ScenarioProgress s={e.scenarios} compact /></span>}
                   </button>
                 </li>
               ))}

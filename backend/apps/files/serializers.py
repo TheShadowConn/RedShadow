@@ -17,6 +17,7 @@ class AttachmentSerializer(serializers.ModelSerializer):
             "kind",
             "engagement",
             "finding",
+            "scenario",
             "is_image",
             "original_name",
             "mime",

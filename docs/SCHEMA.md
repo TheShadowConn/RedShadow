@@ -71,3 +71,11 @@ New `deleted_at` (nullable, indexed) and `deleted_by_id` (nullable, set null). `
 ## notifications_notificationpreference (new, 1.3.0)
 
 One row per user who changed settings: `user_id` (one to one, cascade), `muted` (JSON list of group names), `email_enabled` (default false).
+
+## engagements_engagementscenario (new, 1.4.0)
+
+`engagement_id` (cascade), `name` (unique per engagement on `lower(name)`), `description`, `status` (`planned|in_progress|tested|deferred|cancelled`), `status_reason`, `planned_start`, `planned_end` (check: end on or after start), `completed_on`, `position`, `created_by_id`, timestamps. Index `(engagement, status)`.
+
+## files_attachment (changed, 1.4.0)
+
+New kind `scenario_image` and nullable `scenario_id` (protect). The owner check constraint requires a scenario for this kind and none for the others.

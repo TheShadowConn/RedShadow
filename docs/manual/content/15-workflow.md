@@ -21,7 +21,7 @@ Organisation -> Assets -> Engagement -> Findings (draft) -> Publish
 | 9. Review | {PT}, {SA} | The finding, Retests | The result and the assessor's note are read. A fail returns to step 6 as `Reopened`. |
 | 10. Verification | {PT}, {SA} | Verification | **Verify and close** with a written note. |
 | 11. Close finding | The same action | The finding | `Closed`. The verifier and note are recorded. |
-| 12. Close engagement | {SA} | The engagement | `Reporting`, then `Completed`. Reports are generated. Optionally **Archive**. |
+| 12. Close engagement | {SA} | The engagement | `Reporting`, then `Completed`. Reports are generated. Optionally **Archive**. Untested scenarios need a confirmation. |
 
 ## 1. Organisation
 

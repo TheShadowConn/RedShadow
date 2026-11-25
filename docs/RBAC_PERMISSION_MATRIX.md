@@ -39,6 +39,8 @@ engagement the user can reach (all-engagement roles, or membership from Phase 3)
 | `engagement_notes.create` | engagement | yes | yes | - | - | Create engagement notes |
 | `engagement_costs.view` | platform | yes | - | - | - | View engagement costs and the cost totals on the admin dashboard |
 | `engagement_costs.manage` | platform | yes | - | - | - | Add, edit and delete engagement cost lines |
+| `engagement_scenarios.view` | engagement | yes | yes | yes | yes | View engagement scenarios and their pictures |
+| `engagement_scenarios.manage` | engagement | yes | yes | - | - | Add, edit, reschedule, cancel and reorder scenarios |
 | `documents.view` | engagement | yes | yes | yes | yes | View engagement documents |
 | `documents.upload` | engagement | yes | yes | - | yes | Upload engagement documents |
 | `documents.delete` | engagement | yes | - | - | - | Delete engagement documents |

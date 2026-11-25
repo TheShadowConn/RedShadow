@@ -14,7 +14,7 @@ from PIL import Image
 
 from apps.core.markdown import render_markdown
 from apps.core.storage import get_storage
-from apps.engagements.models import Engagement
+from apps.engagements.models import Engagement, EngagementScenario
 from apps.files.models import Attachment
 from apps.findings import lifecycle
 from apps.findings.models import SEVERITIES, STATUSES, FindingNote, RemediationActivity, RetestRound
@@ -86,6 +86,35 @@ def _evidence(finding_ids, allowed: bool) -> dict:
             bucket.append({"name": att.original_name, "src": uri})
             total += 1
     return found
+
+
+def _scenarios(eng: Engagement, allowed: bool) -> list[dict]:
+    """Scenario list for the report: what was tested, what is still to come. Pictures are bounded like evidence."""
+    if not allowed:
+        return []
+    rows = list(EngagementScenario.objects.filter(engagement=eng).order_by("position", "created_at"))
+    pictures: dict = {}
+    total = 0
+    images = Attachment.objects.filter(
+        kind="scenario_image", scenario__in=rows, deleted_at__isnull=True, purged_at__isnull=True, mime__in=IMAGE_MIMES
+    ).order_by("scenario_id", "created_at")
+    for att in images:
+        bucket = pictures.setdefault(att.scenario_id, [])
+        if len(bucket) >= MAX_IMAGES_PER_FINDING or total >= MAX_IMAGES_TOTAL:
+            continue
+        uri = _image_data_uri(att.storage_key)
+        if uri:
+            bucket.append({"name": att.original_name, "src": uri})
+            total += 1
+    return [
+        {
+            "name": r.name, "status": r.status, "status_label": r.get_status_display(),
+            "planned_start": r.planned_start, "planned_end": r.planned_end, "completed_on": r.completed_on,
+            "reason": r.status_reason, "description_html": render_markdown(r.description),
+            "pending": r.status in ("planned", "in_progress", "deferred"), "images": pictures.get(r.pk, []),
+        }
+        for r in rows
+    ]  # fmt: skip
 
 
 def _roadmap(findings: list[dict], today) -> list[dict]:
@@ -273,8 +302,12 @@ def collect(job, actor) -> dict:
         .order_by("-in_scope", "asset__name")
     ]
 
+    scenario_rows = _scenarios(eng, "engagement_scenarios.view" in perms)
     return {
         "job": job,
+        "scenarios": scenario_rows,
+        "scenarios_pending": sum(1 for r in scenario_rows if r["pending"]),
+        "scenarios_tested": sum(1 for r in scenario_rows if r["status"] == "tested"),
         "engagement": eng,
         "organisation": eng.organisation,
         "title": job.title or f"{eng.get_type_display()} penetration test",

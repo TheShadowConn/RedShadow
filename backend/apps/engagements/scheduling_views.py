@@ -33,7 +33,13 @@ class CalendarViewSet(viewsets.ViewSet):
     """Calendar feed and rescheduling. Both go through the scoped engagement selector."""
 
     permission_classes = [IsAuthenticatedSession, ActionPermission]
-    permission_map = {"events": "calendar.view", "reschedule": "engagements.schedule"}
+    permission_map = {"events": "calendar.view", "scenarios": "calendar.view", "reschedule": "engagements.schedule"}
+
+    @action(detail=False, methods=["get"], url_path="scenarios")
+    def scenarios(self, request):
+        p = request.query_params
+        start, end = scheduling.parse_window(p.get("start", ""), p.get("end", ""))
+        return Response({"results": scheduling.scenario_feed(request.user, start, end)})
 
     @action(detail=False, methods=["get"], url_path="events")
     def events(self, request):

@@ -12,6 +12,7 @@ import {
 } from "../../design/ui";
 import { SeverityScale, isConflict } from "../findings/shared";
 import { ImportStatus, KindBadge, ReuploadPanel, targetName } from "./ImportsPage";
+import { ImportKindChip, ImportKindToast } from "./ImportNotice";
 
 const STEPS = ["File", "Columns", "Check", "Import", "Done"];
 const WORKING = ["uploaded", "parsing", "validating", "importing"];
@@ -46,8 +47,10 @@ export function ImportPage() {
   return (
     <>
       {back}
+      <ImportKindToast kind={job.kind} />
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
+          <p className="m-0 mb-2"><ImportKindChip kind={job.kind} /></p>
           <p className="mono m-0 flex items-center gap-2 text-[14px] text-muted"><KindBadge kind={job.kind} />{job.engagement ? job.engagement.ref : "Organisation"}{job.attempt > 1 && <span>attempt {job.attempt}</span>}</p>
           <h1 className="mt-1 break-all text-[32px] max-sm:text-[26px]">{job.original_name}</h1>
           <p className="mt-3 flex flex-wrap items-center gap-3 text-muted"><ImportStatus status={job.status} /><span>{targetName(job)}</span><span>{formatBytes(job.file_size)}</span><span>{formatDate(job.created_at)}</span></p>

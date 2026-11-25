@@ -11,7 +11,7 @@ from rest_framework.exceptions import ValidationError
 from apps.audit import service as audit
 from apps.core.errors import Conflict, PayloadTooLarge
 from apps.core.storage import get_storage
-from apps.engagements.models import Engagement
+from apps.engagements.models import Engagement, EngagementScenario
 from apps.findings.models import Finding
 from apps.organisations.models import Organisation
 from apps.rbac.authz import has_engagement_perm
@@ -31,7 +31,8 @@ def _read_upload(uploaded) -> bytes:
 
 
 def _store(
-    request, actor, uploaded, *, kind, engagement=None, organisation=None, finding=None, allowed_kinds=None
+    request, actor, uploaded, *, kind, engagement=None, organisation=None, finding=None, scenario=None,
+    allowed_kinds=None,
 ) -> Attachment:
     name = clean_name(uploaded.name)
     try:
@@ -43,7 +44,8 @@ def _store(
     try:
         with transaction.atomic():
             att = Attachment.objects.create(
-                kind=kind, engagement=engagement, organisation=organisation, finding=finding, original_name=name,
+                kind=kind, engagement=engagement, organisation=organisation, finding=finding, scenario=scenario,
+                original_name=name,
                 storage_key=key, mime=inspected.mime, size=len(inspected.data),
                 sha256=hashlib.sha256(inspected.data).hexdigest(), uploaded_by=actor,
             )  # fmt: skip
@@ -54,6 +56,7 @@ def _store(
                     "organisation": organisation.name if organisation else None,
                     "finding_id": str(finding.pk) if finding else None,
                     "finding": finding.ref if finding else None,
+                    "scenario_id": str(scenario.pk) if scenario else None,
                 },
             )  # fmt: skip
     except Exception:
@@ -113,6 +116,36 @@ def delete_evidence(request, actor, att: Attachment) -> None:
         att.save(update_fields=["deleted_at", "updated_at"])
         audit.record("attachment.deleted", request=request, entity=att, engagement=att.engagement,
                      metadata={"kind": "evidence", "finding_id": str(att.finding_id)})  # fmt: skip
+
+
+MAX_IMAGES_PER_SCENARIO = 10
+
+
+def upload_scenario_image(request, actor, scenario: EngagementScenario, uploaded) -> Attachment:
+    eng = scenario.engagement
+    if not has_engagement_perm(actor, eng.pk, "engagement_scenarios.manage"):
+        deny(request, "attachment.upload_denied", "You do not have permission to change scenarios.", eng)
+    if eng.is_archived:
+        raise Conflict("This engagement is archived. Unarchive it to make changes.")
+    if Attachment.objects.filter(scenario=scenario, deleted_at__isnull=True).count() >= MAX_IMAGES_PER_SCENARIO:
+        raise Conflict(f"A scenario can hold at most {MAX_IMAGES_PER_SCENARIO} pictures.")
+    return _store(request, actor, uploaded, kind="scenario_image", engagement=eng, scenario=scenario,
+                  allowed_kinds=IMAGE_KINDS)  # fmt: skip
+
+
+def delete_scenario_image(request, actor, att: Attachment) -> None:
+    if att.kind != "scenario_image":
+        raise Conflict("Only scenario pictures are deleted here.")
+    if not has_engagement_perm(actor, att.engagement_id, "engagement_scenarios.manage"):
+        deny(request, "attachment.delete_denied", "You do not have permission to change scenarios.", att)
+    with transaction.atomic():
+        att = Attachment.objects.select_for_update(of=("self",)).select_related("engagement").get(pk=att.pk)
+        if att.engagement.is_archived:
+            raise Conflict("This engagement is archived. Unarchive it to make changes.")
+        att.deleted_at = timezone.now()
+        att.save(update_fields=["deleted_at", "updated_at"])
+        audit.record("attachment.deleted", request=request, entity=att, engagement=att.engagement,
+                     metadata={"kind": "scenario_image", "scenario_id": str(att.scenario_id)})  # fmt: skip
 
 
 def set_logo(request, actor, org: Organisation, uploaded) -> Attachment:

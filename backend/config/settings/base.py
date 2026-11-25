@@ -77,7 +77,7 @@ SLA_DAYS = {
     "low": int(os.environ.get("SLA_DAYS_LOW", "180")),
 }
 # Shown on the About page. Set through compose env (APP_VERSION, BUILD_ID, BUILD_DATE).
-APP_VERSION = os.environ.get("APP_VERSION", "1.3.0")
+APP_VERSION = os.environ.get("APP_VERSION", "1.4.0")
 BUILD_ID = os.environ.get("BUILD_ID", "dev")
 BUILD_DATE = os.environ.get("BUILD_DATE", "")
 
@@ -165,6 +165,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "reports-cleanup-daily": {"task": "reports.cleanup", "schedule": 86400.0, "options": {"queue": "maintenance"}},
     "findings-sla-sweep-hourly": {"task": "findings.sla_sweep", "schedule": 3600.0},
+    "engagements-scenario-reminders-hourly": {"task": "engagements.scenario_reminders", "schedule": 3600.0},
     "findings-due-soon-hourly": {"task": "findings.due_soon_sweep", "schedule": 3600.0},
     "notifications-prune-daily": {
         "task": "notifications.prune",

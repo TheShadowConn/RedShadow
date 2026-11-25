@@ -9,7 +9,7 @@ import { Button, ErrorNote } from "../design/ui";
 import { LoginPage } from "../features/auth/LoginPage";
 import { MfaSetupRequired, MfaVerify, PasswordChange } from "../features/auth/RestrictionFlow";
 import { OverviewPage } from "../features/home/OverviewPage";
-import { Shell, useFixerLanding } from "./Shell";
+import { Shell } from "./Shell";
 
 const AboutPage = lazy(() => import("../features/about/AboutPage").then((m) => ({ default: m.AboutPage })));
 const AssetsPage = lazy(() => import("../features/assets/AssetsPage").then((m) => ({ default: m.AssetsPage })));
@@ -48,9 +48,9 @@ function Splash({ children }: { children?: React.ReactNode }) {
   );
 }
 
+/** Everyone lands on the dashboard of their role. Remediation owners reach their queue from it. */
 function Landing() {
-  const fixer = useFixerLanding();
-  return fixer ? <Navigate to="/remediation" replace /> : <OverviewPage />;
+  return <OverviewPage />;
 }
 
 function Gate() {
@@ -94,7 +94,7 @@ function Gate() {
         <Route path="users" element={<UsersPage />} />
         <Route path="roles/:roleId?" element={<RolesPage />} />
         <Route path="account" element={<AccountPage />} />
-<Route path="about" element={<AboutPage />} />
+        <Route path="about" element={<AboutPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

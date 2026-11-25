@@ -47,6 +47,8 @@ PERMISSIONS: dict[str, tuple[str, str]] = {
     "engagement_notes.create": (ENGAGEMENT, "Create engagement notes"),
     "engagement_costs.view": (PLATFORM, "View engagement costs and the cost totals on the admin dashboard"),
     "engagement_costs.manage": (PLATFORM, "Add, edit and delete engagement cost lines"),
+    "engagement_scenarios.view": (ENGAGEMENT, "View engagement scenarios and their pictures"),
+    "engagement_scenarios.manage": (ENGAGEMENT, "Add, edit, reschedule, cancel and reorder scenarios"),
     "documents.view": (ENGAGEMENT, "View engagement documents"),
     "documents.upload": (ENGAGEMENT, "Upload engagement documents"),
     "documents.delete": (ENGAGEMENT, "Delete engagement documents"),
@@ -96,6 +98,7 @@ PERMISSIONS: dict[str, tuple[str, str]] = {
 _PENTESTER_GRANTS = [
     "organisations.view", "assets.view", "engagements.view", "engagements.update_status",
     "engagement_notes.view_team", "engagement_notes.view_shared", "engagement_notes.create",
+    "engagement_scenarios.view", "engagement_scenarios.manage",
     "documents.view", "documents.upload",
     "findings.view", "findings.view_draft", "findings.create", "findings.update",
     "findings.duplicate", "findings.assign", "findings.bulk_update", "findings.publish",
@@ -111,7 +114,7 @@ _PENTESTER_GRANTS = [
 
 _REMEDIATION_GRANTS = [
     "organisations.view", "assets.view", "engagements.view",
-    "engagement_notes.view_shared", "documents.view", "findings.view",
+    "engagement_notes.view_shared", "engagement_scenarios.view", "documents.view", "findings.view",
     "evidence.view", "evidence.upload", "evidence.delete_own",
     "finding_notes.remediation", "remediation.update_status",
     "remediation.submit_verification", "retests.view", "exports.csv", "audit.view_engagement",
@@ -122,7 +125,7 @@ _REMEDIATION_GRANTS = [
 # own import jobs. They publish their own findings but cannot verify, close, reopen, assign or delete.
 _VENDOR_GRANTS = [
     "organisations.view", "assets.view", "engagements.view", "engagement_notes.view_shared",
-    "documents.view", "documents.upload",
+    "engagement_scenarios.view", "documents.view", "documents.upload",
     "findings.view", "findings.view_draft", "findings.create", "findings.update", "findings.duplicate",
     "findings.publish", "evidence.view", "evidence.upload", "evidence.delete_own",
     "finding_notes.technical", "retests.view", "templates.view",

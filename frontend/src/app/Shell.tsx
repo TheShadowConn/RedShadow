@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { Bug, Building2, Server, CalendarDays, ClipboardCheck, FileUp, FileText, Palette, Crosshair, FileStack, ScrollText, LayoutDashboard, MoreHorizontal, LogOut, Moon, Repeat2, ShieldCheck, Sun, UserCircle, Users, Wrench, type LucideIcon } from "lucide-react";
+import { Bug, Building2, Info, Server, CalendarDays, ClipboardCheck, FileUp, FileText, Palette, Crosshair, FileStack, ScrollText, LayoutDashboard, MoreHorizontal, LogOut, Moon, Repeat2, ShieldCheck, Sun, UserCircle, Users, Wrench, type LucideIcon } from "lucide-react";
 
 import { useAuth } from "../api/auth";
 import { Credit } from "../design/Credit";
@@ -33,6 +33,7 @@ const ITEMS: Item[] = [
   { to: "/users", label: "Users", icon: Users, perm: "users.view" },
   { to: "/roles", label: "Roles", icon: ShieldCheck, perm: "roles.view" },
   { to: "/account", label: "Account", icon: UserCircle },
+  { to: "/about", label: "About", icon: Info },
 ];
 
 function useTheme() {
@@ -55,9 +56,9 @@ function useTheme() {
 }
 
 const MOBILE_PRIMARY = new Set(["/", "/engagements", "/findings"]);
-const MOBILE_PRIMARY_FIXERS = new Set(["/remediation", "/findings", "/retests"]);
+const MOBILE_PRIMARY_FIXERS = new Set(["/", "/remediation", "/findings"]);
 
-/** Fixers (can start work, cannot create findings) work from the queue, so it is their landing page. */
+/** Fixers (can start work, cannot create findings) work from the queue: it is one tap from their dashboard and in their mobile bar. */
 export const useFixerLanding = () => {
   const { can } = useAuth();
   return can("remediation.update_status") && !can("findings.create");
@@ -68,7 +69,7 @@ export function Shell() {
   const { theme, toggle } = useTheme();
   const signOut = useSignOut();
   const fixer = useFixerLanding();
-  const items = ITEMS.filter((i) => (!i.perm || can(i.perm)) && !(fixer && i.to === "/"));
+  const items = ITEMS.filter((i) => !i.perm || can(i.perm));
   const primarySet = fixer ? MOBILE_PRIMARY_FIXERS : MOBILE_PRIMARY;
   const [more, setMore] = useState(false);
   const [search, setSearch] = useState(false);

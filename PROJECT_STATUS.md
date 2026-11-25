@@ -270,3 +270,13 @@ Done on a throwaway `rs_qa` stack (removed with its own volumes only; real `reds
 
 - Version default raised to 1.1.0 (`APP_VERSION` in compose, Makefile and settings, shown on the About page and the manual cover). The manual PDF is rebuilt for 1.1.0.
 - Contents of 1.1.0 since 1.0.0: engagement cost (per currency, Super Admin only by default), the Racing Red report theme, asset matching by name, IP or URL on CSV import, the eclipse loading animation, and the updated user manual.
+
+## Release 1.4.0 (2026-11-25)
+
+- **Test scenarios** (ADR-0023): an engagement lists use cases with their own name, description, pictures, planned dates and status (planned, in progress, tested, deferred, cancelled). No owner and no link from findings. Add, add several, edit, reschedule, defer, cancel, reorder, per-scenario history, progress bars, calendar bars, hourly reminders, scenarios copied by Clone, an interim-report section in the PDF, and a completion guard that asks for confirmation.
+- **Role dashboards:** every role opens its own dashboard. Remediation no longer redirects to the queue and gets an "Open my queue" button. A scenarios panel lists late and soon-starting scenarios.
+- **Import notice:** a chip and a short pop-up say whether you are importing assets or findings.
+- **About:** an "About" entry in the menu.
+- New permissions `engagement_scenarios.view` and `engagement_scenarios.manage` (rbac migration 0004); migrations `engagements/0007` and `files/0003`.
+- User manual rebuilt for 1.4.0, with a new Test scenarios chapter.
+- Workflow additions: a starter scenario library (OWASP Top 10, API Top 10, Mobile Top 10, internal network, cloud), a notification when a deferred scenario's date arrives, a "Retest this scenario" shortcut into the Verification queue, and a "Scenarios this week" panel on the Pentester dashboard.

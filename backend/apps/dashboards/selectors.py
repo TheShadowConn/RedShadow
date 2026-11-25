@@ -27,6 +27,7 @@ DUE_SOON_DAYS = 7
 SLA_WINDOW_DAYS = 90
 ACTIVITY_LIMIT = 8
 COST_TOP = 8
+SCENARIO_ITEMS = 6
 
 
 def _zeroed(keys, counts) -> dict[str, int]:
@@ -242,6 +243,63 @@ def costs_block(user) -> dict | None:
     }  # fmt: skip
 
 
+def _scenario_item(r, today) -> dict:
+    return {
+        "id": r.pk, "name": r.name, "status": r.status, "planned_start": r.planned_start, "planned_end": r.planned_end,
+        "overdue": r.status in ("planned", "in_progress") and r.planned_end is not None and r.planned_end < today,
+        "engagement": {"id": r.engagement_id, "ref": r.engagement.ref, "name": r.engagement.name},
+    }  # fmt: skip
+
+
+def scenarios_block(user, today, kind: str = "admin") -> dict:
+    """Scenario counts over the engagements the user may read scenarios of. Open engagements only."""
+    from apps.engagements.models import EngagementScenario
+    from apps.engagements.selectors import scope_engagements as _scope
+
+    open_engagements = _scope(user, "engagement_scenarios.view").filter(
+        status__in=("planned", "scheduled", "in_progress", "reporting")
+    )
+    live = EngagementScenario.objects.filter(engagement__in=open_engagements).exclude(status="cancelled")
+    horizon = today + timedelta(days=DUE_SOON_DAYS)
+    # The list people act on: what is late or about to start. Admins also see deferred scenarios waiting for a date.
+    wanted = Q(status__in=("planned", "in_progress"), planned_end__lt=today) | Q(
+        status__in=("planned", "deferred"), planned_start__gte=today, planned_start__lte=horizon
+    )
+    if kind == "admin":
+        wanted |= Q(status="deferred")
+    rows = (
+        live.filter(wanted)
+        .select_related("engagement")
+        .order_by(F("planned_end").asc(nulls_last=True), F("planned_start").asc(nulls_last=True), "position")[
+            :SCENARIO_ITEMS
+        ]
+    )
+    week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=6)
+    this_week = None
+    if kind == "pentester":
+        mine = (
+            live.filter(status__in=("planned", "in_progress", "deferred"), planned_start__isnull=False)
+            .filter(planned_start__lte=week_end)
+            .filter(Q(planned_end__gte=week_start) | Q(planned_end__isnull=True, planned_start__gte=week_start))
+            .select_related("engagement")
+            .order_by("planned_start", "position")[:SCENARIO_ITEMS]
+        )
+        this_week = {"from": week_start, "to": week_end, "items": [_scenario_item(r, today) for r in mine]}
+    return {
+        "this_week": this_week,
+        "items": [_scenario_item(r, today) for r in rows],
+        "total": live.count(),
+        "tested": live.filter(status="tested").count(),
+        "in_progress": live.filter(status="in_progress").count(),
+        "deferred": live.filter(status="deferred").count(),
+        "overdue": live.filter(status__in=("planned", "in_progress"), planned_end__lt=today).count(),
+        "starting_soon": live.filter(
+            status__in=("planned", "deferred"), planned_start__gte=today, planned_start__lte=horizon
+        ).count(),
+    }
+
+
 def admin(user, today) -> dict:
     return {
         "costs": costs_block(user),
@@ -294,6 +352,7 @@ def build(kind: str, user) -> dict:
     return {
         "kind": kind,
         "generated_at": timezone.now(),
+        "scenarios": scenarios_block(user, today, kind),
         "findings": findings_block(user, today),
         "engagements": engagements_block(user, today),
         "trend": trend(user, today),

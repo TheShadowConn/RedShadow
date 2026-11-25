@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Q
+from django.db.models.functions import Lower
 
 from apps.core.models import BaseModel, SoftDeleteModel
 
@@ -152,3 +153,44 @@ class EngagementCost(BaseModel):
 
 
 CATEGORY_CODES = [code for code, _ in EngagementCost.CATEGORIES]
+
+
+class EngagementScenario(BaseModel):
+    """One use case or test scenario inside an engagement.
+
+    A scenario only records what is tested and when. It has no owner: the engagement lead owns the work, and
+    findings belong to the engagement, never to a scenario. The name is exactly what the user typed.
+    """
+
+    STATUSES = [
+        ("planned", "Planned"), ("in_progress", "In progress"), ("tested", "Tested"),
+        ("deferred", "Deferred"), ("cancelled", "Cancelled"),
+    ]  # fmt: skip
+
+    engagement = models.ForeignKey(Engagement, on_delete=models.CASCADE, related_name="scenarios")
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    status = models.CharField(max_length=12, choices=STATUSES, default="planned")
+    status_reason = models.CharField(max_length=500, blank=True)
+    planned_start = models.DateField(null=True, blank=True)
+    planned_end = models.DateField(null=True, blank=True)
+    completed_on = models.DateField(null=True, blank=True)
+    position = models.PositiveIntegerField(default=0)
+    created_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.PROTECT, related_name="+")
+
+    class Meta:
+        ordering = ["position", "created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                Lower("name"), "engagement", name="uniq_scenario_name_per_engagement"
+            ),
+            models.CheckConstraint(
+                condition=Q(planned_start__isnull=True) | Q(planned_end__isnull=True)
+                | Q(planned_end__gte=models.F("planned_start")),
+                name="scenario_dates_ordered",
+            ),
+        ]
+        indexes = [models.Index(fields=["engagement", "status"], name="scenario_eng_status")]
+
+    def audit_label(self) -> str:
+        return self.name

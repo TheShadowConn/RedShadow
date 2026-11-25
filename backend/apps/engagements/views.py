@@ -15,8 +15,8 @@ from apps.files.serializers import AttachmentSerializer, UploadSerializer
 from apps.rbac.authz import has_engagement_perm, user_permissions
 from apps.rbac.viewsets import ScopedModelViewSet
 
-from . import selectors, services
-from .models import Engagement, EngagementAsset, EngagementCost, EngagementMembership
+from . import scenario_templates, scenarios, selectors, services
+from .models import Engagement, EngagementAsset, EngagementCost, EngagementMembership, EngagementScenario
 from .serializers import (
     AssetLinkCreateSerializer,
     AssetLinkUpdateSerializer,
@@ -37,6 +37,14 @@ from .serializers import (
     MemberUpdateSerializer,
     NoteCreateSerializer,
     NoteSerializer,
+    ScenarioBulkSerializer,
+    ScenarioCreateSerializer,
+    ScenarioOrderSerializer,
+    ScenarioRescheduleSerializer,
+    ScenarioSerializer,
+    ScenarioStatusSerializer,
+    ScenarioTemplateApplySerializer,
+    ScenarioUpdateSerializer,
     StatusSerializer,
     VersionSerializer,
 )
@@ -87,6 +95,18 @@ class EngagementViewSet(ScopedModelViewSet):
         "add_cost": "engagement_costs.manage",
         "update_cost": "engagement_costs.manage",
         "delete_cost": "engagement_costs.manage",
+        "scenarios": "engagement_scenarios.view",
+        "add_scenario": "engagement_scenarios.manage",
+        "add_scenarios_bulk": "engagement_scenarios.manage",
+        "scenario_template_list": "engagement_scenarios.manage",
+        "apply_scenario_template": "engagement_scenarios.manage",
+        "scenario_history": "engagement_scenarios.view",
+        "update_scenario": "engagement_scenarios.manage",
+        "reschedule_scenario": "engagement_scenarios.manage",
+        "scenario_status": "engagement_scenarios.manage",
+        "reorder_scenarios": "engagement_scenarios.manage",
+        "add_scenario_image": "engagement_scenarios.manage",
+        "delete_scenario_image": "engagement_scenarios.manage",
         "notes": "engagement_notes.view_shared",
         "add_note": "engagement_notes.create",
         "history": "audit.view_engagement",
@@ -109,8 +129,10 @@ class EngagementViewSet(ScopedModelViewSet):
                 return Engagement.all_objects.none()
             deleted = Engagement.all_objects.filter(deleted_at__isnull=False)
             return selectors.with_overdue(deleted).select_related("organisation", "lead").order_by("-deleted_at")
-        qs = selectors.with_overdue(selectors.scope_engagements(self.request.user)).select_related(
-            "organisation", "lead"
+        qs = (
+            selectors.with_overdue(selectors.scope_engagements(self.request.user))
+            .select_related("organisation", "lead")
+            .prefetch_related("scenarios")
         )
         if self.action != "list":
             return qs
@@ -194,7 +216,10 @@ class EngagementViewSet(ScopedModelViewSet):
     @action(detail=True, methods=["post"], url_path="status")
     def change_status(self, request, pk=None):
         data = _validated(StatusSerializer, request)
-        eng = services.change_status(request, request.user, self.get_object(), data["status"], data["version"])
+        eng = services.change_status(
+            request, request.user, self.get_object(), data["status"], data["version"],
+            data["acknowledge_open_scenarios"],
+        )
         return Response(self._detail(eng))
 
     # members
@@ -312,6 +337,101 @@ class EngagementViewSet(ScopedModelViewSet):
         services.delete_cost(request, request.user, eng, cost)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    # scenarios
+
+    def _scenario(self, eng, scenario_id):
+        return get_object_or_404(EngagementScenario, engagement=eng, pk=_uuid_or_404(scenario_id))
+
+    @action(detail=True, methods=["get"], url_path="scenarios", pagination_class=None)
+    def scenarios(self, request, pk=None):
+        eng = self.get_object()
+        rows = EngagementScenario.objects.filter(engagement=eng).prefetch_related("images")
+        return Response(ScenarioSerializer(rows, many=True).data)
+
+    @scenarios.mapping.post
+    def add_scenario(self, request, pk=None):
+        eng = self.get_object()
+        data = _validated(ScenarioCreateSerializer, request)
+        sc = scenarios.add_scenario(request, request.user, eng, data)
+        return Response(ScenarioSerializer(sc).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"], url_path="scenarios-bulk")
+    def add_scenarios_bulk(self, request, pk=None):
+        eng = self.get_object()
+        names = _validated(ScenarioBulkSerializer, request)["names"]
+        made = scenarios.add_scenarios_bulk(request, request.user, eng, names)
+        return Response(ScenarioSerializer(made, many=True).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["get"], url_path="scenario-templates", pagination_class=None)
+    def scenario_template_list(self, request, pk=None):
+        self.get_object()
+        return Response(scenario_templates.listing())
+
+    @action(detail=True, methods=["post"], url_path="scenario-templates/apply")
+    def apply_scenario_template(self, request, pk=None):
+        eng = self.get_object()
+        data = _validated(ScenarioTemplateApplySerializer, request)
+        made, skipped = scenarios.add_from_template(request, request.user, eng, data["template"], data.get("items"))
+        return Response({"created": ScenarioSerializer(made, many=True).data, "skipped": skipped},
+                        status=status.HTTP_201_CREATED)  # fmt: skip
+
+    @action(detail=True, methods=["get"], url_path=r"scenarios/(?P<scenario_id>[^/.]+)/history")
+    def scenario_history(self, request, pk=None, scenario_id=None):
+        eng = self.get_object()
+        sc = self._scenario(eng, scenario_id)
+        if not has_engagement_perm(request.user, eng.pk, "audit.view_engagement"):
+            raise PermissionDenied("You do not have permission to view history.")
+        qs = AuditEvent.objects.filter(engagement_id=eng.pk, metadata__scenario_id=str(sc.pk)).order_by("-id")
+        page = self.paginate_queryset(qs)
+        return self.get_paginated_response(HistorySerializer(page, many=True).data)
+
+    @action(detail=True, methods=["post"], url_path="scenario-order")
+    def reorder_scenarios(self, request, pk=None):
+        eng = self.get_object()
+        ids = _validated(ScenarioOrderSerializer, request)["ids"]
+        rows = scenarios.reorder_scenarios(request, request.user, eng, ids)
+        return Response(ScenarioSerializer(rows, many=True).data)
+
+    @action(detail=True, methods=["patch"], url_path=r"scenarios/(?P<scenario_id>[^/.]+)")
+    def update_scenario(self, request, pk=None, scenario_id=None):
+        eng = self.get_object()
+        sc = self._scenario(eng, scenario_id)
+        data = _validated(ScenarioUpdateSerializer, request, partial=True)
+        return Response(ScenarioSerializer(scenarios.update_scenario(request, request.user, eng, sc, data)).data)
+
+    @action(detail=True, methods=["post"], url_path=r"scenarios/(?P<scenario_id>[^/.]+)/reschedule")
+    def reschedule_scenario(self, request, pk=None, scenario_id=None):
+        eng = self.get_object()
+        sc = self._scenario(eng, scenario_id)
+        data = _validated(ScenarioRescheduleSerializer, request)
+        return Response(ScenarioSerializer(scenarios.reschedule_scenario(request, request.user, eng, sc, data)).data)
+
+    @action(detail=True, methods=["post"], url_path=r"scenarios/(?P<scenario_id>[^/.]+)/status")
+    def scenario_status(self, request, pk=None, scenario_id=None):
+        eng = self.get_object()
+        sc = self._scenario(eng, scenario_id)
+        data = _validated(ScenarioStatusSerializer, request)
+        return Response(ScenarioSerializer(scenarios.change_scenario_status(request, request.user, eng, sc, data)).data)
+
+    @action(detail=True, methods=["post"], url_path=r"scenarios/(?P<scenario_id>[^/.]+)/images",
+            parser_classes=[MultiPartParser])
+    def add_scenario_image(self, request, pk=None, scenario_id=None):
+        eng = self.get_object()
+        sc = self._scenario(eng, scenario_id)
+        upload = _validated(UploadSerializer, request)["file"]
+        att = file_services.upload_scenario_image(request, request.user, sc, upload)
+        return Response(AttachmentSerializer(att).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["delete"], url_path=r"scenarios/(?P<scenario_id>[^/.]+)/images/(?P<image_id>[^/.]+)")
+    def delete_scenario_image(self, request, pk=None, scenario_id=None, image_id=None):
+        eng = self.get_object()
+        sc = self._scenario(eng, scenario_id)
+        att = get_object_or_404(
+            Attachment, scenario=sc, kind="scenario_image", deleted_at__isnull=True, pk=_uuid_or_404(image_id)
+        )
+        file_services.delete_scenario_image(request, request.user, att)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     # notes
 
     @action(detail=True, methods=["get"], url_path="notes")
@@ -367,6 +487,7 @@ class EngagementViewSet(ScopedModelViewSet):
         eng = (
             selectors.with_overdue(selectors.scope_engagements(self.request.user))
             .select_related("organisation", "lead")
+            .prefetch_related("scenarios")
             .get(pk=eng.pk)
         )
         return EngagementSerializer(eng, context={"request": self.request}).data

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { useAuth } from "../../api/auth";
 import type { QueueRow } from "../../api/types";
@@ -14,11 +15,13 @@ export function VerificationQueue() {
   const { can } = useAuth();
   const [action, setAction] = useState<{ row: QueueRow; move: Move } | null>(null);
   const [request, setRequest] = useState<{ rows: QueueRow[]; done: () => void } | null>(null);
+  const scenario = useSearchParams()[0].get("scenario") ?? "";
   const canVerify = can("findings.verify");
   const canRequest = can("retests.create");
 
   return (
     <>
+      {scenario && <div className="mb-4"><Alert tone="ok">Retest for scenario <strong>{scenario}</strong>. Select the findings it covers and choose Request retest. The scenario name is added to the note.</Alert></div>}
       <QueueView
         title="Verification"
         lead="Fixes submitted for retest, longest waiting first."
@@ -44,7 +47,7 @@ export function VerificationQueue() {
         )}
       />
       {action && <MoveDialog f={action.row} move={action.move} onClose={() => setAction(null)} />}
-      {request && <RequestRetestDialog rows={request.rows} onClose={() => setRequest(null)} onDone={request.done} />}
+      {request && <RequestRetestDialog rows={request.rows} defaultNote={scenario ? `Retest of scenario: ${scenario}` : ""} onClose={() => setRequest(null)} onDone={request.done} />}
     </>
   );
 }

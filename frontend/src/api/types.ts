@@ -177,6 +177,36 @@ export type EngagementRow = {
   version: number;
   archived_at: string | null;
   deleted_at?: string | null;
+  scenarios?: ScenarioSummary;
+};
+
+export type ScenarioStatus = "planned" | "in_progress" | "tested" | "deferred" | "cancelled";
+export const SCENARIO_STATUSES = [
+  ["planned", "Planned"], ["in_progress", "In progress"], ["tested", "Tested"], ["deferred", "Deferred"], ["cancelled", "Cancelled"],
+] as const;
+export type ScenarioSummary = {
+  total: number; planned: number; in_progress: number; tested: number; deferred: number; cancelled: number; overdue: number; next_date: string | null;
+};
+export type ScenarioImage = { id: string; original_name: string; mime: string; size: number; download_url: string; created_at: string };
+export type Scenario = {
+  id: string;
+  name: string;
+  description: string;
+  status: ScenarioStatus;
+  status_reason: string;
+  planned_start: string | null;
+  planned_end: string | null;
+  completed_on: string | null;
+  position: number;
+  overdue: boolean;
+  images: ScenarioImage[];
+  created_at: string;
+  updated_at: string;
+};
+export type ScenarioTemplate = { key: string; name: string; items: Array<{ index: number; name: string; description: string }> };
+export type CalendarScenario = {
+  id: string; name: string; status: ScenarioStatus; planned_start: string; planned_end: string; overdue: boolean;
+  engagement: { id: string; ref: string; name: string };
 };
 
 export type Engagement = EngagementRow & {
@@ -520,7 +550,7 @@ export type SavedMapping = { id: string; name: string; column_map: Record<string
 
 export const REPORT_SECTIONS = [
   ["document_control", "Document control"], ["executive_summary", "Executive summary"], ["engagement_info", "Engagement overview"],
-  ["scope", "Scope"], ["methodology", "Methodology and rating scale"], ["summary_table", "Findings at a glance"],
+  ["scope", "Scope"], ["scenarios", "Test scenarios"], ["methodology", "Methodology and rating scale"], ["summary_table", "Findings at a glance"],
   ["severity_distribution", "Severity and status distribution"], ["findings", "Detailed findings"],
   ["remediation_roadmap", "Remediation roadmap"], ["retest_summary", "Retest results"], ["appendix", "Appendix"],
 ] as const;
@@ -586,6 +616,11 @@ export type Dashboard = {
   mine?: { open: number; overdue: number; drafts: number };
   retests?: { active_rounds: number; items_pending: number; rounds: Array<{ id: string; ref: string; engagement: { id: string; ref: string }; status: string; pending: number }> };
   recently_closed?: number;
+  scenarios?: {
+    total: number; tested: number; in_progress: number; deferred: number; overdue: number; starting_soon: number;
+    items: Array<{ id: string; name: string; status: ScenarioStatus; planned_start: string | null; planned_end: string | null; overdue: boolean; engagement: { id: string; ref: string; name: string } }>;
+    this_week: { from: string; to: string; items: Array<{ id: string; name: string; status: ScenarioStatus; planned_start: string | null; planned_end: string | null; overdue: boolean; engagement: { id: string; ref: string; name: string } }> } | null;
+  };
 };
 
 export const COST_CATEGORIES = [

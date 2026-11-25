@@ -1,11 +1,13 @@
 from decimal import Decimal
 
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.accounts.models import User
 from apps.audit.models import AuditEvent
 from apps.core.fields import ScopedPrimaryKeyField
 from apps.core.serializers import StrictSerializer
+from apps.files.serializers import AttachmentSerializer
 from apps.organisations.models import Asset, Organisation
 from apps.organisations.selectors import scope_organisations
 from apps.rbac.authz import engagement_permissions
@@ -20,6 +22,7 @@ from .models import (
     EngagementCost,
     EngagementMembership,
     EngagementNote,
+    EngagementScenario,
 )
 
 _ENGAGEMENT_CODES = {c for c, (scope, _) in PERMISSIONS.items() if scope == ENGAGEMENT}
@@ -36,17 +39,24 @@ class EngagementListSerializer(serializers.ModelSerializer):
     organisation = serializers.SerializerMethodField()
     lead = UserRefSerializer(read_only=True)
     overdue = serializers.BooleanField(read_only=True)
+    scenarios = serializers.SerializerMethodField()
 
     class Meta:
         model = Engagement
         fields = [
             "id", "ref", "organisation", "name", "type", "status", "start_date", "end_date",
-            "lead", "overdue", "version", "archived_at", "deleted_at", "created_at", "updated_at",
+            "lead", "overdue", "scenarios", "version", "archived_at", "deleted_at", "created_at", "updated_at",
         ]  # fmt: skip
         read_only_fields = fields
 
     def get_organisation(self, obj):
         return {"id": obj.organisation_id, "name": obj.organisation.name}
+
+    def get_scenarios(self, obj):
+        """Counts only (no names), for the progress bar."""
+        from .scenarios import summarise
+
+        return summarise(obj.scenarios.all())
 
 
 class EngagementSerializer(EngagementListSerializer):
@@ -112,6 +122,7 @@ class DeleteSerializer(VersionSerializer):
 
 class StatusSerializer(VersionSerializer):
     status = serializers.ChoiceField(choices=[c for c, _ in Engagement.STATUSES if c != "archived"])
+    acknowledge_open_scenarios = serializers.BooleanField(required=False, default=False)
 
 
 class MemberSerializer(serializers.ModelSerializer):
@@ -226,3 +237,67 @@ class CostUpdateSerializer(CostCreateSerializer):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.required = False
+
+
+class ScenarioSerializer(serializers.ModelSerializer):
+    images = serializers.SerializerMethodField()
+    overdue = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EngagementScenario
+        fields = [
+            "id", "name", "description", "status", "status_reason", "planned_start", "planned_end",
+            "completed_on", "position", "overdue", "images", "created_at", "updated_at",
+        ]  # fmt: skip
+        read_only_fields = fields
+
+    def get_images(self, obj):
+        live = [a for a in obj.images.all() if a.deleted_at is None]
+        return AttachmentSerializer(sorted(live, key=lambda a: a.created_at), many=True).data
+
+    def get_overdue(self, obj):
+        late = obj.planned_end is not None and obj.planned_end < timezone.localdate()
+        return bool(late and obj.status in ("planned", "in_progress"))
+
+
+class _ScenarioDates(StrictSerializer):
+    planned_start = serializers.DateField(required=False, allow_null=True)
+    planned_end = serializers.DateField(required=False, allow_null=True)
+
+
+class ScenarioCreateSerializer(_ScenarioDates):
+    name = serializers.CharField(max_length=200, trim_whitespace=True)
+    description = serializers.CharField(required=False, allow_blank=True, max_length=20000, default="")
+
+
+class ScenarioUpdateSerializer(StrictSerializer):
+    name = serializers.CharField(max_length=200, required=False, trim_whitespace=True)
+    description = serializers.CharField(required=False, allow_blank=True, max_length=20000)
+
+
+class ScenarioRescheduleSerializer(StrictSerializer):
+    planned_start = serializers.DateField(allow_null=True)
+    planned_end = serializers.DateField(allow_null=True)
+    reason = serializers.CharField(required=False, allow_blank=True, max_length=500, default="")
+
+
+class ScenarioStatusSerializer(_ScenarioDates):
+    status = serializers.ChoiceField(choices=[c for c, _ in EngagementScenario.STATUSES])
+    reason = serializers.CharField(required=False, allow_blank=True, max_length=500, default="")
+    completed_on = serializers.DateField(required=False)
+
+
+class ScenarioOrderSerializer(StrictSerializer):
+    ids = serializers.ListField(child=serializers.UUIDField(), allow_empty=False, max_length=200)
+
+
+class ScenarioBulkSerializer(StrictSerializer):
+    names = serializers.ListField(
+        child=serializers.CharField(max_length=200, trim_whitespace=True), allow_empty=False, max_length=50
+    )
+
+
+class ScenarioTemplateApplySerializer(StrictSerializer):
+    template = serializers.CharField(max_length=60)
+    items = serializers.ListField(child=serializers.IntegerField(min_value=0), required=False, max_length=50)
+
