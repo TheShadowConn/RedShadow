@@ -15,7 +15,7 @@ from apps.files.serializers import AttachmentSerializer, UploadSerializer
 from apps.rbac.authz import has_engagement_perm, user_permissions
 from apps.rbac.viewsets import ScopedModelViewSet
 
-from . import scenarios, selectors, services
+from . import scenario_templates, scenarios, selectors, services
 from .models import Engagement, EngagementAsset, EngagementCost, EngagementMembership, EngagementScenario
 from .serializers import (
     AssetLinkCreateSerializer,
@@ -43,6 +43,7 @@ from .serializers import (
     ScenarioRescheduleSerializer,
     ScenarioSerializer,
     ScenarioStatusSerializer,
+    ScenarioTemplateApplySerializer,
     ScenarioUpdateSerializer,
     StatusSerializer,
     VersionSerializer,
@@ -97,6 +98,8 @@ class EngagementViewSet(ScopedModelViewSet):
         "scenarios": "engagement_scenarios.view",
         "add_scenario": "engagement_scenarios.manage",
         "add_scenarios_bulk": "engagement_scenarios.manage",
+        "scenario_template_list": "engagement_scenarios.manage",
+        "apply_scenario_template": "engagement_scenarios.manage",
         "scenario_history": "engagement_scenarios.view",
         "update_scenario": "engagement_scenarios.manage",
         "reschedule_scenario": "engagement_scenarios.manage",
@@ -358,6 +361,19 @@ class EngagementViewSet(ScopedModelViewSet):
         names = _validated(ScenarioBulkSerializer, request)["names"]
         made = scenarios.add_scenarios_bulk(request, request.user, eng, names)
         return Response(ScenarioSerializer(made, many=True).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["get"], url_path="scenario-templates", pagination_class=None)
+    def scenario_template_list(self, request, pk=None):
+        self.get_object()
+        return Response(scenario_templates.listing())
+
+    @action(detail=True, methods=["post"], url_path="scenario-templates/apply")
+    def apply_scenario_template(self, request, pk=None):
+        eng = self.get_object()
+        data = _validated(ScenarioTemplateApplySerializer, request)
+        made, skipped = scenarios.add_from_template(request, request.user, eng, data["template"], data.get("items"))
+        return Response({"created": ScenarioSerializer(made, many=True).data, "skipped": skipped},
+                        status=status.HTTP_201_CREATED)  # fmt: skip
 
     @action(detail=True, methods=["get"], url_path=r"scenarios/(?P<scenario_id>[^/.]+)/history")
     def scenario_history(self, request, pk=None, scenario_id=None):

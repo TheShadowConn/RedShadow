@@ -279,3 +279,4 @@ Done on a throwaway `rs_qa` stack (removed with its own volumes only; real `reds
 - **About:** an "About" entry in the menu.
 - New permissions `engagement_scenarios.view` and `engagement_scenarios.manage` (rbac migration 0004); migrations `engagements/0007` and `files/0003`.
 - User manual rebuilt for 1.4.0, with a new Test scenarios chapter.
+- Workflow additions: a starter scenario library (OWASP Top 10, API Top 10, Mobile Top 10, internal network, cloud), a notification when a deferred scenario's date arrives, a "Retest this scenario" shortcut into the Verification queue, and a "Scenarios this week" panel on the Pentester dashboard.

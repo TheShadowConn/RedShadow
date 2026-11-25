@@ -243,6 +243,14 @@ def costs_block(user) -> dict | None:
     }  # fmt: skip
 
 
+def _scenario_item(r, today) -> dict:
+    return {
+        "id": r.pk, "name": r.name, "status": r.status, "planned_start": r.planned_start, "planned_end": r.planned_end,
+        "overdue": r.status in ("planned", "in_progress") and r.planned_end is not None and r.planned_end < today,
+        "engagement": {"id": r.engagement_id, "ref": r.engagement.ref, "name": r.engagement.name},
+    }  # fmt: skip
+
+
 def scenarios_block(user, today, kind: str = "admin") -> dict:
     """Scenario counts over the engagements the user may read scenarios of. Open engagements only."""
     from apps.engagements.models import EngagementScenario
@@ -266,21 +274,21 @@ def scenarios_block(user, today, kind: str = "admin") -> dict:
             :SCENARIO_ITEMS
         ]
     )
+    week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=6)
+    this_week = None
+    if kind == "pentester":
+        mine = (
+            live.filter(status__in=("planned", "in_progress", "deferred"), planned_start__isnull=False)
+            .filter(planned_start__lte=week_end)
+            .filter(Q(planned_end__gte=week_start) | Q(planned_end__isnull=True, planned_start__gte=week_start))
+            .select_related("engagement")
+            .order_by("planned_start", "position")[:SCENARIO_ITEMS]
+        )
+        this_week = {"from": week_start, "to": week_end, "items": [_scenario_item(r, today) for r in mine]}
     return {
-        "items": [
-            {
-                "id": r.pk,
-                "name": r.name,
-                "status": r.status,
-                "planned_start": r.planned_start,
-                "planned_end": r.planned_end,
-                "overdue": r.status in ("planned", "in_progress")
-                and r.planned_end is not None
-                and r.planned_end < today,
-                "engagement": {"id": r.engagement_id, "ref": r.engagement.ref, "name": r.engagement.name},
-            }
-            for r in rows
-        ],
+        "this_week": this_week,
+        "items": [_scenario_item(r, today) for r in rows],
         "total": live.count(),
         "tested": live.filter(status="tested").count(),
         "in_progress": live.filter(status="in_progress").count(),

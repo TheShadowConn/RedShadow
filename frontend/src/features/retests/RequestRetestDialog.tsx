@@ -9,12 +9,12 @@ import { noFieldErrors } from "../findings/shared";
 import { useInvalidateWork } from "../remediation/shared";
 
 /** Ask an assessor to retest findings of one engagement. Only people who can record results are offered. */
-export function RequestRetestDialog({ rows, onClose, onDone }: { rows: QueueRow[]; onClose: () => void; onDone: () => void }) {
+export function RequestRetestDialog({ rows, defaultNote = "", onClose, onDone }: { rows: QueueRow[]; defaultNote?: string; onClose: () => void; onDone: () => void }) {
   const nav = useNavigate();
   const refresh = useInvalidateWork();
   const engagement = rows[0].engagement;
   const [assessor, setAssessor] = useState("");
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState(defaultNote);
   const people = useQuery({ queryKey: ["assessors", engagement.id], queryFn: () => api<UserRef[]>("GET", `/retest-rounds/assessors?engagement=${engagement.id}`) });
   const save = useMutation({
     mutationFn: () => api<RetestRound>("POST", "/retest-rounds", { engagement: engagement.id, assessor, findings: rows.map((r) => r.id), note }),

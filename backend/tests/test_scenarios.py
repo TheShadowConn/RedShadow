@@ -411,10 +411,106 @@ def test_dashboard_items_differ_by_role(w, admin_client):
     add(admin_client, w.eng_a, "Far one", planned_start=far, planned_end=far)
     d = add(admin_client, w.eng_a, "Waiting").json()["id"]
     admin_client.post(url(w.eng_a, d, "/status"), {"status": "deferred", "reason": "Freeze"}, format="json")
-    names = lambda client, kind: [i["name"] for i in client.get(f"{API}/dashboards/{kind}").json()["scenarios"]["items"]]  # noqa: E731
+    def names(client, kind):
+        return [i["name"] for i in client.get(f"{API}/dashboards/{kind}").json()["scenarios"]["items"]]
+
     assert names(admin_client, "admin") == ["Late one", "Soon one", "Waiting"]
     pent = names(signed_in(w.p1), "pentester")
     assert pent == ["Late one", "Soon one"] and "Waiting" not in pent and "Far one" not in pent
     first = signed_in(w.p1).get(f"{API}/dashboards/pentester").json()["scenarios"]["items"][0]
     assert first["overdue"] is True and first["engagement"]["ref"] == w.eng_a.ref
     assert names(signed_in(w.p3), "pentester") == []  # not on eng_a
+
+
+# ---------------------------------------------------------------- templates, deferred-due notice, this week
+
+
+def test_template_library_lists_and_applies(w, admin_client):
+    base = f"{API}/engagements/{w.eng_a.pk}/scenario-templates"
+    lib = admin_client.get(base).json()
+    keys = {t["key"] for t in lib}
+    assert {"owasp_top10_2021", "owasp_api_top10_2023", "internal_network"} <= keys
+    top10 = next(t for t in lib if t["key"] == "owasp_top10_2021")
+    assert len(top10["items"]) == 10 and top10["items"][0]["name"].startswith("A01")
+    r = admin_client.post(f"{base}/apply", {"template": "owasp_top10_2021"}, format="json")
+    assert r.status_code == 201 and len(r.json()["created"]) == 10 and r.json()["skipped"] == []
+    rows = admin_client.get(url(w.eng_a)).json()
+    assert [s["position"] for s in rows] == list(range(10)) and all(
+        s["status"] == "planned" and s["description"] for s in rows
+    )
+    again = admin_client.post(f"{base}/apply", {"template": "owasp_top10_2021", "items": [0, 1]}, format="json")
+    assert again.status_code == 201 and again.json()["created"] == [] and len(again.json()["skipped"]) == 2
+    assert (
+        AuditEvent.objects.filter(action="engagement.scenarios_added", metadata__template="owasp_top10_2021").count()
+        == 1
+    )
+
+
+def test_template_subset_and_validation(w, admin_client):
+    base = f"{API}/engagements/{w.eng_a.pk}/scenario-templates/apply"
+    ok = admin_client.post(base, {"template": "internal_network", "items": [2, 0]}, format="json")
+    assert [s["name"] for s in ok.json()["created"]] == ["Network discovery and enumeration", "Credential attacks"]
+    for bad in (
+        {"template": "nope"},
+        {"template": "internal_network", "items": [99]},
+        {"template": "internal_network", "items": [1, 1]},
+        {"template": "internal_network", "items": []},
+        {"template": "internal_network", "x": 1},
+    ):
+        assert admin_client.post(base, bad, format="json").status_code == 400, bad
+
+
+def test_template_needs_manage_and_scope(w, admin_client):
+    base = f"{API}/engagements/{w.eng_a.pk}/scenario-templates"
+    assert signed_in(w.r1).get(base).status_code == 403
+    assert signed_in(w.r1).post(f"{base}/apply", {"template": "internal_network"}, format="json").status_code == 403
+    assert signed_in(w.p3).get(base).status_code == 404
+    assert signed_in(w.p1).get(base).status_code == 200
+
+
+def test_deferred_scenario_due_notifies_planners_once(w, admin_client):
+    from apps.engagements import scenarios
+    from apps.notifications.models import Notification
+
+    sid = add(admin_client, w.eng_a, "Wireless").json()["id"]
+    when = (TODAY + timedelta(days=20)).isoformat()
+    admin_client.post(
+        url(w.eng_a, sid, "/status"),
+        {"status": "deferred", "reason": "Freeze", "planned_start": when, "planned_end": when},
+        format="json",
+    )
+    scenarios.remind()
+    assert not Notification.objects.filter(kind="scenario.deferred_due").exists()  # date not reached
+    from apps.engagements.models import EngagementScenario
+
+    EngagementScenario.objects.filter(pk=sid).update(planned_start=TODAY, planned_end=TODAY)
+    scenarios.remind()
+    got = Notification.objects.filter(kind="scenario.deferred_due")
+    assert got.filter(recipient=w.p1).exists() and not got.filter(recipient=w.r1).exists()  # remediation cannot plan it
+    assert "Wireless" in got.first().title
+    count = got.count()
+    scenarios.remind()
+    assert Notification.objects.filter(kind="scenario.deferred_due").count() == count
+
+
+def test_pentester_dashboard_this_week(w, admin_client):
+    monday = TODAY - timedelta(days=TODAY.weekday())
+    add(
+        admin_client,
+        w.eng_a,
+        "This week",
+        planned_start=(monday + timedelta(days=2)).isoformat(),
+        planned_end=(monday + timedelta(days=3)).isoformat(),
+    )
+    add(
+        admin_client,
+        w.eng_a,
+        "Next week",
+        planned_start=(monday + timedelta(days=9)).isoformat(),
+        planned_end=(monday + timedelta(days=9)).isoformat(),
+    )
+    add(admin_client, w.eng_a, "Undated")
+    block = signed_in(w.p1).get(f"{API}/dashboards/pentester").json()["scenarios"]["this_week"]
+    assert block["from"] == monday.isoformat() and block["to"] == (monday + timedelta(days=6)).isoformat()
+    assert [i["name"] for i in block["items"]] == ["This week"]
+    assert admin_client.get(f"{API}/dashboards/admin").json()["scenarios"]["this_week"] is None

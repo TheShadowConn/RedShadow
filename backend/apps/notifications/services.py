@@ -12,7 +12,8 @@ GROUPS = {"engagement": "Engagement changes", "assignments": "Assignments", "fin
           "deadlines": "Due dates and overdue", "retests": "Retests"}  # fmt: skip
 EMAIL_GROUPS = {"assignments", "deadlines", "retests"}
 _BY_KIND = {"finding.assigned": "assignments", "finding.due_soon": "deadlines", "finding.overdue": "deadlines",
-            "scenario.due_soon": "deadlines", "scenario.overdue": "deadlines"}
+            "scenario.due_soon": "deadlines", "scenario.overdue": "deadlines",
+            "scenario.deferred_due": "deadlines"}
 
 
 def group_of(kind: str) -> str:

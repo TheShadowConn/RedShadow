@@ -122,3 +122,11 @@ Added with the scenario extras (1.4.0):
 
 Dashboards (Section D, 1.4.0): the `scenarios` block now carries `items`, up to 6 scenarios worth acting on, most urgent first: planned or in-progress ones past their planned end, and planned or deferred ones starting within 7 days. The admin dashboard also lists every deferred scenario. Each item has `id, name, status, planned_start, planned_end, overdue, engagement{id, ref, name}`.
 
+Workflow additions (1.4.0):
+
+| Method and path | Permission | Purpose |
+|---|---|---|
+| `GET /engagements/{id}/scenario-templates` | `engagement_scenarios.manage` | The starter library: OWASP Top 10 (2021), OWASP API Security Top 10 (2023), OWASP Mobile Top 10 (2024), internal network and cloud starters. Each template lists `items[{index, name, description}]`. The library is code, not database rows. |
+| `POST /engagements/{id}/scenario-templates/apply` | `engagement_scenarios.manage` | `{template, items?: [index]}`. Creates the chosen items (all when `items` is omitted) as planned scenarios. Names already present are skipped and returned in `skipped`. 201 `{created, skipped}`. Audit `engagement.scenarios_added` with the template key. |
+
+The hourly reminder task also sends `scenario.deferred_due` (group "Due dates and overdue") to the lead and the members who hold `engagement_scenarios.manage` when a deferred scenario's new start date has arrived; once per scenario and date. The scenario stays deferred until someone plans it again. The Pentester dashboard's `scenarios` block adds `this_week: {from, to, items}` (Monday to Sunday, planned, in-progress and deferred scenarios with dates); it is `null` on the other dashboards.

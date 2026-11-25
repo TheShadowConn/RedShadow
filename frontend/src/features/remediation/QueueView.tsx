@@ -9,6 +9,7 @@ import { SEVERITIES, type EngagementRow, type Page, type QueuePage, type QueueRo
 import { Button, EmptyState, ErrorState, LoadingRows, PageHeader, Pager, Select, Sheet, cx, formatDay } from "../../design/ui";
 import { FindingStatus, SeverityBadge, userName } from "../findings/shared";
 import { SlaBadge, daysUntil } from "./shared";
+import { useSearchParams } from "react-router-dom";
 
 const PAGE_SIZE = 25;
 export type QueueFilters = { status: string; severity: string[]; engagement: string; mine: boolean };
@@ -34,7 +35,8 @@ type Props = {
 /** Work queue: status strip, filters (a bottom sheet on phones), rows as a table or cards. */
 export function QueueView(p: Props) {
   const { can } = useAuth();
-  const [f, setF] = useState<QueueFilters>(EMPTY);
+  const [params] = useSearchParams();
+  const [f, setF] = useState<QueueFilters>({ ...EMPTY, engagement: params.get("engagement") ?? "" });
   const [page, setPage] = useState(1);
   const [sheet, setSheet] = useState(false);
   const [picked, setPicked] = useState<Map<string, QueueRow>>(new Map());

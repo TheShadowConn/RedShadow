@@ -275,7 +275,7 @@ COVERED_ROUTES = {
     # Scenarios: covered by tests/test_scenarios.py
     "engagement-scenarios", "engagement-update-scenario", "engagement-reschedule-scenario",
     "engagement-scenario-status", "engagement-reorder-scenarios", "engagement-add-scenario-image",
-    "engagement-delete-scenario-image", "engagement-add-scenarios-bulk", "engagement-scenario-history",
+    "engagement-delete-scenario-image", "engagement-add-scenarios-bulk", "engagement-scenario-template-list", "engagement-apply-scenario-template", "engagement-scenario-history",
     "calendar-scenarios",
     # Section A (lead, delete, join): covered by tests/test_engagement_lifecycle.py
     "engagement-change-lead", "engagement-delete-engagement", "engagement-join", "engagement-restore", "engagement-clone",

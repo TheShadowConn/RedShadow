@@ -295,3 +295,9 @@ class ScenarioBulkSerializer(StrictSerializer):
     names = serializers.ListField(
         child=serializers.CharField(max_length=200, trim_whitespace=True), allow_empty=False, max_length=50
     )
+
+
+class ScenarioTemplateApplySerializer(StrictSerializer):
+    template = serializers.CharField(max_length=60)
+    items = serializers.ListField(child=serializers.IntegerField(min_value=0), required=False, max_length=50)
+

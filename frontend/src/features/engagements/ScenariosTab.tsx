@@ -1,9 +1,12 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, CalendarClock, ChevronLeft, ChevronRight, GripVertical, History, ImagePlus, ListPlus, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, BookOpenCheck, CalendarClock, ChevronLeft, ChevronRight, GripVertical, History, ImagePlus, ListPlus, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { api, upload } from "../../api/client";
-import { SCENARIO_STATUSES, type Engagement, type HistoryEvent, type Page, type Scenario, type ScenarioImage, type ScenarioStatus, type ScenarioSummary } from "../../api/types";
+import { Link } from "react-router-dom";
+
+import { useAuth } from "../../api/auth";
+import { SCENARIO_STATUSES, type ScenarioTemplate, type Engagement, type HistoryEvent, type Page, type Scenario, type ScenarioImage, type ScenarioStatus, type ScenarioSummary } from "../../api/types";
 import {
   Alert, Badge, Button, EmptyState, ErrorNote, ErrorState, Field, fieldError, formatDate, formatDay, label, LoadingRows, Modal, Textarea, TextInput,
 } from "../../design/ui";
@@ -50,9 +53,11 @@ export function ScenarioProgress({ s, compact }: { s?: ScenarioSummary; compact?
 export function ScenariosTab({ eng }: { eng: Engagement }) {
   const qc = useQueryClient();
   const perms = new Set(eng.permissions);
+  const { can } = useAuth();
+  const canRetest = can("retests.create");
   const writable = perms.has("engagement_scenarios.manage") && !eng.archived_at;
   const key = ["scenarios", eng.id];
-  const [dialog, setDialog] = useState<null | { kind: "add" } | { kind: "bulk" } | { kind: "edit" | "reschedule" | "status" | "history"; s: Scenario; to?: ScenarioStatus }>(null);
+  const [dialog, setDialog] = useState<null | { kind: "add" } | { kind: "bulk" } | { kind: "template" } | { kind: "edit" | "reschedule" | "status" | "history"; s: Scenario; to?: ScenarioStatus }>(null);
   const [view, setView] = useState<{ images: ScenarioImage[]; at: number } | null>(null);
   const dragId = useRef<string | null>(null);
   const q = useQuery({ queryKey: key, queryFn: () => api<Scenario[]>("GET", `/engagements/${eng.id}/scenarios`) });
@@ -93,6 +98,7 @@ export function ScenariosTab({ eng }: { eng: Engagement }) {
         </div>
         {writable && (
           <div className="flex flex-wrap gap-3">
+            <Button onClick={() => setDialog({ kind: "template" })}><BookOpenCheck size={18} aria-hidden /> From template</Button>
             <Button onClick={() => setDialog({ kind: "bulk" })}><ListPlus size={18} aria-hidden /> Add several</Button>
             <Button variant="primary" onClick={() => setDialog({ kind: "add" })}><Plus size={18} aria-hidden /> Add scenario</Button>
           </div>
@@ -151,13 +157,16 @@ export function ScenariosTab({ eng }: { eng: Engagement }) {
                   ))}
                 </ul>
               )}
-              {writable && MOVES[s.status].length > 0 && (
+              {(writable && MOVES[s.status].length > 0) || (s.status === "tested" && canRetest && !eng.archived_at) ? (
                 <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-3">
-                  {MOVES[s.status].map(([to, text]) => (
+                  {s.status === "tested" && canRetest && !eng.archived_at && (
+                    <Link to={`/verification?engagement=${eng.id}&scenario=${encodeURIComponent(s.name)}`} className="btn btn-secondary btn-sm">Retest this scenario</Link>
+                  )}
+                  {writable && MOVES[s.status].map(([to, text]) => (
                     <Button key={to} size="sm" variant={to === "cancelled" ? "danger" : "secondary"} onClick={() => setDialog({ kind: "status", s, to })}>{text}</Button>
                   ))}
                 </div>
-              )}
+              ) : null}
             </li>
           ))}
         </ol>
@@ -165,6 +174,7 @@ export function ScenariosTab({ eng }: { eng: Engagement }) {
 
       {dialog?.kind === "add" && <ScenarioForm eng={eng} onClose={() => setDialog(null)} onDone={refresh} />}
       {dialog?.kind === "edit" && <ScenarioForm eng={eng} scenario={rows.find((r) => r.id === dialog.s.id) ?? dialog.s} onClose={() => setDialog(null)} onDone={refresh} />}
+      {dialog?.kind === "template" && <TemplateDialog eng={eng} onClose={() => setDialog(null)} onDone={refresh} />}
       {dialog?.kind === "bulk" && <BulkAdd eng={eng} onClose={() => setDialog(null)} onDone={refresh} />}
       {dialog?.kind === "reschedule" && <Reschedule eng={eng} s={dialog.s} onClose={() => setDialog(null)} onDone={refresh} />}
       {dialog?.kind === "status" && dialog.to && <StatusDialog eng={eng} s={dialog.s} to={dialog.to} onClose={() => setDialog(null)} onDone={refresh} />}
@@ -273,6 +283,70 @@ function ScenarioForm({ eng, scenario, onClose, onDone }: { eng: Engagement; sce
           <Button type="submit" variant="primary" loading={save.isPending} disabled={!name.trim()}>{editing ? "Save changes" : "Add scenario"}</Button>
         </div>
       </form>
+    </Modal>
+  );
+}
+
+/* Starter templates */
+
+function TemplateDialog({ eng, onClose, onDone }: { eng: Engagement; onClose: () => void; onDone: () => void }) {
+  const [key, setKey] = useState("");
+  const [picked, setPicked] = useState<Set<number>>(new Set());
+  const [skipped, setSkipped] = useState<string[] | null>(null);
+  const q = useQuery({ queryKey: ["scenario-templates", eng.id], queryFn: () => api<ScenarioTemplate[]>("GET", `/engagements/${eng.id}/scenario-templates`) });
+  const tpl = q.data?.find((t) => t.key === key);
+  const choose = (k: string) => { setKey(k); setPicked(new Set(q.data?.find((t) => t.key === k)?.items.map((i) => i.index))); };
+  const toggle = (i: number) => setPicked((p) => { const n = new Set(p); if (n.has(i)) n.delete(i); else n.add(i); return n; });
+  const save = useMutation({
+    mutationFn: () => api<{ created: Scenario[]; skipped: string[] }>("POST", `/engagements/${eng.id}/scenario-templates/apply`, { template: key, items: [...picked] }),
+    onSuccess: (r) => { onDone(); if (r.skipped.length) setSkipped(r.skipped); else onClose(); },
+  });
+  return (
+    <Modal open onClose={onClose} title="Add from a template">
+      <div className={FORM}>
+        {q.isPending && <LoadingRows rows={3} />}
+        {q.isError && <ErrorState error={q.error} onRetry={() => void q.refetch()} />}
+        {skipped ? (
+          <>
+            <Alert tone="ok">Added. {skipped.length} already in this engagement and skipped: {skipped.join(", ")}.</Alert>
+            <div className={ACTIONS}><Button variant="primary" onClick={onClose}>Done</Button></div>
+          </>
+        ) : q.data && (
+          <form className="space-y-6" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate(); }}>
+            <ErrorNote error={noFieldErrors(save.error)} />
+            <Field label="Template" hint="A starting list. Everything can be edited afterwards. Names already in this engagement are skipped.">
+              {(p) => (
+                <select {...p} className="select" required value={key} onChange={(e) => choose(e.target.value)}>
+                  <option value="" disabled>Choose a template</option>
+                  {q.data.map((t) => <option key={t.key} value={t.key}>{t.name}</option>)}
+                </select>
+              )}
+            </Field>
+            {tpl && (
+              <fieldset className="m-0 space-y-1 border-0 p-0">
+                <legend className="label mb-2 flex w-full items-center justify-between gap-3">
+                  <span>{picked.size} of {tpl.items.length} selected</span>
+                  <button type="button" className="text-accent underline-offset-2 hover:underline" onClick={() => setPicked(picked.size === tpl.items.length ? new Set() : new Set(tpl.items.map((i) => i.index)))}>{picked.size === tpl.items.length ? "Clear all" : "Select all"}</button>
+                </legend>
+                <ul className="m-0 max-h-80 list-none divide-y divide-line overflow-y-auto rounded-lg border border-line p-0">
+                  {tpl.items.map((i) => (
+                    <li key={i.index}>
+                      <label className="flex cursor-pointer items-start gap-3 p-3 hover:bg-raised">
+                        <input type="checkbox" className="mt-1 h-5 w-5 flex-none accent-[var(--color-accent)]" checked={picked.has(i.index)} onChange={() => toggle(i.index)} />
+                        <span className="min-w-0"><span className="block font-medium">{i.name}</span><span className="block text-[14px] text-muted">{i.description}</span></span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </fieldset>
+            )}
+            <div className={ACTIONS}>
+              <Button onClick={onClose}>Cancel</Button>
+              <Button type="submit" variant="primary" loading={save.isPending} disabled={!tpl || picked.size === 0}>Add {picked.size || ""} scenario{picked.size === 1 ? "" : "s"}</Button>
+            </div>
+          </form>
+        )}
+      </div>
     </Modal>
   );
 }

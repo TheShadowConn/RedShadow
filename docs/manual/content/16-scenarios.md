@@ -46,3 +46,19 @@ When you move an engagement to **Reporting** or **Completed** while scenarios ar
 ## Your dashboard
 
 Every role opens on its own dashboard. The **Test scenarios** panel shows overdue scenarios and those starting within 7 days, and Super Admins also see deferred scenarios waiting for a date. Remediation owners reach their queue with **Open my queue**.
+
+## Starter templates
+
+**From template** on the Scenarios tab adds a ready-made list in one step: OWASP Top 10 (2021) for web applications, OWASP API Security Top 10 (2023), OWASP Mobile Top 10 (2024), an internal network starter and a cloud configuration starter. Choose a template, untick anything you do not need and select **Add**. Every item arrives as a planned scenario with a description you can edit. Names already in the engagement are skipped, so applying a template twice does no harm.
+
+## Deferred scenarios and reminders
+
+When the new start date of a deferred scenario arrives, the engagement lead and the pentesters on the engagement get a notification (**Due dates and overdue** group). The scenario stays deferred until you plan it again or start it.
+
+## Retesting after fixes
+
+A tested scenario has a **Retest this scenario** button. It opens the **Verification** queue for that engagement with the scenario's name noted. Findings belong to the engagement, not to the scenario, so you choose which findings the retest covers. The scenario name is added to the note for the assessor.
+
+## This week
+
+The Pentester dashboard has a **Scenarios this week** panel listing the scenarios planned for the current week (Monday to Sunday), with a link to the week view of the calendar.

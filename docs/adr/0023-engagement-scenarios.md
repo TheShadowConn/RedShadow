@@ -27,3 +27,7 @@ An engagement often lists several use cases or test scenarios. Some are tested n
 ## Consequences
 
 Calendar and dashboards read scenario dates. Removing a scenario is not offered: cancel it, so the history stays.
+
+16. **Starter templates** are code (`scenario_templates.py`), not data: nothing to migrate, versioned with the app. Applying one skips names already present.
+17. **Deferred-due notice** goes to the lead and members holding `engagement_scenarios.manage`, once per scenario and date. It does not change the status.
+18. **Retest shortcut** links to the Verification queue (engagement and scenario name in the URL). Findings are still chosen by the user because they do not belong to scenarios; the name goes into the retest note.

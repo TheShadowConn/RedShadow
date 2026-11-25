@@ -152,6 +152,23 @@ function Body({ d }: { d: Dashboard }) {
           <Panel title="Open by severity"><SeverityBars counts={f.open_by_severity} mine={false} /></Panel>
           <Panel title="All findings by status"><StatusStrip counts={f.by_status} /></Panel>
           <Panel title="Opened and closed, last 12 weeks" wide><TrendChart data={d.trend} /></Panel>
+          {kind === "pentester" && d.scenarios?.this_week && (
+            <Panel title="Scenarios this week" wide action={<Link to="/calendar?view=week" className="inline-flex min-h-11 items-center text-accent hover:underline">Open week</Link>}>
+              <p className="m-0 mb-3 text-[14px] text-muted">{formatDay(d.scenarios.this_week.from)} to {formatDay(d.scenarios.this_week.to)}</p>
+              {d.scenarios.this_week.items.length === 0 ? <p className="m-0 text-muted">No scenarios are planned for this week.</p> : (
+                <ul className="m-0 list-none divide-y divide-line p-0">
+                  {d.scenarios.this_week.items.map((s) => (
+                    <li key={s.id}>
+                      <Link to={`/engagements/${s.engagement.id}?tab=scenarios`} className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 py-3 hover:bg-raised">
+                        <span className="min-w-0 flex-1 basis-48"><span className="block font-medium">{s.name}</span><span className="block text-[14px] text-muted"><span className="mono">{s.engagement.ref}</span> · {s.engagement.name}</span></span>
+                        <span className="text-[14px] text-muted">{s.status === "in_progress" ? "In progress · " : s.status === "deferred" ? "Deferred · " : ""}{s.planned_start ? formatDay(s.planned_start) : ""}{s.planned_end && s.planned_end !== s.planned_start ? ` to ${formatDay(s.planned_end)}` : ""}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Panel>
+          )}
           <Panel title="Next due" action={kind === "vendor" ? undefined : <Link to="/remediation" className="inline-flex min-h-11 items-center text-accent hover:underline">Open queue</Link>}><DueList rows={d.next_due} /></Panel>
           <Panel title="Fix deadlines"><Sla d={d} /></Panel>
           {kind !== "remediation" && <Panel title="Starting soon" action={<Link to="/calendar" className="inline-flex min-h-11 items-center text-accent hover:underline">Calendar</Link>}><EngagementList rows={d.engagements.upcoming} empty="No engagements start in the next 30 days." /></Panel>}

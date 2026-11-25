@@ -11,7 +11,9 @@ from apps.audit import service as audit
 from apps.core.changes import apply_changes
 from apps.core.errors import Conflict
 from apps.notifications import services as inbox
+from apps.rbac.authz import has_engagement_perm
 
+from . import scenario_templates
 from .models import Engagement, EngagementScenario
 from .services import _assert_writable, _lock, _require_engagement_perm, refusals_audited
 
@@ -239,6 +241,42 @@ def add_scenarios_bulk(request, actor, eng: Engagement, names: list[str]) -> lis
     return made
 
 
+@refusals_audited
+def add_from_template(request, actor, eng: Engagement, key: str, indexes: list[int] | None) -> tuple[list, list]:
+    """Create the chosen items of a starter template as planned scenarios. Names already in the engagement are
+    skipped (not an error). Returns (created, skipped_names)."""
+    tpl = scenario_templates.BY_KEY.get(key)
+    if tpl is None:
+        raise ValidationError({"template": ["Unknown template."]})
+    items = list(enumerate(tpl["items"]))
+    if indexes is not None:
+        if any(i < 0 or i >= len(items) for i in indexes) or len(set(indexes)) != len(indexes):
+            raise ValidationError({"items": ["Choose items from the template, each once."]})
+        items = [items[i] for i in sorted(indexes)]
+    if not items:
+        raise ValidationError({"items": ["Choose at least one item."]})
+    with transaction.atomic():
+        eng = _lock(eng)
+        _require_engagement_perm(request, actor, eng, MANAGE, "engagement.scenario_denied")
+        _assert_writable(eng)
+        existing = EngagementScenario.objects.filter(engagement=eng)
+        taken = {n.lower() for n in existing.values_list("name", flat=True)}
+        fresh = [(n, d) for _, (n, d) in items if n.lower() not in taken]
+        skipped = [n for _, (n, _d) in items if n.lower() in taken]
+        if existing.count() + len(fresh) > MAX_SCENARIOS:
+            raise Conflict(f"An engagement can hold at most {MAX_SCENARIOS} scenarios.")
+        last = existing.aggregate(m=Max("position"))["m"]
+        start = 0 if last is None else last + 1
+        made = EngagementScenario.objects.bulk_create(
+            [EngagementScenario(engagement=eng, name=n, description=d, position=start + i, created_by=actor)
+             for i, (n, d) in enumerate(fresh)]
+        )  # fmt: skip
+        if made:
+            audit.record("engagement.scenarios_added", request=request, entity=eng, engagement=eng,
+                         metadata={"count": len(made), "template": key, "names": [m.name for m in made]})  # fmt: skip
+    return made, skipped
+
+
 def copy_scenarios(request, actor, src: Engagement, dst: Engagement) -> int:
     """Clone helper: names and descriptions only, all planned, no dates, no pictures. Cancelled ones are skipped."""
     rows = EngagementScenario.objects.filter(engagement=src).exclude(status="cancelled")
@@ -279,5 +317,25 @@ def remind(today: datetime.date | None = None) -> int:
             _people(sc.engagement), "scenario.overdue", f"{sc.engagement.ref}: {sc.name} is past its planned end",
             body=sc.engagement.name, link=inbox.eng_link(sc.engagement), engagement=sc.engagement,
             dedupe_key=f"{sc.pk}:overdue:{sc.planned_end.isoformat()}",
+        ))  # fmt: skip
+    return sent + _remind_deferred_due(today)
+
+
+def _remind_deferred_due(today: datetime.date) -> int:
+    """A deferred scenario whose new date has arrived: tell the people who can plan it (lead and pentesters).
+    It stays deferred until someone plans it again. Once per scenario and date."""
+    sent = 0
+    due = EngagementScenario.objects.filter(
+        status="deferred", planned_start__lte=today,
+        engagement__archived_at__isnull=True, engagement__deleted_at__isnull=True,
+    ).select_related("engagement__lead")  # fmt: skip
+    for sc in due:
+        eng = sc.engagement
+        planners = [u for u in _people(eng) if has_engagement_perm(u, eng.pk, MANAGE)]
+        sent += bool(inbox.notify(
+            planners, "scenario.deferred_due",
+            f"{eng.ref}: deferred scenario {sc.name} is now due", body=f"Planned for {sc.planned_start.isoformat()}. "
+            "Start it or plan it again.", link=inbox.eng_link(eng), engagement=eng,
+            dedupe_key=f"{sc.pk}:deferred-due:{sc.planned_start.isoformat()}",
         ))  # fmt: skip
     return sent

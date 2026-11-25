@@ -2070,6 +2070,68 @@
                 }
             }
         },
+        "/api/v1/engagements/{id}/scenario-templates": {
+            "get": {
+                "operationId": "engagements_scenario_templates_retrieve",
+                "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "engagements"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Engagement"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/engagements/{id}/scenario-templates/apply": {
+            "post": {
+                "operationId": "engagements_scenario_templates_apply_create",
+                "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "engagements"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Engagement"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/engagements/{id}/scenarios": {
             "get": {
                 "operationId": "engagements_scenarios_retrieve",

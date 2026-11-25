@@ -203,6 +203,7 @@ export type Scenario = {
   created_at: string;
   updated_at: string;
 };
+export type ScenarioTemplate = { key: string; name: string; items: Array<{ index: number; name: string; description: string }> };
 export type CalendarScenario = {
   id: string; name: string; status: ScenarioStatus; planned_start: string; planned_end: string; overdue: boolean;
   engagement: { id: string; ref: string; name: string };
@@ -618,6 +619,7 @@ export type Dashboard = {
   scenarios?: {
     total: number; tested: number; in_progress: number; deferred: number; overdue: number; starting_soon: number;
     items: Array<{ id: string; name: string; status: ScenarioStatus; planned_start: string | null; planned_end: string | null; overdue: boolean; engagement: { id: string; ref: string; name: string } }>;
+    this_week: { from: string; to: string; items: Array<{ id: string; name: string; status: ScenarioStatus; planned_start: string | null; planned_end: string | null; overdue: boolean; engagement: { id: string; ref: string; name: string } }> } | null;
   };
 };
 
