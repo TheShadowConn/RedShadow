@@ -92,6 +92,10 @@ def build_html(ctx: dict, template) -> str:
     sections = [s for s in (template.sections if template else None) or [] if s != "cover"]
     if "findings" not in sections:
         sections.append("findings")
+    if ctx.get("scenarios") and "scenarios" not in sections:
+        # Older templates predate the section: show the scenarios anyway, next to the scope.
+        at = sections.index("scope") + 1 if "scope" in sections else sections.index("findings")
+        sections.insert(at, "scenarios")
     names = dict(SECTIONS)
     ctx = {
         **ctx,

@@ -4,7 +4,7 @@
 
 ## Your queue
 
-After you sign in you land on **Remediation**: findings waiting for a fix, overdue ones first.
+After you sign in you land on the **Remediation** dashboard. Select **Open my queue** (or **Remediation** in the menu) for the findings waiting for a fix, overdue ones first.
 
 ![The remediation queue](24-remediation-queue.png)
 

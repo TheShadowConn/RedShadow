@@ -7,7 +7,8 @@ from apps.core.models import BaseModel
 class Attachment(BaseModel):
     """File metadata. The bytes live in core.storage under a random key, never under the name."""
 
-    KINDS = [("document", "Engagement document"), ("logo", "Organisation logo"), ("evidence", "Finding evidence")]
+    KINDS = [("document", "Engagement document"), ("logo", "Organisation logo"), ("evidence", "Finding evidence"),
+             ("scenario_image", "Scenario picture")]
 
     kind = models.CharField(max_length=16, choices=KINDS)
     engagement = models.ForeignKey(
@@ -15,6 +16,9 @@ class Attachment(BaseModel):
     )
     finding = models.ForeignKey(
         "findings.Finding", null=True, blank=True, on_delete=models.PROTECT, related_name="evidence"
+    )
+    scenario = models.ForeignKey(
+        "engagements.EngagementScenario", null=True, blank=True, on_delete=models.PROTECT, related_name="images"
     )
     organisation = models.ForeignKey(
         "organisations.Organisation", null=True, blank=True, on_delete=models.PROTECT, related_name="+"
@@ -33,16 +37,22 @@ class Attachment(BaseModel):
         constraints = [
             models.CheckConstraint(
                 condition=(
-                    Q(kind="document", engagement__isnull=False, organisation__isnull=True, finding__isnull=True)
+                    Q(kind="document", engagement__isnull=False, organisation__isnull=True, finding__isnull=True,
+                      scenario__isnull=True)
                 )
-                | (Q(kind="logo", engagement__isnull=True, organisation__isnull=False, finding__isnull=True))
-                | (Q(kind="evidence", engagement__isnull=False, organisation__isnull=True, finding__isnull=False)),
+                | (Q(kind="logo", engagement__isnull=True, organisation__isnull=False, finding__isnull=True,
+                     scenario__isnull=True))
+                | (Q(kind="evidence", engagement__isnull=False, organisation__isnull=True, finding__isnull=False,
+                     scenario__isnull=True))
+                | (Q(kind="scenario_image", engagement__isnull=False, organisation__isnull=True,
+                     finding__isnull=True, scenario__isnull=False)),
                 name="attachment_owner_matches_kind",
             )
         ]
         indexes = [
             models.Index(fields=["engagement", "deleted_at"]),
             models.Index(fields=["finding", "deleted_at"]),
+            models.Index(fields=["scenario", "deleted_at"]),
         ]
 
     @property

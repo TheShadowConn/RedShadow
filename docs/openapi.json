@@ -886,6 +886,20 @@
                 }
             }
         },
+        "/api/v1/calendar/scenarios": {
+            "get": {
+                "operationId": "calendar_scenarios_retrieve",
+                "description": "Calendar feed and rescheduling. Both go through the scoped engagement selector.",
+                "tags": [
+                    "calendar"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
         "/api/v1/contacts": {
             "get": {
                 "operationId": "contacts_list",
@@ -2002,6 +2016,363 @@
                     {
                         "in": "path",
                         "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "engagements"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Engagement"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/engagements/{id}/scenario-order": {
+            "post": {
+                "operationId": "engagements_scenario_order_create",
+                "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "engagements"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Engagement"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/engagements/{id}/scenarios": {
+            "get": {
+                "operationId": "engagements_scenarios_retrieve",
+                "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "engagements"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Engagement"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "engagements_scenarios_create",
+                "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "engagements"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Engagement"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/engagements/{id}/scenarios-bulk": {
+            "post": {
+                "operationId": "engagements_scenarios_bulk_create",
+                "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "engagements"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Engagement"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/engagements/{id}/scenarios/{scenario_id}": {
+            "patch": {
+                "operationId": "engagements_scenarios_partial_update",
+                "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "scenario_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "engagements"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Engagement"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/engagements/{id}/scenarios/{scenario_id}/history": {
+            "get": {
+                "operationId": "engagements_scenarios_history_retrieve",
+                "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "scenario_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "engagements"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Engagement"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/engagements/{id}/scenarios/{scenario_id}/images": {
+            "post": {
+                "operationId": "engagements_scenarios_images_create",
+                "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "scenario_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "engagements"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Engagement"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/engagements/{id}/scenarios/{scenario_id}/images/{image_id}": {
+            "delete": {
+                "operationId": "engagements_scenarios_images_destroy",
+                "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "image_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "scenario_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "engagements"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/v1/engagements/{id}/scenarios/{scenario_id}/reschedule": {
+            "post": {
+                "operationId": "engagements_scenarios_reschedule_create",
+                "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "scenario_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "engagements"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Engagement"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/engagements/{id}/scenarios/{scenario_id}/status": {
+            "post": {
+                "operationId": "engagements_scenarios_status_create",
+                "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "scenario_id",
                         "schema": {
                             "type": "string"
                         },
@@ -5138,6 +5509,12 @@
                         "readOnly": true,
                         "nullable": true
                     },
+                    "scenario": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true,
+                        "nullable": true
+                    },
                     "is_image": {
                         "type": "string",
                         "readOnly": true
@@ -5182,6 +5559,7 @@
                     "kind",
                     "mime",
                     "original_name",
+                    "scenario",
                     "sha256",
                     "size",
                     "uploaded_by"
@@ -5191,10 +5569,11 @@
                 "enum": [
                     "document",
                     "logo",
-                    "evidence"
+                    "evidence",
+                    "scenario_image"
                 ],
                 "type": "string",
-                "description": "* `document` - Engagement document\n* `logo` - Organisation logo\n* `evidence` - Finding evidence"
+                "description": "* `document` - Engagement document\n* `logo` - Organisation logo\n* `evidence` - Finding evidence\n* `scenario_image` - Scenario picture"
             },
             "AudienceEnum": {
                 "enum": [
@@ -5343,6 +5722,10 @@
                         "type": "boolean",
                         "readOnly": true
                     },
+                    "scenarios": {
+                        "type": "string",
+                        "readOnly": true
+                    },
                     "version": {
                         "type": "integer",
                         "readOnly": true
@@ -5410,6 +5793,7 @@
                     "permissions",
                     "ref",
                     "rules_of_engagement",
+                    "scenarios",
                     "scope",
                     "start_date",
                     "status",
@@ -5476,6 +5860,10 @@
                         "type": "boolean",
                         "readOnly": true
                     },
+                    "scenarios": {
+                        "type": "string",
+                        "readOnly": true
+                    },
                     "version": {
                         "type": "integer",
                         "readOnly": true
@@ -5514,6 +5902,7 @@
                     "organisation",
                     "overdue",
                     "ref",
+                    "scenarios",
                     "start_date",
                     "status",
                     "type",

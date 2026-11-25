@@ -37,7 +37,7 @@ drill:
 
 # Builds docs/manual/RedShadow-User-Manual.pdf with WeasyPrint inside the backend test image.
 manual:
-	docker compose --profile test run --rm -v "$$PWD/backend:/app" -v "$$PWD/docs:/docs" -v "$$PWD/frontend/public:/frontend-public:ro" -v "$$PWD/docs/manual:/manual-out" -e MANUAL_OUT=/manual-out/RedShadow-User-Manual.pdf -e BRAND_DIR=/frontend-public/brand -e APP_VERSION="$${APP_VERSION:-1.3.0}" backend-test python /docs/manual/build_manual.py
+	docker compose --profile test run --rm -v "$$PWD/backend:/app" -v "$$PWD/docs:/docs" -v "$$PWD/frontend/public:/frontend-public:ro" -v "$$PWD/docs/manual:/manual-out" -e MANUAL_OUT=/manual-out/RedShadow-User-Manual.pdf -e BRAND_DIR=/frontend-public/brand -e APP_VERSION="$${APP_VERSION:-1.4.0}" backend-test python /docs/manual/build_manual.py
 
 # Writes docs/openapi.json (drf-spectacular, dev-only settings). A typed client can be generated from it with openapi-typescript.
 schema:

@@ -164,3 +164,36 @@ def reschedule(request, actor, eng: Engagement, start, end, version: int, dry_ru
             metadata={"double_booked": booked},
         )  # fmt: skip
     return eng, conflicts
+
+
+def scenario_feed(user, start: datetime.date, end: datetime.date) -> list[dict]:
+    """Scenarios with planned dates that touch the window, for engagements the user sees in the calendar and may
+    read scenarios of. Cancelled scenarios are left out."""
+    from .models import EngagementScenario
+
+    visible = scope_engagements(user, "calendar.view").filter(archived_at__isnull=True)
+    allowed = scope_engagements(user, "engagement_scenarios.view").values("pk")
+    today = datetime.date.today()
+    rows = (
+        EngagementScenario.objects.filter(engagement__in=visible, engagement_id__in=allowed)
+        .exclude(status="cancelled")
+        .filter(planned_start__isnull=False)
+        .filter(
+            Q(planned_start__lte=end),
+            Q(planned_end__gte=start) | Q(planned_end__isnull=True, planned_start__gte=start),
+        )
+        .select_related("engagement")
+        .order_by("planned_start", "position")[: MAX_EVENTS + 1]
+    )
+    rows = list(rows)
+    if len(rows) > MAX_EVENTS:
+        raise ValidationError({"end": ["Too many scenarios in this window. Narrow the dates."]})
+    return [
+        {
+            "id": r.pk, "name": r.name, "status": r.status, "planned_start": r.planned_start,
+            "planned_end": r.planned_end or r.planned_start,
+            "overdue": r.status in ("planned", "in_progress") and (r.planned_end or r.planned_start) < today,
+            "engagement": {"id": r.engagement_id, "ref": r.engagement.ref, "name": r.engagement.name},
+        }
+        for r in rows
+    ]  # fmt: skip

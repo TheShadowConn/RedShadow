@@ -22,4 +22,5 @@
 | **Scope** | Where a role's permissions apply: which engagements and which findings. |
 | **SLA** | The target time to fix a finding, set by severity. |
 | **Verification** | A person confirming that a fix works and recording how. |
+| **Scenario** | One use case or test inside an engagement, with its own name, description, pictures, dates and status. It has no owner and findings do not belong to it. |
 | **Cost line** | One amount in one currency on an engagement, with a category and a date. Totals are per currency and never converted. |

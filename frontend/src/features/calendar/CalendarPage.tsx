@@ -1,11 +1,11 @@
 import { useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, SlidersHorizontal, TriangleAlert } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { useAuth } from "../../api/auth";
 import { api } from "../../api/client";
-import { STATUSES, type CalendarEvent } from "../../api/types";
+import { SCENARIO_STATUSES, STATUSES, type CalendarEvent, type CalendarScenario } from "../../api/types";
 import { Button, EmptyState, EngagementStatus, ErrorState, LoadingRows, PageHeader, Select, Sheet, cx, label } from "../../design/ui";
 import { CalendarGrid } from "./CalendarGrid";
 import { add, addMonths, dayShort, monthRange, monthStart, monthTitle, rangeTitle, today, weekRange, weekStart } from "./dates";
@@ -25,6 +25,7 @@ export function CalendarPage() {
   const [open, setOpen] = useState<CalendarEvent | null>(null);
   const [edit, setEdit] = useState<{ event: CalendarEvent; start: string; end: string } | null>(null);
   const canMove = can("engagements.schedule");
+  const nav = useNavigate();
 
   const phone = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
   const view = (VIEWS.some(([v]) => v === params.get("view")) ? params.get("view") : phone ? "list" : "month") as View;
@@ -43,6 +44,16 @@ export function CalendarPage() {
   for (const [k, v] of Object.entries(f)) if (v) qs.set(k, String(v));
   const q = useQuery({ queryKey: ["calendar", qs.toString()], queryFn: () => api<{ results: CalendarEvent[] }>("GET", `/calendar/events?${qs}`), placeholderData: (p) => p });
   const events = q.data?.results ?? [];
+  const showScenarios = params.get("scenarios") !== "off";
+  const sq = useQuery({
+    queryKey: ["calendar-scenarios", range.start, range.end],
+    queryFn: () => api<{ results: CalendarScenario[] }>("GET", `/calendar/scenarios?start=${range.start}&end=${range.end}`),
+    placeholderData: (p) => p,
+  });
+  const visibleIds = new Set(events.map((e) => e.id));
+  const scoped = !!(f.engagement || f.client || f.pentester || f.mine || params.get("status"));
+  const scenarios = !showScenarios ? [] : (sq.data?.results ?? []).filter((s) => !scoped || visibleIds.has(s.engagement.id));
+  const openScenario = (s: CalendarScenario) => nav(`/engagements/${s.engagement.id}?tab=scenarios`);
 
   // Filter options come from what has been loaded, so a filter never hides its own choices.
   const seen = useRef({ clients: new Map<string, string>(), people: new Map<string, string>(), engagements: new Map<string, string>() });
@@ -65,7 +76,7 @@ export function CalendarPage() {
   const weeks = view === "week" ? 1 : Math.round((Date.parse(range.end) - Date.parse(range.start)) / 86_400_000 / 7 + 1 / 7);
 
   const controls = (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+    <div className="flex flex-wrap items-end gap-x-8 gap-y-5">
       <Select aria-label="Client" className="sm:max-w-56" value={f.client} onChange={(e) => set({ client: e.target.value })}>
         <option value="">All clients</option>
         {options.clients.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
@@ -87,7 +98,11 @@ export function CalendarPage() {
           </label>
         ))}
       </fieldset>
-      <label className="check"><input type="checkbox" checked={f.mine} onChange={(e) => set({ mine: e.target.checked ? "true" : "" })} /> My engagements</label>
+      <fieldset className="m-0 flex min-w-0 flex-wrap gap-x-4 border-0 p-0">
+        <legend className="label mb-1">Show</legend>
+        <label className="check"><input type="checkbox" checked={showScenarios} onChange={(e) => set({ scenarios: e.target.checked ? "" : "off" })} /> Scenarios</label>
+        <label className="check"><input type="checkbox" checked={f.mine} onChange={(e) => set({ mine: e.target.checked ? "true" : "" })} /> My engagements only</label>
+      </fieldset>
     </div>
   );
 
@@ -121,12 +136,28 @@ export function CalendarPage() {
       {q.isError && <div className="card"><ErrorState error={q.error} onRetry={() => void q.refetch()} /></div>}
       {q.data && view !== "list" && (
         <>
-          <CalendarGrid first={gridFirst} weeks={weeks} month={view === "month" ? date : undefined} events={events} detailed={view === "week"} canDrag={canMove}
+          <CalendarGrid first={gridFirst} weeks={weeks} month={view === "month" ? date : undefined} events={events} scenarios={scenarios} onOpenScenario={openScenario} detailed={view === "week"} canDrag={canMove}
             onOpen={setOpen} onMove={(event, start, end) => setEdit({ event, start, end })} />
           {events.length === 0 && <p className="mt-4 text-center text-muted">No engagements in this {view}.</p>}
         </>
       )}
       {q.data && view === "list" && <ListView events={events} onOpen={setOpen} />}
+      {q.data && view === "list" && scenarios.length > 0 && (
+        <section className="mt-6" aria-labelledby="sc-h">
+          <h2 id="sc-h" className="mb-3 text-xl">Scenarios</h2>
+          <ul className="card m-0 list-none divide-y divide-line p-0">
+            {scenarios.map((s) => (
+              <li key={s.id}>
+                <button type="button" onClick={() => openScenario(s)} className="block w-full space-y-1 px-4 py-3 text-left hover:bg-raised">
+                  <span className="block font-medium">{s.name}</span>
+                  <span className="block text-[14px] text-muted"><span className="mono">{s.engagement.ref}</span> · {s.engagement.name}</span>
+                  <span className="block text-[14px] text-muted">{label(SCENARIO_STATUSES, s.status)}{s.overdue ? " · overdue" : ""} · {dayShort(s.planned_start)} to {dayShort(s.planned_end)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <Legend />
       <Sheet open={sheet} onClose={() => setSheet(false)} title="Filters">

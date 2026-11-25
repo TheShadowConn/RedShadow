@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Copy, Pencil, Trash2, UserCog } from "lucide-react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { useAuth } from "../../api/auth";
 import { ApiError, api } from "../../api/client";
@@ -13,9 +13,10 @@ import { FindingsList } from "../findings/FindingsList";
 import { EngagementFields } from "./EngagementsPage";
 import { ReportsList } from "../reports/ReportsList";
 import { CostTab } from "./CostTab";
+import { ScenarioProgress, ScenariosTab } from "./ScenariosTab";
 import { DocumentsPanel, HistoryTab, NotesPanel, ScopeTab, TeamTab } from "./EngagementTabs";
 
-type Tab = "overview" | "scope" | "findings" | "reports" | "team" | "costs" | "notes" | "history";
+type Tab = "overview" | "scenarios" | "scope" | "findings" | "reports" | "team" | "costs" | "notes" | "history";
 
 const STATUS_VERB: Record<string, string> = { planned: "Move back to planned", scheduled: "Mark scheduled", in_progress: "Start testing", reporting: "Move to reporting", completed: "Mark completed", cancelled: "Cancel engagement" };
 
@@ -27,7 +28,9 @@ export function EngagementPage() {
   const { id } = useParams();
   const { can } = useAuth();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<Tab>("overview");
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState<Tab>((params.get("tab") as Tab) || "overview");
+  const [ack, setAck] = useState(false);
   const [editing, setEditing] = useState(false);
   const [moving, setMoving] = useState<string | null>(null);
   const [archiving, setArchiving] = useState(false);
@@ -40,9 +43,13 @@ export function EngagementPage() {
   const e = q.data;
 
   const move = useMutation({
-    mutationFn: (status: string) => api<Engagement>("POST", `/engagements/${id}/status`, { status, version: e!.version }),
-    onSuccess: () => { refresh(); setMoving(null); },
-    onError: (err) => { if (conflictHint(err)) void qc.invalidateQueries({ queryKey: ["engagement", id] }); },
+    mutationFn: (status: string) => api<Engagement>("POST", `/engagements/${id}/status`, { status, version: e!.version, ...(ack ? { acknowledge_open_scenarios: true } : {}) }),
+    onSuccess: () => { refresh(); setMoving(null); setAck(false); },
+    onError: (err) => {
+      // Scenarios still open: show the server's message and let the user continue on purpose.
+      if (err instanceof ApiError && err.status === 409 && /scenario/i.test(err.message)) { setAck(true); return; }
+      if (conflictHint(err)) void qc.invalidateQueries({ queryKey: ["engagement", id] });
+    },
   });
   const archive = useMutation({
     mutationFn: () => api<Engagement>("POST", `/engagements/${id}/${e!.archived_at ? "unarchive" : "archive"}`, { version: e!.version }),
@@ -57,6 +64,7 @@ export function EngagementPage() {
   const archived = !!eng.archived_at;
   const tabs: Array<{ id: Tab; label: string }> = [
     { id: "overview", label: "Overview" },
+    ...(perms.has("engagement_scenarios.view") ? [{ id: "scenarios" as const, label: eng.scenarios?.total ? `Scenarios (${eng.scenarios.tested}/${eng.scenarios.total})` : "Scenarios" }] : []),
     ...(perms.has("assets.view") ? [{ id: "scope" as const, label: "Scope and assets" }] : []),
     ...(perms.has("findings.view") ? [{ id: "findings" as const, label: "Findings" }] : []),
     ...(perms.has("reports.view") ? [{ id: "reports" as const, label: "Reports" }] : []),
@@ -83,7 +91,7 @@ export function EngagementPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           {can("calendar.view") && !archived && <Link to={`/calendar?engagement=${eng.id}&date=${eng.start_date}`} className="btn btn-secondary">Open in calendar</Link>}
-          {nextStatuses.map((s) => <Button key={s} variant={s === "cancelled" ? "danger" : "secondary"} onClick={() => { move.reset(); setMoving(s); }}>{STATUS_VERB[s]}</Button>)}
+          {nextStatuses.map((s) => <Button key={s} variant={s === "cancelled" ? "danger" : "secondary"} onClick={() => { move.reset(); setAck(false); setMoving(s); }}>{STATUS_VERB[s]}</Button>)}
           {can("engagements.update") && !archived && <Button onClick={() => setEditing(true)}><Pencil size={18} aria-hidden /> Edit</Button>}
           {can("engagements.update") && !archived && <Button onClick={() => setLeadOpen(true)}><UserCog size={18} aria-hidden /> Change lead</Button>}
           {can("engagements.create") && <Button onClick={() => setCloning(true)}><Copy size={18} aria-hidden /> Clone</Button>}
@@ -96,6 +104,7 @@ export function EngagementPage() {
       <Tabs label="Engagement sections" value={active} onChange={setTab} tabs={tabs} />
       <TabPanel id={active}>
         {active === "overview" && <Overview eng={eng} />}
+        {active === "scenarios" && <ScenariosTab eng={eng} />}
         {active === "scope" && <ScopeTab eng={eng} />}
         {active === "findings" && <FindingsList engagement={eng} />}
         {active === "reports" && <ReportsList engagement={eng} canCreate={!archived && (perms.has("reports.generate_pdf") || perms.has("exports.csv"))} />}
@@ -118,12 +127,12 @@ export function EngagementPage() {
         open={!!moving}
         title={moving ? STATUS_VERB[moving] : ""}
         body={moving ? `Status changes from ${eng.status.replace("_", " ")} to ${moving.replace("_", " ")}. The change is recorded in the history.` : ""}
-        confirmLabel="Confirm"
-        danger={moving === "cancelled"}
+        confirmLabel={ack ? "Continue anyway" : "Confirm"}
+        danger={moving === "cancelled" || ack}
         busy={move.isPending}
         error={move.error}
         onConfirm={() => moving && move.mutate(moving)}
-        onClose={() => setMoving(null)}
+        onClose={() => { setMoving(null); setAck(false); }}
       />
       <ConfirmDialog
         open={archiving}
@@ -154,6 +163,13 @@ function Overview({ eng }: { eng: Engagement }) {
         <Fact k="Lead" v={eng.lead?.display_name ?? "Unassigned"} />
         <Fact k="Type" v={label(ENGAGEMENT_TYPES, eng.type)} />
       </dl>
+      {eng.scenarios && eng.scenarios.total > 0 && (
+        <section className="card card-pad">
+          <h2 className="text-lg">Scenarios</h2>
+          <div className="mt-3 max-w-md"><ScenarioProgress s={eng.scenarios} /></div>
+          {eng.scenarios.next_date && <p className="m-0 mt-2 text-[14px] text-muted">Next planned start {formatDay(eng.scenarios.next_date)}</p>}
+        </section>
+      )}
       {blocks.map(([title, text]) => (
         <section key={title} className="card card-pad">
           <h2 className="text-lg">{title}</h2>

@@ -20,8 +20,12 @@ def scope_attachments(user):
     evidence = Q(kind="evidence", finding_id__in=scope_findings(user).values("id"))
     if not sees_everything(user, "evidence.view"):
         evidence &= Q(engagement_id__in=engagement_ids_with(user, "evidence.view"))
+    if sees_everything(user, "engagement_scenarios.view"):
+        pictures = Q(kind="scenario_image")
+    else:
+        pictures = Q(kind="scenario_image", engagement_id__in=engagement_ids_with(user, "engagement_scenarios.view"))
     return (
         Attachment.objects.filter(deleted_at__isnull=True)
-        .filter(docs | Q(kind="logo", organisation__in=orgs) | evidence)
+        .filter(docs | Q(kind="logo", organisation__in=orgs) | evidence | pictures)
         .select_related("uploaded_by")
     )

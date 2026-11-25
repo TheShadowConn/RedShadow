@@ -172,8 +172,12 @@ def clone_engagement(request, actor, src: Engagement, data: dict) -> Engagement:
         EngagementAsset.objects.bulk_create(
             [EngagementAsset(engagement=eng, asset=ln.asset, in_scope=ln.in_scope, notes=ln.notes) for ln in links]
         )
+        from . import scenarios
+
+        copied = scenarios.copy_scenarios(request, actor, src, eng)
         audit.record("engagement.cloned", request=request, entity=eng, engagement=eng,
-                     metadata={"source": src.ref, "members": len(added), "assets": len(links)})  # fmt: skip
+                     metadata={"source": src.ref, "members": len(added), "assets": len(links),
+                               "scenarios": copied})  # fmt: skip
         inbox.notify(added, "engagement.added", f"You were added to {eng.ref}", body=eng.name,
                      link=inbox.eng_link(eng), actor=actor, engagement=eng)
     return eng
@@ -203,7 +207,9 @@ def update_engagement(request, actor, eng: Engagement, data: dict, version: int)
 
 
 @refusals_audited
-def change_status(request, actor, eng: Engagement, to_status: str, version: int) -> Engagement:
+def change_status(
+    request, actor, eng: Engagement, to_status: str, version: int, acknowledge_open_scenarios: bool = False
+) -> Engagement:
     with transaction.atomic():
         eng = _lock(eng)
         _require_engagement_perm(request, actor, eng, "engagements.update_status", "engagement.status_denied")
@@ -211,11 +217,21 @@ def change_status(request, actor, eng: Engagement, to_status: str, version: int)
         _check_version(eng, version)
         if to_status not in TRANSITIONS.get(eng.status, set()):
             raise ValidationError({"status": [f"Cannot move from {eng.status} to {to_status}."]})
+        if to_status in ("reporting", "completed") and not acknowledge_open_scenarios:
+            from . import scenarios
+
+            pending = scenarios.open_count(eng)
+            if pending:
+                raise Conflict(
+                    f"{pending} scenario{'s are' if pending != 1 else ' is'} not tested yet (planned, in progress "
+                    "or deferred). Confirm to continue, or finish them first."
+                )
         old, eng.status = eng.status, to_status
         eng.version += 1
         eng.save()
+        meta = {"acknowledged_open_scenarios": True} if acknowledge_open_scenarios else None
         audit.record("engagement.status_changed", request=request, entity=eng, engagement=eng,
-                     changes={"status": [old, to_status]})  # fmt: skip
+                     changes={"status": [old, to_status]}, metadata=meta)  # fmt: skip
         now_status = to_status.replace("_", " ")
         inbox.notify(inbox.engagement_people(eng), "engagement.status", f"{eng.ref} is now {now_status}",
                      body=eng.name, link=inbox.eng_link(eng), actor=actor, engagement=eng)

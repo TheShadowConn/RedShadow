@@ -2,6 +2,8 @@
 
 {SA} This chapter covers the Assets page, asset identifiers, importing assets, managing failed imports and deleting users. Pentesters and remediation users see assets of their own engagements only and cannot change them. Imports of findings are described in the pentester chapter; the tools for correcting and repeating an import apply to both kinds.
 
+An **Importing assets** or **Importing findings** label (with a short pop-up when you switch) tells you which kind of import you are in.
+
 ## Assets and identifiers
 
 Open **Assets** in the menu. Search covers the name, every identifier and the tags. Filters narrow by organisation, type, environment and criticality, and four tabs separate all, onboarded, not onboarded and archived assets.

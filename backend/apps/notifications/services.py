@@ -11,7 +11,8 @@ from .models import Notification, NotificationPreference
 GROUPS = {"engagement": "Engagement changes", "assignments": "Assignments", "findings": "Finding updates",
           "deadlines": "Due dates and overdue", "retests": "Retests"}  # fmt: skip
 EMAIL_GROUPS = {"assignments", "deadlines", "retests"}
-_BY_KIND = {"finding.assigned": "assignments", "finding.due_soon": "deadlines", "finding.overdue": "deadlines"}
+_BY_KIND = {"finding.assigned": "assignments", "finding.due_soon": "deadlines", "finding.overdue": "deadlines",
+            "scenario.due_soon": "deadlines", "scenario.overdue": "deadlines"}
 
 
 def group_of(kind: str) -> str:

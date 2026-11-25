@@ -10,6 +10,7 @@ SECTIONS = [
     ("executive_summary", "Executive summary"),
     ("engagement_info", "Engagement overview"),
     ("scope", "Scope"),
+    ("scenarios", "Test scenarios"),
     ("methodology", "Methodology and rating scale"),
     ("summary_table", "Findings at a glance"),
     ("severity_distribution", "Severity and status distribution"),

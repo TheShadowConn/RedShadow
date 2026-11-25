@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { TriangleAlert } from "lucide-react";
 
-import type { CalendarEvent } from "../../api/types";
-import { cx } from "../../design/ui";
+import { SCENARIO_STATUSES, type CalendarEvent, type CalendarScenario } from "../../api/types";
+import { cx, label } from "../../design/ui";
 import { add, diff, today as todayIso, weekdayShort } from "./dates";
 import { lookFor, movable, statusText } from "./shared";
 
@@ -34,6 +34,31 @@ function pack(weekDays: string[], events: CalendarEvent[]): { segments: Segment[
   return { segments, lanes: laneEnds.length };
 }
 
+type ScSegment = { sc: CalendarScenario; from: number; to: number; left: boolean; right: boolean; lane: number };
+
+function packScenarios(weekDays: string[], items: CalendarScenario[]): { segments: ScSegment[]; lanes: number } {
+  const raw = items
+    .filter((s) => s.planned_start <= weekDays[6] && s.planned_end >= weekDays[0])
+    .map((sc) => ({
+      sc, from: Math.max(0, diff(sc.planned_start, weekDays[0])), to: Math.min(6, diff(sc.planned_end, weekDays[0])),
+      left: sc.planned_start < weekDays[0], right: sc.planned_end > weekDays[6],
+    }))
+    .sort((a, b) => a.from - b.from || a.sc.name.localeCompare(b.sc.name));
+  const laneEnds: number[] = [];
+  const segments = raw.map((s) => {
+    let lane = laneEnds.findIndex((end) => end < s.from);
+    if (lane === -1) lane = laneEnds.length;
+    laneEnds[lane] = s.to;
+    return { ...s, lane };
+  });
+  return { segments, lanes: laneEnds.length };
+}
+
+const SC_LOOK: Record<string, string> = {
+  planned: "border-line bg-surface text-ink", in_progress: "border-warn bg-warn-bg text-warn", tested: "border-ok bg-ok-bg text-ok",
+  deferred: "border-line bg-raised text-muted", cancelled: "border-line bg-raised text-muted line-through",
+};
+
 type Props = {
   /** Monday of the first visible week, and how many weeks to show (1 = the week view). */
   first: string;
@@ -41,6 +66,8 @@ type Props = {
   /** Month the grid belongs to, to fade the days outside it. */
   month?: string;
   events: CalendarEvent[];
+  scenarios?: CalendarScenario[];
+  onOpenScenario?: (s: CalendarScenario) => void;
   detailed?: boolean;
   canDrag: boolean;
   onOpen: (e: CalendarEvent) => void;
@@ -49,7 +76,7 @@ type Props = {
 
 /** Month and week view: one row per week, engagements as bars that span their days.
  *  Super Admin can drag a bar to move it or an end to resize it (mouse and pen). "Change dates" is the keyboard route. */
-export function CalendarGrid({ first, weeks, month, events, detailed, canDrag, onOpen, onMove }: Props) {
+export function CalendarGrid({ first, weeks, month, events, scenarios = [], onOpenScenario, detailed, canDrag, onOpen, onMove }: Props) {
   const [drag, setDrag] = useState<Drag | null>(null);
   const dragRef = useRef<Drag | null>(null);
   const suppress = useRef(false);
@@ -116,9 +143,11 @@ export function CalendarGrid({ first, weeks, month, events, detailed, canDrag, o
       </div>
       {rows.map((days) => {
         const { segments, lanes } = pack(days, shown);
+        const sc = packScenarios(days, scenarios);
+        const engLanes = Math.max(lanes, 1);
         return (
           <div key={days[0]} className="grid grid-cols-7 border-b border-line last:border-b-0"
-            style={{ gridTemplateRows: `32px repeat(${Math.max(lanes, 1)}, ${LANE_PX}px)`, minHeight: detailed ? 220 : 110 }}>
+            style={{ gridTemplateRows: `32px repeat(${engLanes + sc.lanes}, ${LANE_PX}px)`, minHeight: detailed ? 220 : 110 }}>
             {days.map((d, i) => {
               const faded = month ? d.slice(0, 7) !== month.slice(0, 7) : false;
               return (
@@ -129,6 +158,17 @@ export function CalendarGrid({ first, weeks, month, events, detailed, canDrag, o
                 </div>
               );
             })}
+            {sc.segments.map(({ sc: item, from, to, left, right, lane }) => (
+              <button key={item.id} type="button" onClick={() => onOpenScenario?.(item)}
+                aria-label={`Scenario ${item.name}, ${item.engagement.ref}, ${label(SCENARIO_STATUSES, item.status)}, ${item.planned_start} to ${item.planned_end}${item.overdue ? ", overdue" : ""}`}
+                className={cx("relative z-[1] mx-0.5 mt-0.5 flex min-w-0 items-center gap-1.5 border border-dashed px-2 text-left text-[12px] outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent",
+                  SC_LOOK[item.status], item.overdue && "border-fail text-fail", left ? "rounded-l-none border-l-0" : "rounded-l-md", right ? "rounded-r-none border-r-0" : "rounded-r-md")}
+                style={{ gridColumn: `${from + 1} / ${to + 2}`, gridRow: engLanes + lane + 2, height: LANE_PX - 4 }}>
+                <span aria-hidden className="flex-none">◦</span>
+                <span className="truncate">{item.name}</span>
+                {detailed && <span className="hidden truncate font-normal opacity-80 md:inline">· {item.engagement.ref}</span>}
+              </button>
+            ))}
             {segments.map(({ ev, from, to, left, right, lane }) => {
               const look = lookFor(ev);
               const Icon = look.icon;

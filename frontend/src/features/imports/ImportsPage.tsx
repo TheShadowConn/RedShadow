@@ -10,6 +10,7 @@ import {
   Alert, Badge, Button, ConfirmDialog, EmptyState, ErrorNote, ErrorState, Field, formatBytes, formatDate, label, LoadingRows, PageHeader, Pager,
   Select, TextInput,
 } from "../../design/ui";
+import { ImportKindChip, ImportKindToast } from "./ImportNotice";
 
 const PAGE_SIZE = 25;
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -177,7 +178,11 @@ function NewImport({ kind, onDone, onCancel }: { kind: "findings" | "assets"; on
 
   return (
     <form className="card card-pad mb-6 flex flex-col gap-5" onSubmit={(e) => { e.preventDefault(); if (picker.file && target) send.mutate(); }}>
-      <h2 className="text-xl">{isAssets ? "Step 1: choose the organisation and the file" : "Step 1: choose the engagement and the file"}</h2>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <h2 className="text-xl">{isAssets ? "Step 1: choose the organisation and the file" : "Step 1: choose the engagement and the file"}</h2>
+        <ImportKindChip kind={kind} />
+      </div>
+      <ImportKindToast kind={kind} />
       <ErrorNote error={send.error} />
       {picker.problem && <Alert tone="error">{picker.problem}</Alert>}
       <ErrorNote error={dlError} />

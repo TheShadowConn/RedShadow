@@ -34,7 +34,7 @@ class AttachmentViewSet(ScopedModelViewSet):
     def get_queryset(self):
         qs = selectors.scope_attachments(self.request.user)
         if self.action == "list":
-            qs = qs.exclude(kind="evidence")  # evidence is listed through its finding
+            qs = qs.exclude(kind__in=("evidence", "scenario_image"))  # listed through their finding or scenario
             eng = self.request.query_params.get("engagement")
             try:
                 qs = qs.filter(engagement_id=uuid.UUID(eng)) if eng else qs
@@ -47,6 +47,10 @@ class AttachmentViewSet(ScopedModelViewSet):
             raise PermissionDenied("You do not have permission to view documents.")
         if att.kind == "evidence" and not has_engagement_perm(self.request.user, att.engagement_id, "evidence.view"):
             raise PermissionDenied("You do not have permission to view evidence.")
+        if att.kind == "scenario_image" and not has_engagement_perm(
+            self.request.user, att.engagement_id, "engagement_scenarios.view"
+        ):
+            raise PermissionDenied("You do not have permission to view scenarios.")
 
     def retrieve(self, request, *args, **kwargs):
         att = self.get_object()
@@ -57,6 +61,8 @@ class AttachmentViewSet(ScopedModelViewSet):
         att = self.get_object()
         if att.kind == "evidence":
             raise PermissionDenied("Delete evidence from its finding.")
+        if att.kind == "scenario_image":
+            raise PermissionDenied("Delete pictures from their scenario.")
         services.delete_document(request, request.user, att)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -65,7 +71,7 @@ class AttachmentViewSet(ScopedModelViewSet):
         """Authorise, then hand the transfer to nginx (internal /protected/ location)."""
         att = self.get_object()
         self._check_document_access(att)
-        if att.kind in ("document", "evidence"):
+        if att.kind in ("document", "evidence", "scenario_image"):
             audit.record(
                 "attachment.downloaded",
                 request=request,

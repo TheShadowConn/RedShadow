@@ -41,7 +41,8 @@ Two minutes before an idle session ends, a box in the corner warns you. Select *
 - **Search** (top bar): finds findings, engagements, organisations and pages. Press `Ctrl K` or `Cmd K`, or `/` when you are not typing in a field.
 - **Theme toggle**: the moon icon switches between light and dark. The choice is remembered on this device.
 - **Overview**: the dashboard for your role. People with more than one dashboard see tabs, for example **Administration**, **Testing**, **Remediation** and **External testing**.
-- **Footer**: "Built by Shadowconn" links to the About page with the version and build.
+- **About**: the last menu entry. It shows the version and build.
+- **Footer**: "Built by Shadowconn" also links to the About page.
 
 ### On a phone or tablet
 
@@ -59,6 +60,6 @@ Open **Account** to see your name, email and role, change your password, turn tw
 
 ## About RedShadow
 
-The **About** page (linked from Account and from the footer) shows the version, build identifier, build date and runtime. Quote these when you report a problem.
+The **About** page (the **About** entry in the menu, and the footer) shows the version, build identifier, build date and runtime. Quote these when you report a problem.
 
 ![The About page](15-about.png)

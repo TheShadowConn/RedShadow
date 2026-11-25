@@ -272,6 +272,11 @@ COVERED_ROUTES = {
     "engagement-assets", "engagement-update-asset-link", "engagement-notes", "engagement-history",
     # Engagement costs: covered by tests/test_costs.py
     "engagement-costs", "engagement-update-cost",
+    # Scenarios: covered by tests/test_scenarios.py
+    "engagement-scenarios", "engagement-update-scenario", "engagement-reschedule-scenario",
+    "engagement-scenario-status", "engagement-reorder-scenarios", "engagement-add-scenario-image",
+    "engagement-delete-scenario-image", "engagement-add-scenarios-bulk", "engagement-scenario-history",
+    "calendar-scenarios",
     # Section A (lead, delete, join): covered by tests/test_engagement_lifecycle.py
     "engagement-change-lead", "engagement-delete-engagement", "engagement-join", "engagement-restore", "engagement-clone",
     # Section E: own notifications only, covered by tests/test_notifications.py

@@ -29,7 +29,7 @@ from apps.rbac.catalogue import PERMISSIONS, PLATFORM, SYSTEM_ROLES  # noqa: E40
 BACKEND = Path(os.environ.get("BACKEND_DIR", "/app"))
 FONTS = BACKEND / "apps" / "reports" / "assets" / "fonts"
 BRAND = Path(os.environ.get("BRAND_DIR", HERE.parent.parent / "frontend" / "public" / "brand"))
-VERSION = os.environ.get("APP_VERSION", "1.3.0")
+VERSION = os.environ.get("APP_VERSION", "1.4.0")
 TODAY = datetime.date.today()
 OUT = Path(os.environ.get("MANUAL_OUT", HERE / "RedShadow-User-Manual.pdf"))
 
@@ -288,7 +288,7 @@ def build() -> None:
   </table>
   <h3>Revision history</h3>
   <table class="wide"><thead><tr><th>Version</th><th>Date</th><th>Change</th><th>Author</th></tr></thead>
-  <tbody><tr><td>{VERSION}</td><td>{TODAY.strftime("%-d %b %Y")}</td><td>First edition. All workflows for the four roles, worked example, feature reference.</td><td>Shadowconn</td></tr></tbody></table>
+  <tbody><tr><td>{VERSION}</td><td>{TODAY.strftime("%-d %b %Y")}</td><td>All workflows for the four roles, worked example, feature reference. Release 1.4.0 adds test scenarios, role dashboards, the import notice and the About entry.</td><td>Shadowconn</td></tr></tbody></table>
   <h3>Who should read what</h3>
   <table class="wide"><thead><tr><th>Role</th><th>Purpose</th><th>Chapters</th></tr></thead><tbody>{role_rows}</tbody></table>
   <p class="muted small">Role names match the application. "Remediation Owner" is the person holding the Remediation role.

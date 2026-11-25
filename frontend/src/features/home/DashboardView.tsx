@@ -6,6 +6,7 @@ import { useAuth } from "../../api/auth";
 import { api } from "../../api/client";
 import { type Dashboard, type DashboardKind, type DashEngagement, type DashFinding } from "../../api/types";
 import { EmptyState, EngagementStatus, ErrorState, formatDate, formatDay, LoadingRows, money, PageHeader, Tabs } from "../../design/ui";
+import { ScenarioProgress } from "../engagements/ScenariosTab";
 import { SeverityBadge } from "../findings/shared";
 import { SeverityBars, StatusStrip, TrendChart } from "./charts";
 
@@ -155,6 +156,28 @@ function Body({ d }: { d: Dashboard }) {
           <Panel title="Fix deadlines"><Sla d={d} /></Panel>
           {kind !== "remediation" && <Panel title="Starting soon" action={<Link to="/calendar" className="inline-flex min-h-11 items-center text-accent hover:underline">Calendar</Link>}><EngagementList rows={d.engagements.upcoming} empty="No engagements start in the next 30 days." /></Panel>}
           {kind !== "remediation" && <Panel title="In progress"><EngagementList rows={d.engagements.in_progress} empty="No engagement is running." /></Panel>}
+          {d.scenarios && d.scenarios.total > 0 && (
+            <Panel title="Test scenarios" action={<Link to="/calendar" className="inline-flex min-h-11 items-center text-accent hover:underline">Calendar</Link>}>
+              <ScenarioProgress s={{ total: d.scenarios.total, tested: d.scenarios.tested, planned: 0, in_progress: d.scenarios.in_progress, deferred: d.scenarios.deferred, cancelled: 0, overdue: d.scenarios.overdue, next_date: null }} />
+              <dl className="m-0 mt-4 grid grid-cols-3 gap-3 text-center">
+                <div><dt className="text-[13px] text-muted">Overdue</dt><dd className={`m-0 text-2xl font-semibold tabular-nums ${d.scenarios.overdue ? "text-fail" : ""}`}>{d.scenarios.overdue}</dd></div>
+                <div><dt className="text-[13px] text-muted">Starting in 7 days</dt><dd className="m-0 text-2xl font-semibold tabular-nums">{d.scenarios.starting_soon}</dd></div>
+                <div><dt className="text-[13px] text-muted">Deferred</dt><dd className="m-0 text-2xl font-semibold tabular-nums">{d.scenarios.deferred}</dd></div>
+              </dl>
+              {d.scenarios.items.length > 0 && (
+                <ul className="m-0 mt-5 list-none divide-y divide-line border-t border-line p-0">
+                  {d.scenarios.items.map((s) => (
+                    <li key={s.id}>
+                      <Link to={`/engagements/${s.engagement.id}?tab=scenarios`} className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 py-3 hover:bg-raised">
+                        <span className="min-w-0 flex-1 basis-48"><span className="block font-medium">{s.name}</span><span className="block text-[14px] text-muted"><span className="mono">{s.engagement.ref}</span> · {s.engagement.name}</span></span>
+                        <span className={`text-[14px] ${s.overdue ? "font-semibold text-fail" : "text-muted"}`}>{s.overdue ? "Overdue · " : s.status === "deferred" ? "Deferred · " : ""}{s.planned_start ? formatDay(s.planned_start) : "No date"}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Panel>
+          )}
           {(kind === "pentester" || kind === "vendor") && d.retests && (
             <Panel title="My retests" action={<Link to="/retests" className="inline-flex min-h-11 items-center text-accent hover:underline">All retests</Link>}>
               {d.retests.rounds.length === 0 ? <p className="m-0 text-muted">No retest round is waiting for you.</p> : (
@@ -212,7 +235,7 @@ export function DashboardView({ kinds }: { kinds: DashboardKind[] }) {
   const integrity = q.data?.integrity;
   return (
     <>
-      <PageHeader title={`Welcome, ${first}`} lead={LEADS[kind]} actions={integrity && integrity.status !== "ok" ? <Link to="/audit" className="btn btn-danger">Audit chain needs attention</Link> : undefined} />
+      <PageHeader title={`Welcome, ${first}`} lead={LEADS[kind]} actions={integrity && integrity.status !== "ok" ? <Link to="/audit" className="btn btn-danger">Audit chain needs attention</Link> : kind === "remediation" ? <Link to="/remediation" className="btn btn-primary">Open my queue</Link> : undefined} />
       {kinds.length > 1 && <Tabs label="Dashboards" value={kind} onChange={setKind} tabs={kinds.map((k) => ({ id: k, label: TITLES[k] }))} />}
       <div className={kinds.length > 1 ? "mt-6" : ""} role={kinds.length > 1 ? "tabpanel" : undefined} id={kinds.length > 1 ? `panel-${kind}` : undefined} aria-labelledby={kinds.length > 1 ? `tab-${kind}` : undefined}>
         {q.isPending && <LoadingRows rows={4} />}

@@ -135,6 +135,25 @@
   {% if out_of_scope_html %}<h3>Out of scope</h3><div class="prose">{{ out_of_scope_html|safe }}</div>{% endif %}
 </section>
 
+{% elif key == "scenarios" %}
+{# ---------------------------------------------------------------- scenarios #}
+<section class="page" id="sec-scenarios">
+  <h2>Test scenarios</h2>
+  {% if scenarios_pending %}
+  <p class="lead"><strong>Interim report.</strong> {{ scenarios_tested }} scenario{{ scenarios_tested|pluralize }} tested so far. {{ scenarios_pending }} not yet tested: the results below cover only the tested scenarios.</p>
+  {% else %}
+  <p class="muted">All scenarios in this engagement are tested or cancelled.</p>
+  {% endif %}
+  <table class="grid"><thead><tr><th>Scenario</th><th>Status</th><th>Planned</th><th>Tested on</th></tr></thead><tbody>
+    {% for sc in scenarios %}<tr><td>{{ sc.name }}</td><td>{{ sc.status_label }}{% if sc.reason %}<br><span class="muted">{{ sc.reason }}</span>{% endif %}</td><td>{% if sc.planned_start %}{{ sc.planned_start|date:"j M Y" }}{% if sc.planned_end and sc.planned_end != sc.planned_start %} to {{ sc.planned_end|date:"j M Y" }}{% endif %}{% else %}Not scheduled{% endif %}</td><td>{% if sc.completed_on %}{{ sc.completed_on|date:"j M Y" }}{% elif sc.pending %}Not yet tested{% else %}&ndash;{% endif %}</td></tr>{% endfor %}
+  </tbody></table>
+  {% for sc in scenarios %}{% if sc.description_html or sc.images %}
+  <h3>{{ sc.name }}</h3>
+  {% if sc.description_html %}<div class="prose">{{ sc.description_html|safe }}</div>{% endif %}
+  {% if sc.images %}<div class="evidence">{% for e in sc.images %}<figure><img src="{{ e.src }}" alt=""><figcaption>{{ e.name }}</figcaption></figure>{% endfor %}</div>{% endif %}
+  {% endif %}{% endfor %}
+</section>
+
 {% elif key == "methodology" %}
 {# ---------------------------------------------------------------- methodology #}
 <section class="page" id="sec-methodology">

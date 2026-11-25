@@ -37,6 +37,7 @@ A report is assembled from sections. The default template includes all of them, 
 | Detailed findings | One block per finding: description, recommendation, references and, in the internal edition, proof of concept. |
 | Remediation roadmap | What to fix first, with due dates. |
 | Retest results | Outcome of retest rounds. |
+| Test scenarios | Each scenario of the engagement with its status, dates and pictures. Marked as an interim report while scenarios are untested. See the Test scenarios chapter. |
 | Appendix | Supporting material. |
 
 Reports use only fonts and images built into RedShadow. A finding cannot make the report fetch anything from the internet or read files from the server.
