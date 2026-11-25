@@ -1,0 +1,9 @@
+/* Shown until the app mounts. Same eclipse O as the in-app loader (src/design/Loader.tsx). */
+.boot { position: fixed; inset: 0; display: grid; place-items: center; background: #f7f9fa; color: #1f3038; }
+.boot rect { fill: none; stroke-width: 17; }
+.boot .t { stroke: currentColor; opacity: .14; }
+.boot .a { stroke: #e5383b; stroke-dasharray: 30 70; animation: o 1.5s linear infinite; }
+.boot .w { fill: #e5383b; transform-box: fill-box; transform-origin: 100% 100%; animation: b 1.5s ease-in-out infinite; }
+@keyframes o { to { stroke-dashoffset: -100; } }
+@keyframes b { 0%, 100% { opacity: .35; transform: scale(.82); } 50% { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .boot .a, .boot .w { animation: none; } }
