@@ -6,6 +6,8 @@ import { api, upload } from "../../api/client";
 import { Link } from "react-router-dom";
 
 import { useAuth } from "../../api/auth";
+import { Markdown } from "../findings/shared";
+import { MarkdownField } from "./MarkdownField";
 import { SCENARIO_STATUSES, type ScenarioTemplate, type Engagement, type HistoryEvent, type Page, type Scenario, type ScenarioImage, type ScenarioStatus, type ScenarioSummary } from "../../api/types";
 import {
   Alert, Badge, Button, EmptyState, ErrorNote, ErrorState, Field, fieldError, formatDate, formatDay, label, LoadingRows, Modal, Textarea, TextInput,
@@ -145,13 +147,13 @@ export function ScenariosTab({ eng }: { eng: Engagement }) {
                   {writable && !["tested", "cancelled"].includes(s.status) && <Button size="sm" onClick={() => setDialog({ kind: "reschedule", s })}><CalendarClock size={16} aria-hidden /> Reschedule</Button>}
                 </div>
               </div>
-              {s.description && <p className="mt-3 mb-0 whitespace-pre-wrap break-words">{s.description}</p>}
+              {s.description && <div className="md-breaks mt-3"><Markdown text={s.description} /></div>}
               {s.images.length > 0 && (
-                <ul className="m-0 mt-4 grid list-none gap-3 p-0 sm:grid-cols-2 xl:grid-cols-3">
+                <ul className="m-0 mt-4 flex list-none flex-wrap gap-3 p-0">
                   {s.images.map((im, at) => (
-                    <li key={im.id} className="min-w-0">
-                      <button type="button" aria-label={`Open picture ${im.original_name}`} onClick={() => setView({ images: s.images, at })} className="block w-full cursor-zoom-in overflow-hidden rounded-md border border-line bg-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
-                        <img src={im.download_url} alt={im.original_name} loading="lazy" className="aspect-video w-full object-contain" />
+                    <li key={im.id} className="h-52 min-w-0 max-w-full sm:h-72">
+                      <button type="button" aria-label={`Open picture ${im.original_name}`} onClick={() => setView({ images: s.images, at })} className="block h-full cursor-zoom-in overflow-hidden rounded-md border border-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+                        <img src={im.download_url} alt={im.original_name} loading="lazy" className="block h-full w-auto max-w-full object-contain" />
                       </button>
                     </li>
                   ))}
@@ -238,14 +240,14 @@ function ScenarioForm({ eng, scenario, onClose, onDone }: { eng: Engagement; sce
   };
 
   return (
-    <Modal open onClose={onClose} title={editing ? "Edit scenario" : "Add scenario"}>
+    <Modal open wide="form" onClose={onClose} title={editing ? "Edit scenario" : "Add scenario"}>
       <form className={FORM} onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate(); }}>
         <ErrorNote error={noFieldErrors(save.error)} />
         <Field label="Name" hint="Kept exactly as you type it. Must be unique in this engagement." error={fieldError(save.error, "name")}>
           {(p) => <TextInput {...p} required maxLength={200} value={name} onChange={(e) => setName(e.target.value)} />}
         </Field>
-        <Field label="Description" hint="What is tested and how. Pictures go below." error={fieldError(save.error, "description")}>
-          {(p) => <Textarea {...p} rows={5} maxLength={20000} value={description} onChange={(e) => setDescription(e.target.value)} />}
+        <Field label="Description" hint="What is tested and how. Markdown works: bullets, numbers and links. Pictures go below." error={fieldError(save.error, "description")}>
+          {(p) => <MarkdownField {...p} maxLength={20000} value={description} onChange={setDescription} />}
         </Field>
         {!editing && (
           <div className="grid gap-6 sm:grid-cols-2">
@@ -258,17 +260,17 @@ function ScenarioForm({ eng, scenario, onClose, onDone }: { eng: Engagement; sce
             <h3 id="pics-h" className="m-0 text-[15px] font-medium">Pictures</h3>
             <p className="m-0 text-[14px] text-muted">PNG, JPEG, GIF or WebP. Up to {MAX_PICTURES} per scenario.</p>
           </div>
-          <ul className="m-0 grid list-none gap-3 p-0 empty:hidden sm:grid-cols-2">
+          <ul className="m-0 flex list-none flex-wrap gap-3 p-0 empty:hidden">
             {live?.images.map((im) => (
-              <li key={im.id} className="relative">
-                <img src={im.download_url} alt={im.original_name} className="aspect-video w-full rounded-md border border-line bg-raised object-contain" />
+              <li key={im.id} className="relative h-36 max-w-full">
+                <img src={im.download_url} alt={im.original_name} className="block h-full w-auto max-w-full rounded-md border border-line object-contain" />
                 {editing && (
                   <button type="button" aria-label={`Remove picture ${im.original_name}`} disabled={removePicture.isPending} onClick={() => removePicture.mutate(im.id)} className="absolute top-1 right-1 rounded bg-surface/90 p-1 text-fail shadow-sm"><Trash2 size={14} aria-hidden /></button>
                 )}
               </li>
             ))}
             {files.map((f, i) => (
-              <li key={`${f.name}${i}`} className="flex aspect-video min-w-0 flex-col justify-between rounded-md border border-dashed border-line p-3 text-[13px]">
+              <li key={`${f.name}${i}`} className="flex h-36 min-w-40 max-w-full flex-col justify-between rounded-md border border-dashed border-line p-3 text-[13px]">
                 <span className="[overflow-wrap:anywhere]">{f.name}</span>
                 <button type="button" className="self-start text-fail underline" onClick={() => setFiles((l) => l.filter((_, j) => j !== i))}>Remove</button>
               </li>

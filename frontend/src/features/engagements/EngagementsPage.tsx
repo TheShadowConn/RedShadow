@@ -165,7 +165,7 @@ function CreateEngagement({ onClose, onCreated }: { onClose: () => void; onCreat
   const set = (k: string) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
   const general = save.error && !Object.keys((save.error as { fields?: object }).fields ?? {}).length ? save.error : null;
   return (
-    <Modal open onClose={onClose} title="New engagement">
+    <Modal open wide="form" onClose={onClose} title="New engagement">
       <form className="space-y-5 p-6" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate(); }}>
         <ErrorNote error={general} />
         <Field label="Organisation" error={fieldError(save.error, "organisation")}>

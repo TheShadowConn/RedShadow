@@ -235,6 +235,7 @@ dialog.modal {
   width: min(520px, calc(100vw - 32px));
   max-height: calc(100vh - 48px);
 }
+dialog.modal.modal-form { width: min(860px, calc(100vw - 24px)); }
 dialog.modal.modal-wide { width: min(1100px, calc(100vw - 24px)); }
 dialog.sheet {
   margin: 0 0 0 auto;
@@ -325,6 +326,8 @@ dialog::backdrop {
 /* rendered markdown */
 .md { line-height: 1.6; overflow-wrap: anywhere; }
 /* Engagement text written before markdown existed keeps its line breaks */
+/* Markdown editor grows with its text (no inner scrollbar inside the dialog scrollbar) up to a sensible height */
+.md-input { min-height: 9rem; max-height: 26rem; field-sizing: content; }
 .md-breaks .md p { white-space: pre-line; }
 .md > :first-child { margin-top: 0; }
 .md > :last-child { margin-bottom: 0; }

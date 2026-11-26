@@ -186,12 +186,12 @@ function useDialog(open: boolean, onClose: () => void) {
   return ref;
 }
 
-function DialogShell({ open, onClose, title, kind, wide, children }: { open: boolean; onClose: () => void; title: string; kind: "modal" | "sheet"; wide?: boolean; children: ReactNode }) {
+function DialogShell({ open, onClose, title, kind, wide, children }: { open: boolean; onClose: () => void; title: string; kind: "modal" | "sheet"; wide?: boolean | "form"; children: ReactNode }) {
   const ref = useDialog(open, onClose);
   return (
     <dialog
       ref={ref}
-      className={cx(kind, wide && "modal-wide")}
+      className={cx(kind, wide === "form" ? "modal-form" : wide && "modal-wide")}
       aria-label={title}
       onMouseDown={(e) => {
         if (e.target === ref.current) onClose();
@@ -212,8 +212,8 @@ function DialogShell({ open, onClose, title, kind, wide, children }: { open: boo
   );
 }
 
-/** `wide` is for pictures and other content that needs room (up to 1100px). */
-export const Modal = (p: { open: boolean; onClose: () => void; title: string; wide?: boolean; children: ReactNode }) => <DialogShell {...p} kind="modal" />;
+/** `wide` is for pictures (up to 1100px); `wide="form"` gives long forms with text editors room (up to 860px). */
+export const Modal = (p: { open: boolean; onClose: () => void; title: string; wide?: boolean | "form"; children: ReactNode }) => <DialogShell {...p} kind="modal" />;
 export const Sheet = (p: { open: boolean; onClose: () => void; title: string; children: ReactNode }) => <DialogShell {...p} kind="sheet" />;
 
 export function ConfirmDialog({
