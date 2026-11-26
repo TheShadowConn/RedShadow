@@ -243,6 +243,93 @@ def costs_block(user) -> dict | None:
     }  # fmt: skip
 
 
+COST_ITEM_LIMIT = 1000
+
+
+def cost_report(user, params) -> dict:
+    """Every cost line the user may see, filtered, with totals, a monthly timeline and a per-engagement breakdown.
+    Currencies are never converted into each other. Needs engagement_costs.view (checked by the view)."""
+    import uuid
+
+    from django.db.models import Count
+    from django.db.models.functions import TruncMonth
+    from rest_framework.exceptions import ValidationError
+
+    from apps.engagements.models import CURRENCY_CODES, EngagementCost
+
+    scope = scope_engagements(user)
+    base = EngagementCost.objects.filter(engagement__in=scope)
+    qs, errors = base, {}
+
+    def number(name, low, high):
+        raw = params.get(name, "")
+        if raw == "":
+            return None
+        if not raw.isdigit() or not low <= int(raw) <= high:
+            errors[name] = [f"Use a number from {low} to {high}."]
+            return None
+        return int(raw)
+
+    year, month = number("year", 1900, 2200), number("month", 1, 12)
+    if year:
+        qs = qs.filter(incurred_on__year=year)
+    if month:
+        qs = qs.filter(incurred_on__month=month)
+    if params.get("engagement"):
+        try:
+            qs = qs.filter(engagement_id=uuid.UUID(params["engagement"]))
+        except ValueError:
+            errors["engagement"] = ["Not a valid engagement."]
+    categories = [k for k, _ in EngagementCost.CATEGORIES]
+    if params.get("category"):
+        if params["category"] in categories:
+            qs = qs.filter(category=params["category"])
+        else:
+            errors["category"] = ["Not a cost category."]
+    if params.get("currency"):
+        if params["currency"] in CURRENCY_CODES:
+            qs = qs.filter(currency=params["currency"])
+        else:
+            errors["currency"] = ["Not a currency."]
+    if errors:
+        raise ValidationError(errors)
+
+    ordered = qs.order_by()
+    totals = [
+        {"currency": r["currency"], "total": r["total"], "lines": r["lines"]}
+        for r in ordered.values("currency").annotate(total=Sum("amount"), lines=Count("pk")).order_by("currency")
+    ]
+    timeline = [
+        {"month": r["month"].strftime("%Y-%m"), "currency": r["currency"], "total": r["total"], "lines": r["lines"]}
+        for r in ordered.annotate(month=TruncMonth("incurred_on"))
+        .values("month", "currency").annotate(total=Sum("amount"), lines=Count("pk")).order_by("month", "currency")
+    ]  # fmt: skip
+    by_engagement = [
+        {"engagement": {"id": str(r["engagement_id"]), "ref": r["engagement__ref"], "name": r["engagement__name"]},
+         "currency": r["currency"], "total": r["total"], "lines": r["lines"]}
+        for r in ordered.values("engagement_id", "engagement__ref", "engagement__name", "currency")
+        .annotate(total=Sum("amount"), lines=Count("pk")).order_by("engagement__ref", "currency")
+    ]  # fmt: skip
+    rows = list(qs.select_related("engagement")[: COST_ITEM_LIMIT + 1])
+    items = [
+        {"id": str(c.pk), "incurred_on": c.incurred_on, "amount": c.amount, "currency": c.currency,
+         "category": c.category, "description": c.description,
+         "engagement": {"id": str(c.engagement_id), "ref": c.engagement.ref, "name": c.engagement.name}}
+        for c in rows[:COST_ITEM_LIMIT]
+    ]  # fmt: skip
+    options = {
+        "years": sorted({d.year for d in base.dates("incurred_on", "year")}, reverse=True),
+        "engagements": [
+            {"id": str(e.pk), "ref": e.ref, "name": e.name}
+            for e in scope.filter(costs__isnull=False).distinct().order_by("ref")
+        ],
+        "currencies": sorted(base.order_by().values_list("currency", flat=True).distinct()),
+        "categories": [{"id": k, "name": v} for k, v in EngagementCost.CATEGORIES],
+    }
+    return {"totals": totals, "timeline": timeline, "by_engagement": by_engagement, "items": items,
+            "truncated": len(rows) > COST_ITEM_LIMIT, "options": options}  # fmt: skip
+
+
 def _scenario_item(r, today) -> dict:
     return {
         "id": r.pk, "name": r.name, "status": r.status, "planned_start": r.planned_start, "planned_end": r.planned_end,

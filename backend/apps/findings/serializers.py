@@ -40,13 +40,14 @@ class FindingListSerializer(serializers.ModelSerializer):
     assigned_pentester = serializers.SerializerMethodField()
     remediation_owner = serializers.SerializerMethodField()
     is_overdue = serializers.SerializerMethodField()
+    needs_review = serializers.SerializerMethodField()
 
     class Meta:
         model = Finding
         fields = [
             "id", "ref", "engagement", "title", "severity", "cvss_score", "status", "asset", "cwe_id",
             "endpoint", "assigned_pentester", "remediation_owner", "discovered_at", "due_date", "is_overdue",
-            "version", "created_at", "updated_at",
+            "needs_review", "version", "created_at", "updated_at",
         ]  # fmt: skip
         read_only_fields = fields
 
@@ -56,6 +57,10 @@ class FindingListSerializer(serializers.ModelSerializer):
 
     def get_is_overdue(self, obj):
         return bool(obj.due_date and obj.status in lifecycle.OVERDUE_STATUSES and obj.due_date < timezone.localdate())
+
+    def get_needs_review(self, obj):
+        """An import left gaps that nobody has fixed or marked reviewed yet."""
+        return bool(obj.import_issues)
 
     def get_asset(self, obj):
         return {"id": obj.asset_id, "name": obj.asset.name} if obj.asset_id else None
@@ -135,8 +140,13 @@ class FindingSerializer(FindingListSerializer):
 
 
 class ReferenceSerializer(StrictSerializer):
-    label = serializers.CharField(max_length=120)
+    label = serializers.CharField(max_length=120, required=False, allow_blank=True, default="")
     url = serializers.CharField(max_length=500)
+
+    def validate(self, attrs):
+        if not attrs.get("label", "").strip():
+            attrs["label"] = attrs["url"].strip()[:120]  # no label typed: show the link itself, as imports do
+        return attrs
 
     def validate_url(self, value):
         parts = urlsplit(value.strip())

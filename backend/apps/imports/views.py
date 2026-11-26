@@ -41,6 +41,7 @@ class ImportJobViewSet(ScopedModelViewSet):
         "retrieve": "imports.view",
         "create": "imports.create",
         "destroy": "imports.create",
+        "clear_history": "imports.delete_history",
         "reupload": "imports.create",
         "retry": "imports.create",
         "history": "imports.view",
@@ -89,6 +90,11 @@ class ImportJobViewSet(ScopedModelViewSet):
     def destroy(self, request, *args, **kwargs):
         services.delete_job(request, request.user, self.get_object())
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=["post"], url_path="clear-history")
+    def clear_history(self, request):
+        """Super Admin: remove every finished import from the history. Findings and assets they created stay."""
+        return Response({"deleted": services.clear_history(request, request.user)})
 
     @action(detail=True, methods=["post"])
     def reupload(self, request, pk=None):

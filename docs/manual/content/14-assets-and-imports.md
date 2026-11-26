@@ -34,7 +34,8 @@ Imported assets are **not onboarded**: they cannot join an engagement and pentes
 - **Problem report** lists the rows that were left out and why. *Row details* shows what the file said.
 - **Upload a corrected file** puts a fixed file into the same import as a new attempt. Your column choices are kept and the file is checked at once. Rows that already went in are recognised and skipped, so nothing is created twice. Uploading the same file again is refused.
 - **Retry** runs a failed import again with the same file.
-- **Delete import** removes a failed or cancelled import with its rows, history and file. An import that created records stays as history.
+- **Delete import** removes a failed or cancelled import with its rows, history and file. For most people an import that created records stays as history.
+- **Super Admin only:** a Super Admin can delete any finished import from the history (completed, failed or cancelled), one at a time with the bin button, or all at once with **Clear history** at the top of the Imports page. The findings and assets those imports created are **kept**; they only lose the link back to the import. Imports that are still waiting or running are never touched. Each deletion is written to the audit log with the number of findings kept. The permission is `imports.delete_history`.
 - **History of this import** lists every attempt with its file, counts and outcome.
 
 ## Deleting a user

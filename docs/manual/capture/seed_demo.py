@@ -54,6 +54,13 @@ eng.link_asset(None, admin, e, build, False, "Not part of this test")
 for cur, cat, amt, d in (("EUR", "labour", 18200, "Labour, 14 days"), ("EUR", "tools", 3400, "Scanner licences"), ("USD", "travel", 1250, "Site visit")):
     eng.add_cost(None, admin, e, {"amount": amt, "currency": cur, "category": cat, "description": d, "incurred_on": today})
 
+# an earlier engagement with its own costs, so the Costs page has a timeline across engagements and years
+old = eng.create_engagement(None, admin, {"type": "mobile", "start_date": date(2026, 2, 2), "end_date": date(2026, 6, 26),
+                                          "organisation": acme, "name": "Acme mobile app test Q2", "lead": priya})  # fmt: skip
+for cur, cat, amt, d, text in (("EUR", "labour", 5200, date(2025, 12, 12), "Scoping workshop"), ("EUR", "labour", 7800, date(2026, 3, 9), "Labour, 10 days"),
+                               ("USD", "travel", 900, date(2026, 3, 11), "Travel to client site"), ("EUR", "tools", 1200, date(2026, 6, 5), "Mobile testing licences")):
+    eng.add_cost(None, admin, old, {"amount": amt, "currency": cur, "category": cat, "description": text, "incurred_on": d})
+
 # scenarios (the first one starting moves the engagement into testing)
 adm = signed_in(admin)
 API = "/api/v1"

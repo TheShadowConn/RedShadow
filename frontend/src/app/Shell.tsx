@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { Bug, Building2, Info, Server, CalendarDays, ClipboardCheck, FileUp, FileText, Palette, Crosshair, FileStack, ScrollText, LayoutDashboard, MoreHorizontal, LogOut, Moon, Repeat2, ShieldCheck, Sun, UserCircle, Users, Wrench, type LucideIcon } from "lucide-react";
+import { Bug, Building2, Coins, Info, Server, CalendarDays, ClipboardCheck, FileUp, FileText, Palette, Crosshair, FileStack, ScrollText, LayoutDashboard, MoreHorizontal, LogOut, Moon, Repeat2, ShieldCheck, Sun, UserCircle, Users, Wrench, type LucideIcon } from "lucide-react";
 
 import { useAuth } from "../api/auth";
 import { Credit } from "../design/Credit";
@@ -12,6 +12,7 @@ import { CommandPalette, SearchButton } from "./CommandPalette";
 import { IdleWarning } from "./IdleWarning";
 import { NotificationBell } from "./NotificationBell";
 import { useSignOut } from "../features/auth/RestrictionFlow";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 type Item = { to: string; label: string; short?: string; icon: LucideIcon; perm?: string; end?: boolean };
 
@@ -27,6 +28,7 @@ const ITEMS: Item[] = [
   { to: "/retests", label: "Retests", icon: Repeat2, perm: "retests.view" },
   { to: "/organisations", label: "Organisations", short: "Orgs", icon: Building2, perm: "organisations.view" },
   { to: "/assets", label: "Assets", short: "Assets", icon: Server, perm: "assets.view" },
+  { to: "/costs", label: "Costs", icon: Coins, perm: "engagement_costs.view" },
   { to: "/templates", label: "Templates", icon: FileStack, perm: "templates.view" },
   { to: "/report-templates", label: "Report styles", icon: Palette, perm: "reports.manage_templates" },
   { to: "/audit", label: "Audit", icon: ScrollText, perm: "audit.view_engagement" },
@@ -140,9 +142,11 @@ export function Shell() {
           </div>
         </header>
         <main id="main" className="mx-auto w-full max-w-[1600px] flex-1 p-3 sm:p-4 lg:p-6">
-          <Suspense fallback={<Loader block />}>
-            <Outlet />
-          </Suspense>
+          <ErrorBoundary key={location.pathname}>
+            <Suspense fallback={<Loader block />}>
+              <Outlet />
+            </Suspense>
+          </ErrorBoundary>
         </main>
         <footer className="mx-auto w-full max-w-[1600px] px-3 pb-6 text-[13px] text-muted sm:px-4 lg:px-6">
           <Link to="/about" className="inline-flex items-center gap-2 border-t border-line pt-4 text-muted no-underline hover:text-ink">

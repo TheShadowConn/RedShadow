@@ -12,6 +12,7 @@ import { OverviewPage } from "../features/home/OverviewPage";
 import { Shell } from "./Shell";
 
 const AboutPage = lazy(() => import("../features/about/AboutPage").then((m) => ({ default: m.AboutPage })));
+const CostsPage = lazy(() => import("../features/costs/CostsPage").then((m) => ({ default: m.CostsPage })));
 const AssetsPage = lazy(() => import("../features/assets/AssetsPage").then((m) => ({ default: m.AssetsPage })));
 const AccountPage = lazy(() => import("../features/account/AccountPage").then((m) => ({ default: m.AccountPage })));
 const ImportPage = lazy(() => import("../features/imports/ImportPage").then((m) => ({ default: m.ImportPage })));
@@ -83,6 +84,7 @@ function Gate() {
         <Route path="engagements" element={<EngagementsPage />} />
         <Route path="engagements/:id" element={<EngagementPage />} />
         <Route path="assets" element={<AssetsPage />} />
+        <Route path="costs" element={<CostsPage />} />
         <Route path="organisations" element={<OrganisationsPage />} />
         <Route path="organisations/:id" element={<OrganisationPage />} />
         <Route path="findings" element={<FindingsPage />} />

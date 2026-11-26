@@ -55,6 +55,8 @@ const settle = (p, ms = 1200) => p.waitForTimeout(ms);
   await p.locator("button[aria-label^='Open picture']").first().click(); await settle(p, 900);
   await shot(p, "33-picture-viewer.png");
   await p.keyboard.press("Escape");
+  await p.goto(BASE + "/costs"); await settle(p, 1500); await shot(p, "36-costs-page.png");
+  await p.getByRole("link", { name: /Total engagement cost/ }).count(); // the dashboard card links here
   // Pentester: import check, import, finding with gaps
   p = await login(b, "priya@redshadow.demo", null);
   await p.goto(`${BASE}/imports/${JOB}`); await settle(p, 1800);
@@ -66,7 +68,20 @@ const settle = (p, ms = 1200) => p.waitForTimeout(ms);
   await p.getByRole("dialog").getByRole("button", { name: "Import", exact: true }).click(); await settle(p, 3500);
   await p.goto(BASE + "/imports"); await settle(p); await shot(p, "22-imports.png");
   const id = await p.evaluate(async () => (await (await fetch("/api/v1/findings?search=Untitled")).json()).results[0]?.id);
+  await p.goto(`${BASE}/findings`); await settle(p, 1500); await shot(p, "37-findings-needs-review.png");
   await p.goto(`${BASE}/findings/${id}`); await settle(p, 1400); await shot(p, "34-finding-import-gaps.png");
+  // The case that used to blank the app: a reference with a link but no label
+  await p.goto(`${BASE}/findings/${id}/edit`); await settle(p, 1200);
+  await p.getByRole("button", { name: "Add reference" }).click();
+  await p.getByLabel("Link", { exact: true }).fill("https://nvd.nist.gov/vuln/detail/cve-2026-98432");
+  await p.getByRole("button", { name: /^Save/ }).click(); await settle(p, 1800);
+  console.log("EDIT_WITHOUT_LABEL page ok:", !(await p.getByText("Something went wrong").count()), "| body text length:", (await p.locator("body").innerText()).length, "| url:", p.url());
+  // Super Admin deletes the import history
+  p = await login(b, "admin@redshadow.demo", MFA);
+  await p.goto(BASE + "/imports"); await settle(p, 1200);
+  await p.getByRole("button", { name: "Clear history" }).click(); await settle(p, 500);
+  await p.getByRole("dialog").getByRole("button", { name: "Clear history" }).click(); await settle(p, 1800);
+  console.log("HISTORY_CLEARED, empty state shown:", (await p.getByText("No imports yet").count()) > 0);
   // External vendor
   p = await login(b, "vera@redshadow.demo", null);
   await shot(p, "27-vendor-dashboard.png");
