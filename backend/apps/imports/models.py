@@ -38,7 +38,10 @@ class ImportJob(BaseModel):
     ]
     WORKING = ("parsing", "validating", "importing")
     FINISHED = ("completed", "failed", "cancelled")
-    MODES = [("all_or_nothing", "All or nothing"), ("valid_rows_only", "Valid rows only")]
+    MODES = [
+        ("all_or_nothing", "All or nothing"), ("valid_rows_only", "Valid rows only"),
+        ("everything", "Everything, fix gaps later"),
+    ]  # fmt: skip
     DUPLICATES = [("skip", "Skip duplicates"), ("import", "Import duplicates anyway")]
 
     kind = models.CharField(max_length=10, choices=KINDS, default="findings")

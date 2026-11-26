@@ -178,7 +178,7 @@ const ACTION_TEXT: Record<string, string> = {
 function PreviewStep({ job, onDone, onChangeColumns }: { job: ImportJob; onDone: () => void; onChangeColumns: () => void }) {
   const [filter, setFilter] = useState<(typeof FILTERS)[number][0]>("problems");
   const [page, setPage] = useState(1);
-  const [mode, setMode] = useState(job.counts.invalid ? "valid_rows_only" : "all_or_nothing");
+  const [mode, setMode] = useState(job.kind === "findings" && job.counts.incomplete ? "everything" : job.counts.invalid ? "valid_rows_only" : "all_or_nothing");
   const [dups, setDups] = useState("skip");
   const [confirm, setConfirm] = useState(false);
   const [dlError, setDlError] = useState<unknown>(null);
@@ -191,7 +191,8 @@ function PreviewStep({ job, onDone, onChangeColumns }: { job: ImportJob; onDone:
   });
   const shown = rowsQ.data?.results ?? [];
   const isAssets = job.kind === "assets";
-  const importable = (c.valid ?? 0) + (!isAssets && dups === "import" ? (c.duplicate ?? 0) : 0);
+  const incomplete = isAssets ? 0 : (c.incomplete ?? 0);
+  const importable = (c.valid ?? 0) + (!isAssets && dups === "import" ? (c.duplicate ?? 0) : 0) + (mode === "everything" ? incomplete : 0);
   const send = useMutation({
     mutationFn: () => api("POST", `/imports/${job.id}/commit`, { mode, duplicates: dups }),
     onSuccess: () => { setConfirm(false); onDone(); },
@@ -251,6 +252,9 @@ function PreviewStep({ job, onDone, onChangeColumns }: { job: ImportJob; onDone:
         <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
           <legend className="label mb-1">If a row has errors</legend>
           <label className="check"><input type="radio" name="mode" checked={mode === "all_or_nothing"} disabled={(c.invalid ?? 0) > 0} onChange={() => setMode("all_or_nothing")} /> All or nothing: import only if every row is valid{(c.invalid ?? 0) > 0 ? " (not available: some rows have errors)" : ""}</label>
+          {incomplete > 0 && (
+            <label className="check items-start"><input type="radio" name="mode" checked={mode === "everything"} onChange={() => setMode("everything")} /> <span>Import everything, and fix the gaps later: {incomplete} row{incomplete === 1 ? "" : "s"} with a missing or unusable value (title, severity, asset, CWE, date, reference) will be created as drafts marked "needs review". Open each finding to fill the value in. They cannot be published until you do.</span></label>
+          )}
           <label className="check"><input type="radio" name="mode" checked={mode === "valid_rows_only"} onChange={() => setMode("valid_rows_only")} /> Import the valid rows and leave the rest</label>
         </fieldset>
         {!isAssets && (c.duplicate ?? 0) > 0 && (

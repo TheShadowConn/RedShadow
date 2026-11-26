@@ -48,6 +48,8 @@ class Finding(BaseModel, SoftDeleteModel):
     poc = models.TextField(blank=True)
     recommendation = models.TextField(blank=True)
     references = models.JSONField(default=list, blank=True)
+    # Gaps an import left (e.g. {"field": "asset", "message": "..."}). Publishing is blocked until they are cleared.
+    import_issues = models.JSONField(default=list, blank=True)
     severity = models.CharField(max_length=8, choices=SEVERITIES)
     cvss_version = models.CharField(max_length=3, blank=True)
     cvss_vector = models.CharField(max_length=200, blank=True)

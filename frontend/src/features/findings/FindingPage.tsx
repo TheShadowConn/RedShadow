@@ -29,6 +29,10 @@ export function FindingPage() {
 
   const q = useQuery({ queryKey: ["finding", id], queryFn: () => api<Finding>("GET", `/findings/${id}`) });
   const quick = useQuickMove();
+  const reviewed = useMutation({
+    mutationFn: (v: number) => api("POST", `/findings/${id}/import-reviewed`, { version: v }),
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ["finding", id] }); },
+  });
   const remove = useMutation({
     mutationFn: () => api("DELETE", `/findings/${id}`),
     onSuccess: () => { void qc.invalidateQueries({ queryKey: ["findings"] }); nav(`/engagements/${q.data!.engagement.id}`); },
@@ -67,6 +71,19 @@ export function FindingPage() {
           {perms.has("findings.delete") && <Button variant="danger" onClick={() => { remove.reset(); setDialog("delete"); }}>Delete</Button>}
         </div>
       </header>
+      {f.import_issues?.length > 0 && (
+        <div className="mb-4">
+          <Alert tone="warn">
+            <p className="m-0 font-medium">Imported with gaps: please review before publishing.</p>
+            <ul className="m-0 mt-2 list-disc space-y-1 pl-5">
+              {f.import_issues.map((i, n) => <li key={n}><span className="font-medium">{i.field.replace(/_/g, " ")}:</span> {i.message}</li>)}
+            </ul>
+            <p className="m-0 mt-2 text-[14px]">Use Edit to fill the values in; each gap clears when you change its field. If a value is meant to stay empty, mark the gaps as reviewed.</p>
+            {canEdit && <div className="mt-3"><Button size="sm" loading={reviewed.isPending} onClick={() => reviewed.mutate(f.version)}>Mark import gaps as reviewed</Button></div>}
+            {reviewed.error && <ErrorNote error={reviewed.error} />}
+          </Alert>
+        </div>
+      )}
       {lock && <div className="mb-4"><Alert tone="warn">{lock}</Alert></div>}
       {quick.error && <div className="mb-4">{isConflict(quick.error) ? <Alert tone="error">Someone else changed this finding. It was reloaded, try again.</Alert> : <ErrorNote error={quick.error} />}</div>}
       <RetestNotice f={f} />
