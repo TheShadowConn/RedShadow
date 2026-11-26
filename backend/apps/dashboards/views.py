@@ -8,6 +8,16 @@ from apps.rbac.viewsets import ActionPermission
 from . import selectors
 
 
+class CostReportViewSet(viewsets.ViewSet):
+    """All cost lines across engagements with filters (year, month, engagement, category, currency)."""
+
+    permission_classes = [IsAuthenticatedSession, ActionPermission]
+    permission_map = {"list": "engagement_costs.view"}
+
+    def list(self, request):
+        return Response(selectors.cost_report(request.user, request.query_params))
+
+
 class DashboardViewSet(viewsets.ViewSet):
     """Read-only aggregates. One dashboard per role family; each needs its own platform permission."""
 

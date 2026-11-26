@@ -132,6 +132,8 @@ class FindingViewSet(ScopedModelViewSet):
             qs = qs.filter(cwe_id=int(p["cwe"]))
         if p.get("assigned") == "me":
             qs = qs.filter(Q(assigned_pentester=self.request.user) | Q(remediation_owner=self.request.user))
+        if p.get("needs_review") == "true":
+            qs = qs.exclude(import_issues=[])
         if p.get("from"):
             qs = qs.filter(discovered_at__gte=p["from"]) if _is_date(p["from"]) else qs.none()
         if p.get("to"):

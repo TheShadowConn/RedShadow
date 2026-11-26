@@ -39,6 +39,7 @@ export function ImportsPage() {
   const [search, setSearch] = useState("");
   const [term, setTerm] = useState("");
   const [deleting, setDeleting] = useState<ImportJob | null>(null);
+  const [clearing, setClearing] = useState(false);
   const canFindings = can("imports.create");
   const canAssets = can("imports.create") && can("assets.import");
 
@@ -58,6 +59,11 @@ export function ImportsPage() {
     mutationFn: (j: ImportJob) => api("DELETE", `/imports/${j.id}`),
     onSuccess: () => { setDeleting(null); void qc.invalidateQueries({ queryKey: ["imports"] }); },
   });
+  const clear = useMutation({
+    mutationFn: () => api<{ deleted: number }>("POST", "/imports/clear-history", {}),
+    onSuccess: () => { setClearing(false); void qc.invalidateQueries({ queryKey: ["imports"] }); },
+  });
+  const canClear = can("imports.delete_history") && rows.some((j) => j.can_delete);
   const filtered = !!(kind || status || term);
   const start = (k: "findings" | "assets" | null) => { setStarting(k); if (params.get("new")) setParams({}, { replace: true }); };
 
@@ -68,6 +74,7 @@ export function ImportsPage() {
         lead="Bring findings or assets in from a CSV file. Findings arrive as drafts for a pentester to review. Assets arrive not onboarded, matched by their identifiers so nothing is created twice."
         actions={
           <>
+            {canClear && <Button onClick={() => { clear.reset(); setClearing(true); }}><Trash2 size={18} aria-hidden /> Clear history</Button>}
             {canAssets && <Button onClick={() => start("assets")}><Upload size={18} aria-hidden /> Import assets</Button>}
             {canFindings && <Button variant="primary" onClick={() => start("findings")}><Upload size={18} aria-hidden /> Import findings</Button>}
           </>
@@ -127,9 +134,22 @@ export function ImportsPage() {
         )}
       </div>
       <ConfirmDialog
+        open={clearing}
+        title="Clear import history"
+        body="Every finished import (completed, failed or cancelled) is removed from the history, with its rows and uploaded file. Findings and assets that imports created are kept; they only lose the link back to their import. Imports that are still waiting or running are not touched. This cannot be undone."
+        confirmLabel="Clear history"
+        danger
+        busy={clear.isPending}
+        error={clear.error}
+        onConfirm={() => clear.mutate()}
+        onClose={() => setClearing(false)}
+      />
+      <ConfirmDialog
         open={!!deleting}
         title="Delete import"
-        body={`${deleting?.original_name} is deleted with its rows, its history and the uploaded file. Nothing it was meant to create exists, so no findings or assets are affected. This cannot be undone.`}
+        body={deleting && (deleting.status === "failed" || deleting.status === "cancelled") && !(deleting.counts.imported ?? 0)
+          ? `${deleting.original_name} is deleted with its rows, its history and the uploaded file. Nothing it was meant to create exists, so no findings or assets are affected. This cannot be undone.`
+          : `${deleting?.original_name} is removed from the import history, with its rows and the uploaded file. The findings and assets it created are kept; they only lose the link back to this import. This cannot be undone.`}
         confirmLabel="Delete import"
         danger
         busy={remove.isPending}

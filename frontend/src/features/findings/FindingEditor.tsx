@@ -182,7 +182,7 @@ export function FindingEditor() {
           <h2 className="text-lg">References</h2>
           {form.references.map((r, i) => (
             <div key={i} className="grid gap-3 sm:grid-cols-[1fr_2fr_auto] sm:items-end">
-              <Field label="Label">{(p) => <TextInput {...p} maxLength={120} value={r.label} onChange={(e) => set("references", form.references.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} />}</Field>
+              <Field label="Label (optional)">{(p) => <TextInput {...p} maxLength={120} placeholder="The link is used if empty" value={r.label} onChange={(e) => set("references", form.references.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} />}</Field>
               <Field label="Link" error={fieldError(save.error, "references")}>{(p) => <TextInput {...p} type="url" maxLength={500} placeholder="https://" value={r.url} onChange={(e) => set("references", form.references.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))} />}</Field>
               <Button aria-label={`Remove reference ${i + 1}`} onClick={() => set("references", form.references.filter((_, j) => j !== i))}><Trash2 size={18} aria-hidden /></Button>
             </div>

@@ -38,8 +38,15 @@ const STATUS_TONE: Record<string, "ok" | "warn" | "fail" | "info"> = {
   closed: "ok", risk_accepted: "info", false_positive: "info", duplicate: "info",
 };
 
-export function FindingStatus({ status }: { status: string }) {
-  return <Badge tone={STATUS_TONE[status] ?? "info"}>{label(FINDING_STATUSES, status)}</Badge>;
+export function FindingStatus({ status, needsReview }: { status: string; needsReview?: boolean }) {
+  const badge = <Badge tone={STATUS_TONE[status] ?? "info"}>{label(FINDING_STATUSES, status)}</Badge>;
+  if (!needsReview) return badge;
+  return <span className="inline-flex flex-wrap items-center gap-1.5">{badge}<NeedsReview /></span>;
+}
+
+/** Shown on drafts an import left gaps in: they cannot be published until the gaps are fixed or marked reviewed. */
+export function NeedsReview() {
+  return <Badge tone="warn">Needs review</Badge>;
 }
 
 /** Only these link targets are rendered as links; anything else (javascript:, data:, vbscript:, protocol-relative) is dropped. */

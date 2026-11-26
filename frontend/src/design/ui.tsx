@@ -114,8 +114,19 @@ export function ErrorNote({ error }: { error: unknown }) {
   );
 }
 
+/** The first message in whatever shape the API sent: "text", ["text"], or nested like {"0": {"label": ["text"]}}. */
+function firstMessage(v: unknown, depth = 0): string | undefined {
+  if (typeof v === "string") return v;
+  if (depth > 4 || v === null || typeof v !== "object") return undefined;
+  for (const x of Array.isArray(v) ? v : Object.values(v)) {
+    const m = firstMessage(x, depth + 1);
+    if (m) return m;
+  }
+  return undefined;
+}
+
 export function fieldError(error: unknown, name: string): string | undefined {
-  return error instanceof ApiError ? error.fields[name]?.[0] : undefined;
+  return error instanceof ApiError ? firstMessage(error.fields[name]) : undefined;
 }
 
 export function Skeleton({ className }: { className?: string }) {

@@ -715,29 +715,68 @@ def _run_asset_import(job: ImportJob) -> None:
 FAILED_OR_STUCK = ("failed", "cancelled")
 
 
+def can_delete_history(actor) -> bool:
+    """Super Admin (platform imports.delete_history) may delete finished imports, even ones that created records."""
+    return has_platform_perm(actor, "imports.delete_history")
+
+
+def _delete_one(request, job: ImportJob, *, history: bool) -> None:
+    """Delete one import with its rows, attempts and file. Must run inside a transaction with ``job`` locked.
+    With ``history`` the findings and assets it created are KEPT: they just lose the link to this import."""
+    kept = job.findings.count()
+    assets_kept = job.rows.filter(asset_id__isnull=False).count()
+    audit.record(
+        "import.history_deleted" if history else "import.deleted",
+        request=request,
+        entity=job,
+        engagement=job.engagement,
+        metadata={"file": job.original_name, "status": job.status, "error": job.error, "attempts": job.attempt,
+                  "findings_kept": kept, "asset_rows": assets_kept},
+    )  # fmt: skip
+    job.findings.update(import_job=None)  # the findings stay; only the pointer to the deleted import goes
+    job.rows.all().delete()
+    job.attempts.all().delete()
+    job.delete()
+
+
 def delete_job(request, actor, job: ImportJob) -> None:
-    """Delete a failed or cancelled import with its rows, history and any file. Nothing it was meant to
-    create exists (a failed commit rolls back), so no findings or assets are touched."""
+    """Delete an import. Anyone who may import can delete a failed or cancelled one that created nothing.
+    Super Admin can also delete finished imports from the history; the findings and assets they created are kept."""
     _require_create(request, actor, job, "import.delete_denied")
     with transaction.atomic():
         job = _lock(job)
-        if job.status not in FAILED_OR_STUCK:
-            raise Conflict("Only a failed or cancelled import can be deleted. Cancel an import that has not run first.")
-        if job.findings.exists() or job.rows.filter(asset_id__isnull=False).exists():
-            raise Conflict("This import already created records and is kept as history.")
-        audit.record(
-            "import.deleted",
-            request=request,
-            entity=job,
-            engagement=job.engagement,
-            metadata={"file": job.original_name, "status": job.status, "error": job.error, "attempts": job.attempt},
-        )
+        created = job.findings.exists() or job.rows.filter(asset_id__isnull=False).exists()
+        history = job.status not in FAILED_OR_STUCK or created
+        if history:
+            if job.status in ImportJob.WORKING or job.status not in ImportJob.FINISHED:
+                raise Conflict("Only a finished import can be deleted. Cancel an import that has not run first.")
+            if not can_delete_history(actor):
+                raise Conflict("This import is kept as history. Only a Super Admin can delete finished imports.")
         storage_key = job.storage_key
-        job.rows.all().delete()
-        job.attempts.all().delete()
-        job.delete()
+        _delete_one(request, job, history=history)
     if storage_key:
         get_storage().delete(storage_key)
+
+
+def clear_history(request, actor) -> int:
+    """Super Admin: delete every finished import (completed, failed, cancelled). Findings and assets are kept."""
+    if not can_delete_history(actor):
+        raise PermissionDenied("You do not have permission to delete the import history.")
+    keys, deleted = [], 0
+    for pk in list(ImportJob.objects.filter(status__in=ImportJob.FINISHED).values_list("pk", flat=True)):
+        with transaction.atomic():
+            job = ImportJob.objects.select_for_update(of=("self",)).select_related("engagement").filter(
+                pk=pk, status__in=ImportJob.FINISHED
+            ).first()
+            if job is None:
+                continue
+            if job.storage_key:
+                keys.append(job.storage_key)
+            _delete_one(request, job, history=True)
+            deleted += 1
+    for key in keys:
+        get_storage().delete(key)
+    return deleted
 
 
 def can_reupload(job: ImportJob) -> bool:

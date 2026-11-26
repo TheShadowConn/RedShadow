@@ -72,6 +72,7 @@ engagement the user can reach (all-engagement roles, or membership from Phase 3)
 | `templates.manage` | platform | yes | - | - | - | Manage finding templates |
 | `imports.view` | engagement | yes | yes | - | yes | View CSV imports |
 | `imports.create` | engagement | yes | yes | - | yes | Run CSV imports |
+| `imports.delete_history` | platform | yes | - | - | - | Delete finished imports from the import history (findings are kept) |
 | `exports.csv` | engagement | yes | yes | yes | yes | Export CSV |
 | `reports.view` | engagement | yes | yes | - | - | View generated reports |
 | `reports.generate_pdf` | engagement | yes | yes | - | - | Generate PDF reports |

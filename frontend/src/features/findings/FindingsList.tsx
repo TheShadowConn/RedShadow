@@ -12,8 +12,8 @@ import {
 import { FindingStatus, SeverityBadge, userName } from "./shared";
 
 const PAGE_SIZE = 25;
-type Filters = { search: string; severity: string[]; status: string; engagement: string; mine: boolean; ordering: string };
-const EMPTY: Filters = { search: "", severity: [], status: "", engagement: "", mine: false, ordering: "-severity" };
+type Filters = { search: string; severity: string[]; status: string; engagement: string; mine: boolean; review: boolean; ordering: string };
+const EMPTY: Filters = { search: "", severity: [], status: "", engagement: "", mine: false, review: false, ordering: "-severity" };
 
 /** Findings table with filters, paging and bulk actions. Pass `engagement` to lock it to one engagement. */
 export function FindingsList({ engagement }: { engagement?: Engagement }) {
@@ -26,6 +26,7 @@ export function FindingsList({ engagement }: { engagement?: Engagement }) {
     severity: engagement ? [] : (params.get("severity")?.split(",").filter((x) => SEVERITIES.some(([k]) => k === x)) ?? []),
     status: engagement ? "" : (params.get("status") ?? ""),
     mine: !engagement && params.get("assigned") === "me",
+    review: params.get("needs_review") === "true",
   }));
   const [page, setPage] = useState(1);
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -47,8 +48,9 @@ export function FindingsList({ engagement }: { engagement?: Engagement }) {
   if (f.severity.length) qs.set("severity", f.severity.join(","));
   if (f.status) qs.set("status", f.status);
   if (f.mine) qs.set("assigned", "me");
+  if (f.review) qs.set("needs_review", "true");
   const list = useQuery({ queryKey: ["findings", qs.toString()], queryFn: () => api<Page<FindingRow>>("GET", `/findings?${qs}`), placeholderData: (p) => p });
-  const filtered = !!(f.search || f.severity.length || f.status || f.engagement || f.mine);
+  const filtered = !!(f.search || f.severity.length || f.status || f.engagement || f.mine || f.review);
   const rows = list.data?.results ?? [];
   const canBulk = can("findings.bulk_update");
   const canCreate = engagement ? engagement.permissions.includes("findings.create") && !engagement.archived_at : can("findings.create");
@@ -68,6 +70,7 @@ export function FindingsList({ engagement }: { engagement?: Engagement }) {
     if (f.severity.length) x.set("severity", f.severity.join(","));
     if (f.status) x.set("status", f.status);
     if (f.mine) x.set("assigned", "me");
+    if (f.review) x.set("needs_review", "true");
     setExporting(true);
     setExportError(null);
     try { await downloadFile(`/findings/export.csv?${x}`, "redshadow-findings.csv"); } catch (e) { setExportError(e); } finally { setExporting(false); }
@@ -114,6 +117,7 @@ export function FindingsList({ engagement }: { engagement?: Engagement }) {
               ))}
             </fieldset>
             <label className="check"><input type="checkbox" checked={f.mine} onChange={(e) => update({ mine: e.target.checked })} /> Assigned to me</label>
+            <label className="check"><input type="checkbox" checked={f.review} onChange={(e) => update({ review: e.target.checked })} /> Needs review</label>
             <span className="ml-auto flex flex-wrap items-center gap-3">
               {can("exports.csv") && <Button loading={exporting} onClick={() => void exportCsv()}><Download size={18} aria-hidden /> Export CSV</Button>}
               {can("imports.create") && <Link to="/imports" className="btn btn-secondary"><FileUp size={18} aria-hidden /> Import CSV</Link>}
@@ -158,7 +162,7 @@ export function FindingsList({ engagement }: { engagement?: Engagement }) {
                     <td><SeverityBadge severity={r.severity} score={r.cvss_score} /></td>
                     <td><button type="button" className="text-left" onClick={(e) => { e.stopPropagation(); nav(`/findings/${r.id}`); }}><span className="block font-medium">{r.title}</span><span className="mono block text-[14px] text-muted">{r.ref}{r.asset ? ` · ${r.asset.name}` : ""}</span></button></td>
                     {!engagement && <td>{r.engagement.name}</td>}
-                    <td><FindingStatus status={r.status} /></td>
+                    <td><FindingStatus status={r.status} needsReview={r.needs_review} /></td>
                     <td>{userName(r.remediation_owner)}</td>
                     <td className="whitespace-nowrap text-muted">{formatDay(r.discovered_at)}</td>
                   </tr>
@@ -170,7 +174,7 @@ export function FindingsList({ engagement }: { engagement?: Engagement }) {
                 <li key={r.id} className="flex items-start gap-3 px-4 py-3">
                   {canBulk && <input type="checkbox" className="mt-1.5" aria-label={`Select ${r.ref}`} checked={picked.has(r.id)} onChange={() => toggle(r.id)} />}
                   <button type="button" onClick={() => nav(`/findings/${r.id}`)} className="block min-w-0 flex-1 space-y-1.5 text-left">
-                    <span className="flex flex-wrap items-center gap-2"><SeverityBadge severity={r.severity} score={r.cvss_score} /><FindingStatus status={r.status} /></span>
+                    <span className="flex flex-wrap items-center gap-2"><SeverityBadge severity={r.severity} score={r.cvss_score} /><FindingStatus status={r.status} needsReview={r.needs_review} /></span>
                     <span className="block font-medium">{r.title}</span>
                     <span className="block text-[14px] text-muted"><span className="mono">{r.ref}</span>{!engagement && ` · ${r.engagement.name}`}</span>
                   </button>

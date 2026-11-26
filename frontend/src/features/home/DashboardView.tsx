@@ -58,7 +58,7 @@ function CostTile({ costs }: { costs: NonNullable<Dashboard["costs"]> }) {
   const lines = costs.totals.reduce((n, t) => n + t.lines, 0);
   return (
     <Stat
-      to="/engagements"
+      to="/costs"
       title="Total engagement cost"
       value={first ? <span className="text-[19px] leading-tight whitespace-nowrap sm:text-[20px]">{money(first.total, first.currency)}</span> : 0}
       hint={first ? (

@@ -126,6 +126,20 @@ Open **Calendar** to see scheduled, in-progress, reporting and completed engagem
 - A hint warns when a pentester would be double-booked.
 - Only people with scheduling rights can move bars. Everyone else sees them read-only.
 
+## The Costs page
+
+Select the **Total engagement cost** card on the dashboard, or **Costs** in the menu, to open the **Costs** page. It lists every cost line across your engagements with the engagement name and reference, the date, the category, the description and the amount.
+
+![The Costs page: filters, totals per currency and cost over time](36-costs-page.png)
+
+- **Filters:** year, month, engagement, category and currency. **Clear filters** shows everything again.
+- **Totals** are shown per currency. Currencies are never converted into each other.
+- **Cost over time** draws one bar per month for each currency, so peaks are easy to spot.
+- **By engagement** adds up each engagement, and the engagement names open its Cost tab.
+- The list shows the 1,000 most recent matching lines; the totals always include every matching line.
+
+The page needs the `engagement_costs.view` permission, which only Super Admin holds by default.
+
 ## Dashboard
 
 The **Administration** dashboard shows open, overdue and due-soon findings, items waiting for verification, running engagements (the card names the engagement, and a **Running now** panel lists each running engagement with the scenarios running inside it), severity and status charts, a twelve-week trend, fix-deadline compliance, upcoming engagements and the latest activity. Each number equals the same filter on the matching list page. The cards across the top are the same size and line up on desktop, laptop and phone.

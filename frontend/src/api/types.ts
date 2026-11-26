@@ -272,6 +272,8 @@ export const FINDING_STATUSES = [
 ] as const;
 
 export type FindingRow = {
+  /** An import left gaps nobody has fixed or marked reviewed yet. */
+  needs_review: boolean;
   id: string;
   ref: string;
   engagement: { id: string; ref: string; name: string };

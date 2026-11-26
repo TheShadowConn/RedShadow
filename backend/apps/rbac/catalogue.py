@@ -80,6 +80,7 @@ PERMISSIONS: dict[str, tuple[str, str]] = {
     "templates.manage": (PLATFORM, "Manage finding templates"),
     "imports.view": (ENGAGEMENT, "View CSV imports"),
     "imports.create": (ENGAGEMENT, "Run CSV imports"),
+    "imports.delete_history": (PLATFORM, "Delete finished imports from the import history (findings are kept)"),
     "exports.csv": (ENGAGEMENT, "Export CSV"),
     "reports.view": (ENGAGEMENT, "View generated reports"),
     "reports.generate_pdf": (ENGAGEMENT, "Generate PDF reports"),

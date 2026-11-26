@@ -66,7 +66,10 @@ class ImportJobSerializer(serializers.ModelSerializer):
         return {"id": o.pk, "name": o.name} if o else None
 
     def get_can_delete(self, obj):
-        return obj.status in services.FAILED_OR_STUCK
+        if obj.status in services.FAILED_OR_STUCK:
+            return True
+        request = self.context.get("request")
+        return bool(request and obj.status in ImportJob.FINISHED and services.can_delete_history(request.user))
 
     def get_can_reupload(self, obj):
         return services.can_reupload(obj)

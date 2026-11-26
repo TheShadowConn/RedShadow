@@ -63,7 +63,7 @@ export function FindingPage() {
         <div className="min-w-0">
           <p className="mono m-0 text-[14px] text-muted">{f.ref}</p>
           <h1 className="mt-1 text-[32px] max-sm:text-[26px]">{f.title}</h1>
-          <p className="mt-3 flex flex-wrap items-center gap-3"><SeverityBadge severity={f.severity} score={f.cvss_score} /><FindingStatus status={f.status} /><SlaBadge due={f.due_date} status={f.status} overdue={f.is_overdue} /></p>
+          <p className="mt-3 flex flex-wrap items-center gap-3"><SeverityBadge severity={f.severity} score={f.cvss_score} /><FindingStatus status={f.status} needsReview={f.needs_review} /><SlaBadge due={f.due_date} status={f.status} overdue={f.is_overdue} /></p>
         </div>
         <div className="flex flex-wrap gap-3 max-md:hidden">
           {moves.map((m, i) => <Button key={m.name} variant={i === 0 ? "primary" : MOVES[m.name].tone === "danger" ? "danger" : "secondary"} loading={quick.isPending && quick.variables?.move.name === m.name} onClick={() => run(m)}>{MOVES[m.name].label}</Button>)}
