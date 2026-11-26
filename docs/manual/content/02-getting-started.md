@@ -40,7 +40,7 @@ Two minutes before an idle session ends, a box in the corner warns you. Select *
 - **Sidebar** (wide screens): the pages your role can use. A page you cannot open does not appear.
 - **Search** (top bar): finds findings, engagements, organisations and pages. Press `Ctrl K` or `Cmd K`, or `/` when you are not typing in a field.
 - **Theme toggle**: the moon icon switches between light and dark. The choice is remembered on this device.
-- **Overview**: the dashboard for your role. People with more than one dashboard see tabs, for example **Administration**, **Testing**, **Remediation** and **External testing**.
+- **Overview**: the dashboard for your role. Each role sees only its own dashboard: Super Admins see the Administration dashboard, Pentesters the Testing one, Remediation Owners the Remediation one and External Vendors the External testing one. Only a custom role that was deliberately given several dashboards sees a tab for each.
 - **About**: the last menu entry. It shows the version and build.
 - **Footer**: "Built by Shadowconn" also links to the About page.
 
