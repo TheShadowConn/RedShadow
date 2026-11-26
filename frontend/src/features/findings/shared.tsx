@@ -42,6 +42,10 @@ export function FindingStatus({ status }: { status: string }) {
   return <Badge tone={STATUS_TONE[status] ?? "info"}>{label(FINDING_STATUSES, status)}</Badge>;
 }
 
+/** Only these link targets are rendered as links; anything else (javascript:, data:, vbscript:, protocol-relative) is dropped. */
+const SAFE_URL = /^(https?:\/\/|mailto:)/i;
+export const safeUrl = (u: string) => (SAFE_URL.test(u.trim()) ? u.trim() : "");
+
 /** User markdown, rendered without raw HTML or images. Links open in a new tab without a referrer. */
 export function Markdown({ text, empty = "Nothing written yet." }: { text: string; empty?: string }) {
   if (!text.trim()) return <p className="m-0 text-muted">{empty}</p>;
@@ -51,12 +55,16 @@ export function Markdown({ text, empty = "Nothing written yet." }: { text: strin
         skipHtml
         disallowedElements={["img"]}
         unwrapDisallowed
+        urlTransform={safeUrl}
         components={{
-          a: ({ href, children }) => (
-            <a href={href} target="_blank" rel="noopener noreferrer nofollow">
-              {children}
-            </a>
-          ),
+          a: ({ href, children }) =>
+            href ? (
+              <a href={href} target="_blank" rel="noopener noreferrer nofollow">
+                {children}
+              </a>
+            ) : (
+              <span>{children}</span>
+            ),
         }}
       >
         {text}

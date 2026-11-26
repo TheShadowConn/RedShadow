@@ -286,8 +286,10 @@ def scenarios_block(user, today, kind: str = "admin") -> dict:
             .order_by("planned_start", "position")[:SCENARIO_ITEMS]
         )
         this_week = {"from": week_start, "to": week_end, "items": [_scenario_item(r, today) for r in mine]}
+    running = live.filter(status="in_progress").select_related("engagement").order_by("engagement__ref", "position")
     return {
         "this_week": this_week,
+        "running": [_scenario_item(r, today) for r in running[:SCENARIO_ITEMS]],
         "items": [_scenario_item(r, today) for r in rows],
         "total": live.count(),
         "tested": live.filter(status="tested").count(),

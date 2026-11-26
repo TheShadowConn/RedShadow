@@ -19,35 +19,91 @@ const LEADS: Record<DashboardKind, string> = {
   vendor: "The findings you reported and imported, and your engagements.",
 };
 
-function Tile({ to, n, title, hint, tone }: { to: string; n: number | string; title: string; hint?: string; tone?: "fail" | "warn" }) {
+const TILE = "card card-pad flex h-full min-w-0 flex-col transition-colors hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+
+/**
+ * One stat card. Every card has the same three parts at the same heights (two-line title slot, value slot, hint
+ * pinned to the bottom), so numbers line up across a row at any width. The grid stretches cards to equal height.
+ */
+function Stat({ to, title, value, hint, tone }: { to: string; title: string; value: ReactNode; hint?: ReactNode; tone?: "fail" | "warn" }) {
   return (
-    <Link to={to} className="card card-pad block transition-colors hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
-      <span className="block text-[14px] text-muted">{title}</span>
-      <span className={`mt-1 block text-[34px] leading-none font-semibold tabular-nums ${tone === "fail" && Number(n) > 0 ? "text-fail" : tone === "warn" && Number(n) > 0 ? "text-warn" : ""}`}>{n}</span>
-      {hint && <span className="mt-2 block text-[14px] text-muted">{hint}</span>}
+    <Link to={to} className={TILE}>
+      <span className="block min-h-[2.5rem] text-[14px] leading-snug text-muted [overflow-wrap:anywhere]">{title}</span>
+      <span className={`flex min-h-10 items-center text-[30px] leading-none font-semibold tabular-nums [overflow-wrap:anywhere] sm:text-[32px] ${tone === "fail" ? "text-fail" : tone === "warn" ? "text-warn" : ""}`}>{value}</span>
+      <span className="mt-auto block pt-3 text-[14px] leading-snug text-muted [overflow-wrap:anywhere]">{hint ?? "\u00a0"}</span>
     </Link>
   );
+}
+
+function Tile({ to, n, title, hint, tone }: { to: string; n: number | string; title: string; hint?: ReactNode; tone?: "fail" | "warn" }) {
+  return <Stat to={to} title={title} value={n} hint={hint} tone={Number(n) > 0 ? tone : undefined} />;
+}
+
+/** Engagements running: the count, plus which engagement it is (names, not just a number). */
+function RunningTile({ d }: { d: Dashboard }) {
+  const rows = d.engagements.in_progress;
+  const n = d.engagements.by_status.in_progress ?? 0;
+  const hint = rows.length === 0 ? `${d.engagements.total} active` : (
+    <>
+      <span className="block font-medium text-ink">{rows[0].name}</span>
+      {n > 1 && <span className="block">and {n - 1} more</span>}
+    </>
+  );
+  return <Stat to="/engagements" title="Engagements running" value={n} hint={hint} />;
 }
 
 /** Total engagement cost. Currencies are never converted into each other, so each gets its own line. */
 function CostTile({ costs }: { costs: NonNullable<Dashboard["costs"]> }) {
   const [first, ...rest] = costs.totals;
+  const lines = costs.totals.reduce((n, t) => n + t.lines, 0);
   return (
-    <Link to="/engagements" className="card card-pad block min-w-0 transition-colors hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
-      <span className="block text-[14px] text-muted">Total engagement cost</span>
-      {first ? (
+    <Stat
+      to="/engagements"
+      title="Total engagement cost"
+      value={first ? <span className="text-[19px] leading-tight whitespace-nowrap sm:text-[20px]">{money(first.total, first.currency)}</span> : 0}
+      hint={first ? (
         <>
-          <span className="mt-1 block break-words text-[26px] leading-tight font-semibold tabular-nums">{money(first.total, first.currency)}</span>
-          {rest.map((t) => <span key={t.currency} className="mt-1 block break-words text-[15px] font-medium tabular-nums">{money(t.total, t.currency)}</span>)}
-          <span className="mt-2 block text-[14px] text-muted">{costs.totals.reduce((n, t) => n + t.lines, 0)} cost lines</span>
+          {rest.map((t) => <span key={t.currency} className="block font-medium tabular-nums text-ink">{money(t.total, t.currency)}</span>)}
+          <span className="block">{lines} cost lines</span>
         </>
-      ) : (
-        <>
-          <span className="mt-1 block text-[34px] leading-none font-semibold tabular-nums">0</span>
-          <span className="mt-2 block text-[14px] text-muted">No cost recorded yet</span>
-        </>
-      )}
-    </Link>
+      ) : "No cost recorded yet"}
+    />
+  );
+}
+
+/** Engagements in testing, each with the scenarios running inside it. */
+function RunningNow({ d }: { d: Dashboard }) {
+  const eng = d.engagements.in_progress;
+  const byEng = new Map<string, NonNullable<Dashboard["scenarios"]>["running"]>();
+  for (const s of d.scenarios?.running ?? []) byEng.set(s.engagement.id, [...(byEng.get(s.engagement.id) ?? []), s]);
+  if (!eng.length) return <p className="m-0 text-muted">No engagement is running.</p>;
+  return (
+    <ul className="m-0 list-none divide-y divide-line p-0">
+      {eng.map((e) => {
+        const scenarios = byEng.get(e.id) ?? [];
+        return (
+          <li key={e.id} className="py-3">
+            <Link to={`/engagements/${e.id}`} className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 hover:bg-raised">
+              <span className="min-w-0 flex-1 basis-48"><span className="block font-medium [overflow-wrap:anywhere]">{e.name}</span><span className="block text-[14px] text-muted [overflow-wrap:anywhere]">{e.organisation} · {e.ref}</span></span>
+              <span className="text-[14px] text-muted">{formatDay(e.start_date)} to {formatDay(e.end_date)}</span>
+              <EngagementStatus status={e.status} overdue={e.overdue} />
+            </Link>
+            {scenarios.length > 0 && (
+              <ul className="m-0 mt-2 ml-1 list-none space-y-1 border-l-2 border-line p-0 pl-4">
+                {scenarios.map((s) => (
+                  <li key={s.id}>
+                    <Link to={`/engagements/${e.id}?tab=scenarios`} className="flex min-h-9 flex-wrap items-center gap-x-3 gap-y-1 hover:bg-raised">
+                      <span className="min-w-0 flex-1 basis-40 text-[15px] [overflow-wrap:anywhere]"><span className="text-muted">Scenario · </span>{s.name}</span>
+                      <span className={`text-[14px] ${s.overdue ? "font-semibold text-fail" : "text-muted"}`}>{s.overdue ? "Overdue · " : ""}{s.planned_end ? `ends ${formatDay(s.planned_end)}` : "No end date"}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -115,13 +171,13 @@ function Body({ d }: { d: Dashboard }) {
   const empty = f.total === 0 && d.engagements.total === 0;
   return (
     <div className="space-y-6">
-      <div className={`grid grid-cols-2 gap-4 ${kind === "admin" && d.costs ? "lg:grid-cols-3 xl:grid-cols-6" : "lg:grid-cols-5"}`}>
+      <div className={`grid grid-cols-2 gap-3 sm:gap-4 [&>:last-child:nth-child(odd)]:col-span-2 ${kind === "admin" && d.costs ? "lg:grid-cols-3 lg:[&>:last-child:nth-child(odd)]:col-span-1 xl:grid-cols-6" : "lg:grid-cols-5 lg:[&>:last-child:nth-child(odd)]:col-span-1"}`}>
         {kind === "admin" && <>
           <Tile to={`/findings?status=${ACTIVE}`} n={f.open} title="Open findings" hint={`${f.total} in total`} />
           <Tile to="/remediation" n={f.overdue} title="Overdue" hint="Past the fix date" tone="fail" />
           <Tile to="/remediation" n={f.due_soon} title="Due in 7 days" tone="warn" />
           <Tile to="/verification" n={f.pending_verification} title="To verify" hint="Waiting for a retest" />
-          <Tile to="/engagements" n={d.engagements.by_status.in_progress ?? 0} title="Engagements running" hint={`${d.engagements.total} active`} />
+          <RunningTile d={d} />
           {d.costs && <CostTile costs={d.costs} />}
         </>}
         {kind === "pentester" && <>
@@ -148,7 +204,7 @@ function Body({ d }: { d: Dashboard }) {
       </div>
       {empty && <div className="card"><EmptyState title="Nothing to show yet" body={kind === "remediation" ? "Findings assigned to you appear here once they are published." : kind === "vendor" ? "Findings you report or import on your engagements appear here." : "Create an engagement and add findings to see numbers here."} /></div>}
       {!empty && (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
           <Panel title="Open by severity"><SeverityBars counts={f.open_by_severity} mine={false} /></Panel>
           <Panel title="All findings by status"><StatusStrip counts={f.by_status} /></Panel>
           <Panel title="Opened and closed, last 12 weeks" wide><TrendChart data={d.trend} /></Panel>
@@ -172,7 +228,7 @@ function Body({ d }: { d: Dashboard }) {
           <Panel title="Next due" action={kind === "vendor" ? undefined : <Link to="/remediation" className="inline-flex min-h-11 items-center text-accent hover:underline">Open queue</Link>}><DueList rows={d.next_due} /></Panel>
           <Panel title="Fix deadlines"><Sla d={d} /></Panel>
           {kind !== "remediation" && <Panel title="Starting soon" action={<Link to="/calendar" className="inline-flex min-h-11 items-center text-accent hover:underline">Calendar</Link>}><EngagementList rows={d.engagements.upcoming} empty="No engagements start in the next 30 days." /></Panel>}
-          {kind !== "remediation" && <Panel title="In progress"><EngagementList rows={d.engagements.in_progress} empty="No engagement is running." /></Panel>}
+          {kind !== "remediation" && <Panel title="Running now" wide><RunningNow d={d} /></Panel>}
           {d.scenarios && d.scenarios.total > 0 && (
             <Panel title="Test scenarios" action={<Link to="/calendar" className="inline-flex min-h-11 items-center text-accent hover:underline">Calendar</Link>}>
               <ScenarioProgress s={{ total: d.scenarios.total, tested: d.scenarios.tested, planned: 0, in_progress: d.scenarios.in_progress, deferred: d.scenarios.deferred, cancelled: 0, overdue: d.scenarios.overdue, next_date: null }} />

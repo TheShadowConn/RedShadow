@@ -139,12 +139,12 @@ export function Shell() {
             </button>
           </div>
         </header>
-        <main id="main" className="mx-auto w-full max-w-[1200px] flex-1 p-4 md:p-8">
+        <main id="main" className="mx-auto w-full max-w-[1600px] flex-1 p-3 sm:p-4 lg:p-6">
           <Suspense fallback={<Loader block />}>
             <Outlet />
           </Suspense>
         </main>
-        <footer className="mx-auto w-full max-w-[1200px] px-4 pb-6 text-[13px] text-muted md:px-8">
+        <footer className="mx-auto w-full max-w-[1600px] px-3 pb-6 text-[13px] text-muted sm:px-4 lg:px-6">
           <Link to="/about" className="inline-flex items-center gap-2 border-t border-line pt-4 text-muted no-underline hover:text-ink">
             Built by <Credit />
             <span className="sr-only">: about RedShadow</span>
