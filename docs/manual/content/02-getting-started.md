@@ -62,4 +62,4 @@ Open **Account** to see your name, email and role, change your password, turn tw
 
 The **About** page (the **About** entry in the menu, and the footer) shows the version, build identifier, build date and runtime. Quote these when you report a problem.
 
-![The About page](15-about.png)
+![The About page: version, creator and, for Super Admins, the newest backup](15-about.png)

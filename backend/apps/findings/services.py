@@ -6,6 +6,7 @@ import hashlib
 import re
 
 from django.conf import settings
+from django.contrib.postgres.search import SearchQuery, SearchVector
 from django.db import transaction
 from django.http import Http404
 from django.utils import timezone
@@ -587,6 +588,80 @@ def delete_finding(request, actor, finding: Finding) -> None:
             raise Conflict("Other findings are marked as duplicates of this one. Resolve them first.")
         f.soft_delete()
         audit.record("finding.deleted", request=request, entity=f, engagement=f.engagement)
+
+
+def restore_findings(request, actor, ids: list) -> list[dict]:
+    """Undo a delete: bring deleted findings back. Needs findings.delete on the finding's engagement (the same right
+    that deletes). A finding the caller may not restore is reported exactly like one that does not exist."""
+    results = []
+    for fid in ids:
+        item = {"id": str(fid), "ok": False, "error": None}
+        try:
+            with transaction.atomic():
+                gone = Finding.all_objects.select_for_update(of=("self",)).select_related("engagement")
+                f = gone.filter(pk=fid, deleted_at__isnull=False, engagement__deleted_at__isnull=True).first()
+                if f is None or not has_engagement_perm(actor, f.engagement_id, "findings.delete"):
+                    if f is not None:
+                        audit.record("finding.restore_denied", request=request, entity=f, engagement=f.engagement,
+                                     outcome="denied", metadata={"reason": "missing findings.delete"})  # fmt: skip
+                    raise Http404
+                _assert_writable(f)
+                f.deleted_at = None
+                f.version += 1
+                f.save()
+                audit.record("finding.restored", request=request, entity=f, engagement=f.engagement)
+            item["ok"] = True
+        except Http404:
+            item["error"] = {"code": "not_found", "message": "Not found, or not deleted."}
+        except Conflict as e:
+            item["error"] = {"code": "conflict", "message": str(e.detail)}
+        results.append(item)
+    return results
+
+
+_TITLE_STOPWORDS = frozenset("the and for with from that this are was not via has have into over under".split())
+
+
+def _title_words(title: str) -> set[str]:
+    """Lower-case words of a title without small filler words, with a plural "s" removed ("headers" -> "header")."""
+    words = (w for w in re.findall(r"[a-z0-9]+", title.lower()) if len(w) >= 3 and w not in _TITLE_STOPWORDS)
+    return {w[:-1] if len(w) > 3 and w.endswith("s") else w for w in words}
+
+
+def similar_findings(actor, engagement_id, title: str, asset_id=None, endpoint: str = "", exclude=None) -> list[dict]:
+    """Findings in the same engagement that look like the one being written: same title, same asset and endpoint, or
+    a title that shares its words. Only findings the caller may see. Used to warn before creating a duplicate."""
+    title, endpoint = (title or "").strip(), (endpoint or "").strip()
+    if len(title) < 4:
+        return []
+    qs = scope_findings(actor).filter(engagement_id=engagement_id).exclude(status="duplicate")
+    if exclude:
+        qs = qs.exclude(pk=exclude)
+    found: dict = {}
+
+    def add(rows, reason):
+        for f in rows:
+            found.setdefault(f.pk, {"id": f.pk, "ref": f.ref, "title": f.title, "status": f.status, "reason": reason})
+
+    add(qs.filter(title__iexact=title)[:5], "Same title")
+    if asset_id and endpoint:
+        add(qs.filter(asset_id=asset_id, endpoint__iexact=endpoint)[:5], "Same asset and endpoint")
+    # Titles are written differently ("SQL injection in the search box" / "SQL injection in search"), so match on
+    # shared words: fetch candidates that share any word, then keep those where most of the shorter title's words
+    # are in the other one.
+    words = _title_words(title)
+    if words:
+        raw = SearchQuery(" | ".join(sorted(words)), config="english", search_type="raw")
+        candidates = qs.annotate(_v=SearchVector("title", config="english")).filter(_v=raw)[:40]
+        scored = []
+        for f in candidates:
+            other = _title_words(f.title)
+            shared = len(words & other)
+            smaller = min(len(words), len(other)) or 1
+            if shared >= min(2, smaller) and shared / smaller >= 0.7:
+                scored.append((shared / smaller, f))
+        add([f for _, f in sorted(scored, key=lambda t: -t[0])], "Similar title")
+    return list(found.values())[:5]
 
 
 # bulk

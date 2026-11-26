@@ -53,12 +53,37 @@ class ReadyView(HealthView):
             return "fail"
 
 
+def backup_status() -> dict:
+    """Newest recorded backup (scripts/backup.sh records one) and whether it is recent enough. Super Admin only."""
+    from django.utils import timezone
+
+    from apps.audit.models import AuditEvent
+
+    last = AuditEvent.objects.filter(action="system.backup_completed").order_by("-id").first()
+    warn = settings.BACKUP_WARN_DAYS
+    if last is None:
+        return {"status": "none", "last_at": None, "name": "", "size_bytes": 0, "age_days": None,
+                "warn_after_days": warn}  # fmt: skip
+    age = (timezone.now() - last.occurred_at).days
+    meta = last.metadata or {}
+    return {
+        "status": "stale" if age > warn else "ok",
+        "last_at": last.occurred_at,
+        "name": meta.get("name", ""),
+        "size_bytes": meta.get("size_bytes", 0),
+        "age_days": age,
+        "warn_after_days": warn,
+    }
+
+
 class AboutView(APIView):
     """Version and build facts for the About page. Any fully signed-in user; nothing sensitive."""
 
     pagination_class = None
 
     def get(self, request):
+        from apps.rbac.authz import has_platform_perm
+
         return Response(
             {
                 "name": "RedShadow",
@@ -67,5 +92,6 @@ class AboutView(APIView):
                 "build_date": settings.BUILD_DATE,
                 "django": django.get_version(),
                 "python": platform.python_version(),
+                "backup": backup_status() if has_platform_perm(request.user, "audit.view_all") else None,
             }
         )

@@ -23,3 +23,9 @@ done
 
 (cd "$OUT" && shasum -a 256 db.dump media.tgz secrets.tgz > SHA256SUMS)
 echo "backup complete: $OUT"
+
+# Tell the app, so the About page can show the newest backup to Super Admins (and warn when it is old).
+# Best effort: a failure here never fails the backup itself.
+BYTES=$(( $(du -sk "$OUT" | cut -f1) * 1024 ))
+docker compose exec -T backend python manage.py record_backup --name "$(basename "$OUT")" --bytes "$BYTES" \
+    || echo "note: could not record this backup in the app (the backup itself is fine)"

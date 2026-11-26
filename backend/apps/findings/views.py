@@ -43,6 +43,7 @@ from .serializers import (
     NoteCreateSerializer,
     NoteSerializer,
     QueueFindingSerializer,
+    RestoreSerializer,
     RetestAssignSerializer,
     RetestResultSerializer,
     RetestRoundCreateSerializer,
@@ -84,6 +85,8 @@ class FindingViewSet(ScopedModelViewSet):
         "destroy": "findings.delete",
         "publish": "findings.publish",
         "import_reviewed": "findings.update",
+        "restore": "findings.delete",
+        "similar": "findings.view",
         "mark_false_positive": "findings.update",
         "mark_duplicate": "findings.duplicate",
         "transition": "findings.view",  # the rule's own permissions are checked in the service
@@ -296,6 +299,27 @@ class FindingViewSet(ScopedModelViewSet):
         results = services.bulk_apply(request, request.user, data["ids"], data["action"], params)
         ok = sum(1 for r in results if r["ok"])
         return Response({"results": results, "succeeded": ok, "failed": len(results) - ok})
+
+    @action(detail=False, methods=["post"])
+    def restore(self, request):
+        """Undo a delete (the Undo button): brings deleted findings back. Needs findings.delete on each engagement."""
+        data = _validated(RestoreSerializer, request)
+        results = services.restore_findings(request, request.user, data["ids"])
+        ok = sum(1 for r in results if r["ok"])
+        return Response({"results": results, "succeeded": ok, "failed": len(results) - ok})
+
+    @action(detail=False, methods=["get"])
+    def similar(self, request):
+        """Existing findings that look like the one being written, to warn before a duplicate is created."""
+        p = request.query_params
+        engagement = _uuids(p.get("engagement", ""))
+        if len(engagement) != 1:
+            raise ValidationError({"engagement": ["Choose an engagement."]})
+        asset = _uuids(p["asset"]) if p.get("asset") else []
+        exclude = _uuids(p["exclude"]) if p.get("exclude") else []
+        found = services.similar_findings(request.user, engagement[0], p.get("title", ""), asset[0] if asset else None,
+                                          p.get("endpoint", ""), exclude[0] if exclude else None)
+        return Response({"results": found})
 
     @action(detail=False, methods=["get"], url_path="export.csv", url_name="export")
     def export(self, request):

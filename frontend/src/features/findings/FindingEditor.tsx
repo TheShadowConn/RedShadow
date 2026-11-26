@@ -40,6 +40,13 @@ function MarkdownField({ name, text, onChange, error, hint }: { name: string; te
   );
 }
 
+/** The value, but only after it has stopped changing for `ms`. */
+function useDebounced<T>(value: T, ms: number): T {
+  const [v, setV] = useState(value);
+  useEffect(() => { const t = setTimeout(() => setV(value), ms); return () => clearTimeout(t); }, [value, ms]);
+  return v;
+}
+
 export function FindingEditor() {
   const { id } = useParams();
   const [params] = useSearchParams();
@@ -76,6 +83,20 @@ export function FindingEditor() {
   const assets = useQuery({ queryKey: ["eng-assets", engagementId], queryFn: () => api<ScopeLink[]>("GET", `/engagements/${engagementId}/assets`), enabled: !!engagementId && perms.has("assets.view") });
   const members = useQuery({ queryKey: ["eng-members", engagementId], queryFn: () => api<Member[]>("GET", `/engagements/${engagementId}/members`), enabled: !!engagementId && perms.has("findings.assign") });
   const templates = useQuery({ queryKey: ["templates", ""], queryFn: () => api<Page<Template>>("GET", "/finding-templates?page_size=200"), enabled: !editing && can("templates.view") });
+
+  // Warn while writing a NEW finding if something similar already exists in the engagement (never blocks saving).
+  const typed = useDebounced(`${form?.title ?? ""}|${form?.asset ?? ""}|${form?.endpoint ?? ""}`, 600);
+  const [typedTitle, typedAsset, typedEndpoint] = typed.split("|");
+  const similar = useQuery({
+    queryKey: ["similar", engagementId, typed],
+    queryFn: () => {
+      const q = new URLSearchParams({ engagement: engagementId, title: typedTitle });
+      if (typedAsset) q.set("asset", typedAsset);
+      if (typedEndpoint) q.set("endpoint", typedEndpoint);
+      return api<{ results: Array<{ id: string; ref: string; title: string; status: string; reason: string }> }>("GET", `/findings/similar?${q}`);
+    },
+    enabled: !editing && !!engagementId && typedTitle.trim().length >= 4,
+  });
 
   const save = useMutation({
     mutationFn: () => {
@@ -147,6 +168,16 @@ export function FindingEditor() {
         <section className="card card-pad space-y-5">
           <h2 className="text-lg">Summary</h2>
           <Field label="Title" error={fieldError(save.error, "title")}>{(p) => <TextInput {...p} required maxLength={200} value={form.title} onChange={inputHandler("title")} />}</Field>
+          {!editing && similar.data && similar.data.results.length > 0 && (
+            <Alert tone="warn">
+              <p className="m-0 font-medium">This engagement already has similar findings. Check you are not adding a duplicate.</p>
+              <ul className="m-0 mt-2 list-disc space-y-1 pl-5">
+                {similar.data.results.map((s) => (
+                  <li key={s.id}><a className="underline" href={`/findings/${s.id}`} target="_blank" rel="noopener noreferrer"><span className="mono">{s.ref}</span> {s.title}<span className="sr-only"> (opens in a new tab)</span></a> <span className="text-[14px]">· {s.reason}</span></li>
+                ))}
+              </ul>
+            </Alert>
+          )}
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Weakness (CWE)" error={fieldError(save.error, "cwe_id")}>{() => <CwePicker value={form.cwe} onChange={(c) => set("cwe", c)} />}</Field>
             <Field label="Discovered on" error={fieldError(save.error, "discovered_at")}>{(p) => <TextInput {...p} type="date" required value={form.discovered_at} onChange={inputHandler("discovered_at")} />}</Field>
