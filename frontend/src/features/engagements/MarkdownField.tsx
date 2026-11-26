@@ -30,7 +30,7 @@ const MAX = 50000; // matches the API limit
  * rendered through `Markdown`, which drops raw HTML and images and allows http(s) and mailto links only.
  * Pass the props `Field` hands to its render function so the label and error stay wired up.
  */
-export function MarkdownField({ value, onChange, id, ...aria }: { value: string; onChange: (v: string) => void; id?: string; "aria-invalid"?: true; "aria-describedby"?: string }) {
+export function MarkdownField({ value, onChange, id, maxLength = MAX, ...aria }: { value: string; onChange: (v: string) => void; id?: string; maxLength?: number; "aria-invalid"?: true; "aria-describedby"?: string }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [mode, setMode] = useState<"write" | "preview">("write");
 
@@ -38,7 +38,7 @@ export function MarkdownField({ value, onChange, id, ...aria }: { value: string;
     const el = ref.current;
     if (!el) return;
     const r = fn(value, el.selectionStart, el.selectionEnd);
-    if (r.text.length > MAX) return;
+    if (r.text.length > maxLength) return;
     onChange(r.text);
     requestAnimationFrame(() => { el.focus(); el.setSelectionRange(r.start, r.end); });
   }
@@ -77,10 +77,10 @@ export function MarkdownField({ value, onChange, id, ...aria }: { value: string;
           id={id}
           ref={ref}
           rows={6}
-          maxLength={MAX}
+          maxLength={maxLength}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="block min-h-32 w-full resize-y border-0 bg-surface px-3 py-3 leading-relaxed text-ink outline-none"
+          className="md-input block w-full resize-y border-0 bg-surface px-3 py-3 leading-relaxed text-ink outline-none"
         />
       ) : (
         <div className="min-h-32 bg-surface px-3 py-3"><Markdown text={value} empty="Nothing to preview." /></div>

@@ -20,8 +20,8 @@ The name is kept exactly as you type it. It must be unique within the engagement
 
 Open an engagement and choose the **Scenarios** tab. Pentesters on the engagement and Super Admins can change scenarios. Remediation owners and external testers who can open the engagement can read them.
 
-- **Add scenario** takes a name, a description, planned dates and pictures. **Add several** takes one name per line, up to 50, and adds none if any name is already used.
-- **Edit** changes the name and description and adds or removes pictures (PNG, JPEG, GIF or WebP, up to 10 per scenario). Pictures are shown large on the Scenarios tab. Select one to open it in a wide viewer, then use the arrow buttons or the left and right arrow keys to move between pictures.
+- **Add scenario** takes a name, a description, planned dates and pictures. The description takes Markdown, with the same toolbar and **Preview** as the engagement text boxes (bullets, numbers, links, bold, code); it is shown formatted on the tab and in the PDF report. **Add several** takes one name per line, up to 50, and adds none if any name is already used.
+- **Edit** changes the name and description and adds or removes pictures (PNG, JPEG, GIF or WebP, up to 10 per scenario). Pictures are shown large on the Scenarios tab, each at its own proportions with no empty bars around it. Select one to open it in a wide viewer, then use the arrow buttons or the left and right arrow keys to move between pictures.
 - **Reschedule** sets new planned dates and an optional reason. A deferred scenario that gets dates becomes planned again.
 - **Start testing** also puts the engagement into testing: a scenario is part of its engagement, so starting one moves the engagement to **In progress** if it is Planned, Scheduled or in Reporting. The change is written to the audit log and the team is notified. A Completed or Cancelled engagement refuses with a message; reopen the engagement first.
 - **Start testing**, **Mark tested**, **Defer**, **Cancel**, **Reopen**, **Plan again** and **Restore** move the scenario between statuses. A tested or cancelled scenario cannot be rescheduled until it is reopened or restored.

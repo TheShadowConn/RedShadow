@@ -278,7 +278,7 @@ function EditEngagement({ eng, onClose, onSaved }: { eng: Engagement; onClose: (
   const general = save.error && !Object.keys((save.error as { fields?: object }).fields ?? {}).length ? save.error : null;
   const conflict = save.error instanceof ApiError && save.error.status === 409;
   return (
-    <Modal open onClose={onClose} title="Edit engagement">
+    <Modal open wide="form" onClose={onClose} title="Edit engagement">
       <form className="space-y-5 p-6" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate(); }}>
         {conflict ? (
           <Alert tone="error">
