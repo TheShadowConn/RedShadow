@@ -28,6 +28,10 @@ Open an engagement and choose the **Scenarios** tab. Pentesters on the engagemen
 - **Reorder** with the arrow buttons, or drag the handle on a wide screen.
 - The clock icon opens the **history** of that one scenario: who changed what, and why.
 
+![A scenario with a Markdown description and two pictures](32-scenarios-pictures.png)
+
+![Selecting a picture opens it large, with arrows to move between pictures](33-picture-viewer.png)
+
 A bar on the engagement page, the engagement list and the dashboards shows progress, for example "3 of 5 tested". Cancelled scenarios are not counted.
 
 ## On the calendar

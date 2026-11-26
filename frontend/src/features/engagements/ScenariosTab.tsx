@@ -151,7 +151,7 @@ export function ScenariosTab({ eng }: { eng: Engagement }) {
               {s.images.length > 0 && (
                 <ul className="m-0 mt-4 flex list-none flex-wrap gap-3 p-0">
                   {s.images.map((im, at) => (
-                    <li key={im.id} className="h-52 min-w-0 max-w-full sm:h-72">
+                    <li key={im.id} className="h-52 min-w-0 max-w-full sm:h-64">
                       <button type="button" aria-label={`Open picture ${im.original_name}`} onClick={() => setView({ images: s.images, at })} className="block h-full cursor-zoom-in overflow-hidden rounded-md border border-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                         <img src={im.download_url} alt={im.original_name} loading="lazy" className="block h-full w-auto max-w-full object-contain" />
                       </button>
@@ -496,7 +496,7 @@ function Lightbox({ images, at, onClose }: { images: ScenarioImage[]; at: number
   return (
     <Modal open wide onClose={onClose} title={im.original_name}>
       <div className="space-y-4 p-4 sm:p-6" onKeyDown={(e) => { if (e.key === "ArrowLeft" && i > 0) setI(i - 1); if (e.key === "ArrowRight" && i < images.length - 1) setI(i + 1); }}>
-        <img src={im.download_url} alt={im.original_name} className="mx-auto max-h-[78vh] w-full rounded-md object-contain" />
+        <img src={im.download_url} alt={im.original_name} className="mx-auto max-h-[68vh] w-full rounded-md object-contain" />
         <div className="flex items-center justify-between gap-3">
           <Button aria-label="Previous picture" disabled={i === 0} onClick={() => setI(i - 1)}><ChevronLeft size={18} aria-hidden /></Button>
           <span className="text-[14px] text-muted">{i + 1} of {images.length}</span>
