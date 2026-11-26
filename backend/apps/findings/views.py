@@ -83,6 +83,7 @@ class FindingViewSet(ScopedModelViewSet):
         "partial_update": "findings.update",
         "destroy": "findings.delete",
         "publish": "findings.publish",
+        "import_reviewed": "findings.update",
         "mark_false_positive": "findings.update",
         "mark_duplicate": "findings.duplicate",
         "transition": "findings.view",  # the rule's own permissions are checked in the service
@@ -175,6 +176,11 @@ class FindingViewSet(ScopedModelViewSet):
     def destroy(self, request, *args, **kwargs):
         services.delete_finding(request, request.user, self.get_object())
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=["post"], url_path="import-reviewed")
+    def import_reviewed(self, request, pk=None):
+        version = _validated(VersionSerializer, request)["version"]
+        return Response(self._detail(services.review_import_issues(request, request.user, self.get_object(), version)))
 
     @action(detail=True, methods=["post"])
     def publish(self, request, pk=None):

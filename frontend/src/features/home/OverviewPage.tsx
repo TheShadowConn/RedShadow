@@ -22,10 +22,15 @@ function useReadiness() {
   return { state, retry: () => setN((x) => x + 1) };
 }
 
-/** Role dashboards when the user holds one; otherwise the plain access and status page. */
+/**
+ * One dashboard per role. Anyone who holds the admin dashboard (Super Admin holds all four) sees only that one, with no
+ * tabs. Other roles see their own; only a custom role deliberately granted several gets a tab for each.
+ * With none, the plain access and status page.
+ */
 export function OverviewPage() {
   const { can } = useAuth();
-  const kinds = (["admin", "pentester", "remediation", "vendor"] as DashboardKind[]).filter((k) => can(`dashboards.${k}`));
+  const held = (["admin", "pentester", "remediation", "vendor"] as DashboardKind[]).filter((k) => can(`dashboards.${k}`));
+  const kinds = held.includes("admin") ? (["admin"] as DashboardKind[]) : held;
   if (kinds.length === 0) return <Plain />;
   return (
     <>

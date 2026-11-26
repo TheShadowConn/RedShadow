@@ -295,6 +295,8 @@ export type FindingRow = {
 export type Reference = { label: string; url: string };
 
 export type Finding = FindingRow & {
+  /** Gaps an import left behind. Publishing is blocked until each is fixed or the list is marked reviewed. */
+  import_issues: Array<{ field: string; message: string }>;
   description: string;
   technical_details: string;
   poc: string;
@@ -513,7 +515,7 @@ export type ImportJob = {
   mode: string;
   duplicates: string;
   counts: {
-    total?: number; valid?: number; invalid?: number; duplicate?: number; imported?: number; skipped?: number;
+    total?: number; valid?: number; invalid?: number; incomplete?: number; duplicate?: number; imported?: number; skipped?: number;
     created?: number; merged?: number; to_create?: number; to_merge?: number;
   };
   error: string;

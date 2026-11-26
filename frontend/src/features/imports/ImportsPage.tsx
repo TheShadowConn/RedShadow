@@ -218,6 +218,12 @@ function NewImport({ kind, onDone, onCancel }: { kind: "findings" | "assets"; on
         </div>
         <p className="m-0 text-[14px] text-muted">UTF-8 or Windows-1252, comma, semicolon or tab separated, first row holds the column names. Up to 10 MB and 50,000 rows.</p>
         <button type="button" className="inline-flex min-h-11 items-center gap-2 text-accent hover:underline" onClick={() => downloadFile(isAssets ? "/imports/asset-template.csv" : "/imports/template.csv").catch(setDlError)}><Download size={16} aria-hidden /> Download a template</button>
+        {!isAssets && (
+          <p className="m-0 flex flex-wrap gap-x-5 gap-y-1 text-[14px]">
+            <button type="button" className="inline-flex min-h-11 items-center gap-2 text-accent hover:underline" onClick={() => downloadFile("/imports/cvss-guide.csv").catch(setDlError)}><Download size={14} aria-hidden /> CVSS guide (score to severity)</button>
+            <button type="button" className="inline-flex min-h-11 items-center gap-2 text-accent hover:underline" onClick={() => downloadFile("/imports/cwe-list.csv").catch(setDlError)}><Download size={14} aria-hidden /> CWE list</button>
+          </p>
+        )}
       </div>
       <UploadProgress progress={progress} />
       <div className="flex flex-wrap justify-end gap-3">

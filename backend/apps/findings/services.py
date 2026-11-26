@@ -290,6 +290,11 @@ def update_finding(request, actor, finding: Finding, data: dict, version) -> Fin
             f.due_date = due
             if due is None or due >= timezone.localdate():
                 f.sla_breached_at = None  # a new deadline can be breached again
+        if changes and f.import_issues:
+            touched = set(changes)
+            if touched & {"severity", "cvss_vector"}:
+                touched |= {"severity", "cvss_vector"}  # one gap covers both: the vector sets the severity
+            f.import_issues = [i for i in f.import_issues if i["field"] not in touched]
         if changes:
             f.dedupe_hash = dedupe_hash(eng.pk, f.title, f.asset_id, f.endpoint, f.cwe_id)
             f.version += 1
@@ -338,6 +343,12 @@ def _check_target(f: Finding, rule: lifecycle.Rule, note: str, expiry, duplicate
         if duplicate_of.status == "duplicate":
             raise ValidationError({"duplicate_of": ["Point to the original finding, not another duplicate."]})
     if rule.name == "published":
+        if f.import_issues:
+            fields = ", ".join(sorted({i["field"].replace("_", " ") for i in f.import_issues}))
+            raise Conflict(
+                f"This finding was imported with gaps ({fields}). Fix them in the editor, or choose "
+                "'Mark import gaps as reviewed', before publishing."
+            )
         missing = {k: ["Required before publishing."] for k in PUBLISH_REQUIRED if not getattr(f, k).strip()}
         if missing:
             raise ValidationError(missing)
@@ -502,6 +513,28 @@ def system_notify_due_soon(finding: Finding) -> bool:
         inbox.finding_people(f), "finding.due_soon", f"{f.ref} is due {f.due_date.isoformat()}", body=f.title,
         link=inbox.finding_link(f), engagement=f.engagement, dedupe_key=f"{f.pk}:{f.due_date.isoformat()}",
     ))  # fmt: skip
+
+
+@refusals_audited
+def review_import_issues(request, actor, finding: Finding, version) -> Finding:
+    """The user has looked at the gaps an import left and accepts the finding as it is."""
+    if not has_engagement_perm(actor, finding.engagement_id, "findings.update"):
+        audit.record("finding.update_denied", request=request, entity=finding, engagement=finding.engagement,
+                     outcome="denied", metadata={"reason": "missing findings.update"})  # fmt: skip
+        raise PermissionDenied("You do not have permission to edit this finding.")
+    with transaction.atomic():
+        f = _lock(finding)
+        _assert_writable(f)
+        _check_version(f, version)
+        if not f.import_issues:
+            return f
+        cleared = f.import_issues
+        f.import_issues = []
+        f.version += 1
+        f.save()
+        audit.record("finding.import_reviewed", request=request, entity=f, engagement=f.engagement,
+                     metadata={"fields": sorted({i["field"] for i in cleared})})  # fmt: skip
+    return f
 
 
 def publish_finding(request, actor, finding: Finding, version) -> Finding:

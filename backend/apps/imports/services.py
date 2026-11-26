@@ -37,7 +37,7 @@ from . import parsing
 from .asset_import import AssetRowValidator, Matcher, describe
 from .mapping import clean_mapping
 from .models import ImportAttempt, ImportJob, ImportMapping, ImportRow
-from .validation import RowValidator
+from .validation import RowValidator, is_recoverable
 
 log = logging.getLogger(__name__)
 
@@ -341,6 +341,11 @@ def validate_job(job_id) -> None:
             for h, fid in existing.items():
                 ImportRow.objects.filter(pk__in=by_hash[h]).update(status="duplicate", duplicate_of_finding=fid)
         counts = {s: job.rows_now.filter(status=s).count() for s in ("valid", "invalid", "duplicate")}
+        incomplete = sum(
+            1 for errs in job.rows_now.filter(status="invalid").values_list("errors", flat=True) if is_recoverable(errs)
+        )
+        if incomplete:
+            counts["incomplete"] = incomplete
         counts["total"] = job.rows_now.count()
         ImportJob.objects.filter(pk=job.pk, status="validating").update(
             status="previewed", counts=counts, updated_at=timezone.now()
@@ -370,6 +375,8 @@ def commit(request, actor, job: ImportJob, mode: str, duplicates: str) -> Import
         if mode == "all_or_nothing" and c.get("invalid", 0) > 0:
             raise Conflict(f"{c['invalid']} rows have errors. Fix the file, or choose to import the valid rows only.")
         importable = c.get("valid", 0) + (c.get("duplicate", 0) if duplicates == "import" else 0)
+        if mode == "everything" and job.kind == "findings":
+            importable += c.get("incomplete", 0)
         if job.kind == "assets":
             importable = c.get("valid", 0)
         if importable == 0:
@@ -404,6 +411,8 @@ def run_import(job_id) -> None:
                 EngagementAsset.objects.filter(engagement=eng, in_scope=True).values_list("asset_id", flat=True)
             )
             want = ["valid"] + (["duplicate"] if job.duplicates == "import" else [])
+            if job.mode == "everything":
+                want.append("invalid")  # only the recoverable ones are kept, see insert()
             rows = job.rows_now.filter(status__in=want).order_by("row_number", "id")
             imported, lost, first_ref, last_ref = 0, 0, None, None
             batch: list[ImportRow] = []
@@ -412,7 +421,18 @@ def run_import(job_id) -> None:
                 nonlocal imported, lost, first_ref, last_ref
                 usable = []
                 for r in batch_rows:
+                    if r.status == "invalid" and not is_recoverable(r.errors):
+                        continue  # stays invalid: it cannot be stored
                     aid = r.mapped.get("asset_id")
+                    if aid and uuid.UUID(str(aid)) not in scope_assets and job.mode == "everything":
+                        r.mapped = {**r.mapped, "asset_id": None}
+                        r.errors = [
+                            *r.errors,
+                            {"field": "asset", "code": "unknown_asset", "message": "The asset is no longer in scope."},
+                        ]
+                        if r.status != "invalid":
+                            r.status = "invalid"  # imported below with the gap recorded
+                        aid = None
                     if aid and uuid.UUID(str(aid)) not in scope_assets:
                         if job.mode == "all_or_nothing":
                             raise ImportAbort(
@@ -490,6 +510,10 @@ def run_import(job_id) -> None:
 
 def _finding(job: ImportJob, eng: Engagement, row: ImportRow, ref: str) -> Finding:
     m = row.mapped
+    # Gaps: problems the row came with. Each one is kept on the draft so it can be fixed in the finding editor.
+    issues = [{"field": e["field"], "message": e["message"]} for e in row.errors if is_recoverable([e])]
+    if row.errors and "title" not in {i["field"] for i in issues} and not m.get("title"):
+        issues.append({"field": "title", "message": "The title is empty."})
     extra = {}
     if m.get("cvss_vector"):
         version, score, severity = cvss.score_vector(m["cvss_vector"])
@@ -501,8 +525,9 @@ def _finding(job: ImportJob, eng: Engagement, row: ImportRow, ref: str) -> Findi
         status="draft",
         source="import",
         import_job=job,
-        title=m["title"],
-        severity=extra.get("severity") or m["severity"],
+        title=m.get("title") or f"Untitled finding (line {row.row_number})",
+        severity=extra.get("severity") or m.get("severity") or "info",
+        import_issues=issues,
         description=m.get("description", ""),
         recommendation=m.get("recommendation", ""),
         technical_details=m.get("technical_details", ""),

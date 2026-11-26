@@ -51,6 +51,8 @@ class ImportJobViewSet(ScopedModelViewSet):
         "cancel": "imports.create",
         "errors": "imports.view",
         "template": "imports.view",
+        "cvss_guide": "imports.view",
+        "cwe_list": "imports.view",
     }
 
     def get_queryset(self):
@@ -226,6 +228,41 @@ class ImportJobViewSet(ScopedModelViewSet):
         )
         response["X-Content-Type-Options"] = "nosniff"
         return response
+
+    @staticmethod
+    def _csv_response(header, rows, filename):
+        handle, _, _ = write_csv(header, rows)
+        response = FileResponse(handle, content_type="text/csv; charset=utf-8", as_attachment=True, filename=filename)
+        response["X-Content-Type-Options"] = "nosniff"
+        return response
+
+    @action(detail=False, methods=["get"], url_path="cvss-guide.csv", url_name="cvss-guide")
+    def cvss_guide(self, request):
+        """CVSS score ranges and the severity each one gives. A CVSS vector sets the severity; if you also give a
+        severity it must match the range."""
+        from decimal import Decimal
+
+        from apps.findings.cvss import BANDS
+
+        ceilings = [Decimal("10.0")] + [floor - Decimal("0.1") for floor, _ in BANDS[:-1]]
+        rows = [
+            [f"{floor} to {ceiling}", name.capitalize(), name]
+            for (floor, name), ceiling in zip(BANDS, ceilings, strict=True)
+        ]
+        rows.append(["0.0", "Info", "info"])
+        rows.append(["", "", ""])
+        rows.append(["Note", "Put a CVSS vector in the CVSS vector column and the severity is worked out for you.", ""])
+        rows.append(["Note", "If you give both, the severity must match the range above or the row is flagged.", ""])
+        header = ["CVSS base score", "Severity", "Value to type in the Severity column"]
+        return self._csv_response(header, rows, "redshadow-cvss-guide.csv")
+
+    @action(detail=False, methods=["get"], url_path="cwe-list.csv", url_name="cwe-list")
+    def cwe_list(self, request):
+        """Every CWE the import accepts. Type either the number or the CWE-79 form in the CWE column."""
+        from apps.findings.models import CWE
+
+        rows = [[f"CWE-{pk}", pk, name] for pk, name in CWE.objects.order_by("pk").values_list("pk", "name")]
+        return self._csv_response(["Value for the CWE column", "Number", "Name"], rows, "redshadow-cwe-list.csv")
 
     @action(detail=False, methods=["get"], url_path="asset-template.csv", url_name="asset-template")
     def asset_template(self, request):

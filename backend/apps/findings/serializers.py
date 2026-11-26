@@ -82,7 +82,7 @@ class FindingSerializer(FindingListSerializer):
             "description", "technical_details", "poc", "recommendation", "references", "cvss_version",
             "cvss_vector", "cwe", "reported_by", "duplicate_of", "permissions", "possible_duplicates",
             "resolved_at", "verified_at", "verified_by", "closed_at", "risk_accepted_until",
-            "risk_acceptance_reason", "allowed_transitions", "imported_from",
+            "risk_acceptance_reason", "allowed_transitions", "imported_from", "import_issues",
         ]  # fmt: skip
         read_only_fields = fields
 

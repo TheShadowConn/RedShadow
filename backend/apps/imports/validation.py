@@ -19,6 +19,18 @@ CWE_RE = re.compile(r"^(?:cwe[\s-]*)?(\d{1,6})$", re.I)
 DATE_RE = re.compile(r"^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$")
 
 
+# Problems that can be fixed later in the finding editor. A row whose only problems are these can still be imported as a
+# draft marked for review ("everything" mode). Anything else (too long, too many values) cannot be stored.
+SOFT_CODES = frozenset({
+    "required", "invalid_severity", "invalid_cvss", "severity_mismatch", "unknown_asset", "unknown_cwe",
+    "invalid_date", "invalid_reference",
+})  # fmt: skip
+
+
+def is_recoverable(errors: list) -> bool:
+    return bool(errors) and all(e.get("code") in SOFT_CODES for e in errors)
+
+
 def _err(errors: list, field: str, code: str, message: str) -> None:
     errors.append({"field": field, "code": code, "message": message})
 

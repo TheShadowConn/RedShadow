@@ -282,7 +282,7 @@ class TestValidation:
         ]
         job = prepared(p1c, w.eng_a, [GOOD, *bad])
         got = {r["row_number"]: r for r in rows(p1c, job)}
-        assert job["counts"] == {"total": 9, "valid": 1, "invalid": 8, "duplicate": 0}
+        assert job["counts"] == {"total": 9, "valid": 1, "invalid": 8, "duplicate": 0, "incomplete": 6}
         codes = [[e["code"] for e in r["errors"]] for r in sorted(got.values(), key=lambda r: r["row_number"])[1:]]
         assert codes == [
             ["required"],

@@ -67,6 +67,10 @@ Open **Organisations** and select **New organisation**. Add the name and industr
 
 The **lead is required**. The lead is added to the team and notified.
 
+![The Edit engagement dialog: each text section has a toolbar, Write and Preview](31-engagement-edit-markdown.png)
+
+![The Overview tab shows the same sections as formatted bullets, numbers and links](35-engagement-sections-markdown.png)
+
 ### Change the lead, archive or delete
 
 - **Change lead** (Super Admin): choose another active user at any time while the engagement is not archived. The new lead joins the team and both people are notified. The previous lead stays on the team until you remove them.
