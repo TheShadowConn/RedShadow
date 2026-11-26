@@ -2,6 +2,8 @@
 
 ## Backup
 
+After a successful run the script records the backup in the app (`manage.py record_backup`, one audit event named `system.backup_completed`). Super Admins see the newest one on the About page, with a warning when it is older than `BACKUP_WARN_DAYS` (default 7). If recording fails, the backup itself is still fine and the script prints a note.
+
 ```bash
 scripts/backup.sh            # writes ./backups/<timestamp>/
 ```

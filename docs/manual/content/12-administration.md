@@ -34,6 +34,8 @@ At the first sign-in you must change the password and enrol two-step verificatio
 
 Keep backups on another machine and protect them like the database: they contain client findings.
 
+**Backup status on the About page.** When `make backup` (the `scripts/backup.sh` script) finishes, it tells the app, and Super Admins then see a **Backups** card on the **About** page with the time, age and size of the newest backup. A green **Up to date** badge means it is newer than 7 days; an amber badge means it is older (**Backup is old**) or that none has been recorded yet. Change the limit with the `BACKUP_WARN_DAYS` setting. This only tells you that a backup was made: the app never sees the backup files, and copying them off the machine is still up to you.
+
 ## Settings you may change
 
 Settings are environment variables in `.env` (see `.env.example`). The most useful:

@@ -134,6 +134,11 @@ r = pen.post(f"{API}/imports", {"engagement": str(e.pk), "file": SimpleUploadedF
 job = r.json()
 cm = {"title": "Title", "severity": "Severity", "description": "Description", "recommendation": "Recommendation", "asset": "Asset", "cwe": "CWE", "discovered_at": "Date", "endpoint": "Endpoint", "references": "References"}
 pen.post(f"{API}/imports/{job['id']}/mapping", {"column_map": cm, "value_map": {}}, format="json")
+# a recorded backup, as scripts/backup.sh does after a run (shown on the About page to Super Admins)
+from django.core.management import call_command  # noqa: E402
+
+call_command("record_backup", name="20261126-020000", bytes=48234496)
+
 # the seed signed in with a code from the current 30 s window; let the screenshots sign in straight away
 from apps.accounts.models import User  # noqa: E402
 

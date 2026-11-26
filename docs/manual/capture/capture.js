@@ -76,12 +76,29 @@ const settle = (p, ms = 1200) => p.waitForTimeout(ms);
   await p.getByLabel("Link", { exact: true }).fill("https://nvd.nist.gov/vuln/detail/cve-2026-98432");
   await p.getByRole("button", { name: /^Save/ }).click(); await settle(p, 1800);
   console.log("EDIT_WITHOUT_LABEL page ok:", !(await p.getByText("Something went wrong").count()), "| body text length:", (await p.locator("body").innerText()).length, "| url:", p.url());
+  // Similar-findings warning while writing a new finding
+  await p.goto(`${BASE}/findings/new?engagement=${ENG}`); await settle(p, 1200);
+  await p.getByLabel("Title").fill("SQL injection in the search box"); await settle(p, 2200);
+  console.log("SIMILAR_WARNING shown:", (await p.getByText("already has similar findings").count()) > 0);
+  await shot(p, "38-similar-findings-warning.png");
   // Super Admin deletes the import history
   p = await login(b, "admin@redshadow.demo", MFA);
   await p.goto(BASE + "/imports"); await settle(p, 1200);
   await p.getByRole("button", { name: "Clear history" }).click(); await settle(p, 500);
   await p.getByRole("dialog").getByRole("button", { name: "Clear history" }).click(); await settle(p, 1800);
   console.log("HISTORY_CLEARED, empty state shown:", (await p.getByText("No imports yet").count()) > 0);
+  // Undo after deleting a finding, and the backup card on About
+  const fid = await p.evaluate(async () => (await (await fetch("/api/v1/findings?search=Debug")).json()).results[0]?.id);
+  await p.goto(`${BASE}/findings/${fid}`); await settle(p, 1200);
+  await p.getByRole("button", { name: "Delete", exact: true }).first().click(); await settle(p, 500);
+  await shot(p, "39-delete-confirm.png");
+  await p.getByRole("dialog").getByRole("button", { name: "Delete", exact: true }).click(); await settle(p, 1500);
+  await shot(p, "40-undo-after-delete.png");
+  const gone = await p.evaluate(async (id) => (await fetch(`/api/v1/findings/${id}`)).status, fid);
+  await p.getByRole("button", { name: "Undo" }).click(); await settle(p, 1500);
+  const back = await p.evaluate(async (id) => (await fetch(`/api/v1/findings/${id}`)).status, fid);
+  console.log("UNDO: status after delete", gone, "-> after undo", back);
+  await p.goto(BASE + "/about"); await settle(p, 1200); await shot(p, "15-about.png");
   // External vendor
   p = await login(b, "vera@redshadow.demo", null);
   await shot(p, "27-vendor-dashboard.png");

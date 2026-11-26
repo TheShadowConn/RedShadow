@@ -76,6 +76,10 @@ The **lead is required**. The lead is added to the team and notified.
 - **Change lead** (Super Admin): choose another active user at any time while the engagement is not archived. The new lead joins the team and both people are notified. The previous lead stays on the team until you remove them.
 - **Add myself** on the Team tab adds the signed-in user to the team.
 - **Archive** makes a completed or cancelled engagement read-only. **Unarchive** undoes it.
+- **Deleting a finding** (Super Admin, or a role with `findings.delete`) asks you to confirm and names the finding. Straight after you delete it, a bar at the bottom shows **Undo** for about 12 seconds; select it to bring the finding back, with its notes and history. The same bar appears after deleting several findings at once from the list. The audit log records both the delete and the restore.
+
+![The Undo bar appears for a few seconds after a finding is deleted](40-undo-after-delete.png)
+
 - **Delete** (Super Admin only) is separate from archive. The engagement and its findings disappear from every screen for all users. You type the engagement reference to confirm and may add a reason. The audit log records the deletion. Use Archive when in doubt. To undo a delete open **Engagements**, choose **Show: Deleted** and select **Restore**: the engagement returns with its findings, team and history.
 - **Clone** (anyone who can create engagements) opens a dialog for a name, dates and a lead. The new Planned engagement copies the organisation, type, scope text, team and in-scope assets. Findings, notes, documents and costs are not copied.
 

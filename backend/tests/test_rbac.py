@@ -292,7 +292,7 @@ COVERED_ROUTES = {
     "retest-round-record-result", "retest-round-assessors", "queue-remediation", "queue-verification",
     # Phase 8: covered by tests/test_imports.py, tests/test_findings_export.py and the MATRIX rows above
     "import-list", "import-detail", "import-set-mapping", "import-rows", "import-commit", "import-cancel",
-    "import-errors", "import-template", "import-cvss-guide", "import-cwe-list", "finding-import-reviewed", "import-clear-history", "cost-report-list", "import-mapping-list", "import-mapping-detail", "finding-export",
+    "import-errors", "import-template", "import-cvss-guide", "import-cwe-list", "finding-import-reviewed", "import-clear-history", "cost-report-list", "finding-restore", "finding-similar", "import-mapping-list", "import-mapping-detail", "finding-export",
     # Phase 7: covered by tests/test_calendar.py and the MATRIX rows above
     "calendar-events", "calendar-reschedule",
     # Phase 6A: covered by tests/test_audit_explorer.py and the MATRIX rows above

@@ -12,6 +12,7 @@ import { CommandPalette, SearchButton } from "./CommandPalette";
 import { IdleWarning } from "./IdleWarning";
 import { NotificationBell } from "./NotificationBell";
 import { useSignOut } from "../features/auth/RestrictionFlow";
+import { UndoBar } from "../design/undo";
 import { ErrorBoundary } from "./ErrorBoundary";
 
 type Item = { to: string; label: string; short?: string; icon: LucideIcon; perm?: string; end?: boolean };
@@ -142,6 +143,7 @@ export function Shell() {
           </div>
         </header>
         <main id="main" className="mx-auto w-full max-w-[1600px] flex-1 p-3 sm:p-4 lg:p-6">
+          <UndoBar />
           <ErrorBoundary key={location.pathname}>
             <Suspense fallback={<Loader block />}>
               <Outlet />

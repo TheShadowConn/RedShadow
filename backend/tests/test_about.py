@@ -13,7 +13,7 @@ class TestAbout:
         body = r.json()
         assert body["name"] == "RedShadow"
         assert body["version"] == settings.APP_VERSION
-        assert set(body) == {"name", "version", "build", "build_date", "django", "python"}
+        assert set(body) == {"name", "version", "build", "build_date", "django", "python", "backup"}
 
     @pytest.mark.parametrize("role", ["pentester", "remediation"])
     def test_other_roles_can_read(self, role):

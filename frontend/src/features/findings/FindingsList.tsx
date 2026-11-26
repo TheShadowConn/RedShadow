@@ -9,6 +9,7 @@ import { FINDING_STATUSES, SEVERITIES, type BulkResult, type Engagement, type En
 import {
   Alert, Button, ConfirmDialog, EmptyState, ErrorNote, ErrorState, formatDay, LoadingRows, Modal, Pager, Select, TextInput,
 } from "../../design/ui";
+import { announceUndo } from "../../design/undo";
 import { FindingStatus, SeverityBadge, userName } from "./shared";
 
 const PAGE_SIZE = 25;
@@ -61,7 +62,12 @@ export function FindingsList({ engagement }: { engagement?: Engagement }) {
 
   const run = useMutation({
     mutationFn: (body: Record<string, unknown>) => api<BulkResult>("POST", "/findings/bulk", { ids: [...picked], ...body }),
-    onSuccess: (r) => { setResult({ ...r, names: new Map(rows.map((x) => [x.id, `${x.ref} ${x.title}`])) }); setBulk(null); setPicked(new Set()); void qc.invalidateQueries({ queryKey: ["findings"] }); },
+    onSuccess: (r, vars) => {
+      setResult({ ...r, names: new Map(rows.map((x) => [x.id, `${x.ref} ${x.title}`])) });
+      setBulk(null); setPicked(new Set()); void qc.invalidateQueries({ queryKey: ["findings"] });
+      const gone = r.results.filter((x) => x.ok).map((x) => x.id);
+      if (vars.action === "delete" && gone.length) announceUndo(`${gone.length} finding${gone.length === 1 ? "" : "s"} deleted.`, () => api("POST", "/findings/restore", { ids: gone }));
+    },
   });
   async function exportCsv() {
     const x = new URLSearchParams({ ordering: f.ordering });
@@ -189,7 +195,7 @@ export function FindingsList({ engagement }: { engagement?: Engagement }) {
       <ConfirmDialog
         open={bulk === "publish" || bulk === "delete"}
         title={bulk === "delete" ? "Delete findings" : "Publish findings"}
-        body={bulk === "delete" ? `${picked.size} selected findings are removed from every list. Findings other findings point to as the original are skipped.` : `${picked.size} selected drafts become open and visible to the people assigned. Findings that are not drafts or are incomplete are skipped.`}
+        body={bulk === "delete" ? `${picked.size} selected finding${picked.size === 1 ? " is" : "s are"} removed from every list. Findings other findings point to as the original are skipped. You get a few seconds to press Undo straight after.` : `${picked.size} selected drafts become open and visible to the people assigned. Findings that are not drafts or are incomplete are skipped.`}
         confirmLabel={bulk === "delete" ? "Delete" : "Publish"}
         danger={bulk === "delete"}
         busy={run.isPending}

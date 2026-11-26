@@ -249,6 +249,10 @@ class BulkSerializer(StrictSerializer):
         return attrs
 
 
+class RestoreSerializer(StrictSerializer):
+    ids = serializers.ListField(child=serializers.UUIDField(), min_length=1, max_length=100)
+
+
 class CvssSerializer(StrictSerializer):
     vector = serializers.CharField(max_length=200)
 

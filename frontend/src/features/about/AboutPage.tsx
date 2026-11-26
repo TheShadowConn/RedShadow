@@ -4,9 +4,10 @@ import { ExternalLink } from "lucide-react";
 import { api } from "../../api/client";
 import { Credit } from "../../design/Credit";
 import { Logo } from "../../design/Logo";
-import { PageHeader } from "../../design/ui";
+import { Badge, formatBytes, formatDate, PageHeader } from "../../design/ui";
 
-type About = { name: string; version: string; build: string; build_date: string; django: string; python: string };
+type Backup = { status: "ok" | "stale" | "none"; last_at: string | null; name: string; size_bytes: number; age_days: number | null; warn_after_days: number };
+type About = { name: string; version: string; build: string; build_date: string; django: string; python: string; backup: Backup | null };
 
 const GITHUB = "https://github.com/TheShadowConn";
 
@@ -41,6 +42,30 @@ export function AboutPage() {
             <span className="sr-only">(opens in a new tab)</span>
           </a>
         </section>
+        {a?.backup && (
+          <section className="card card-pad lg:col-span-2" aria-labelledby="about-backup-h">
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+              <h2 id="about-backup-h" className="text-xl">Backups</h2>
+              <Badge tone={a.backup.status === "ok" ? "ok" : "warn"}>{a.backup.status === "ok" ? "Up to date" : a.backup.status === "stale" ? "Backup is old" : "No backup recorded"}</Badge>
+            </div>
+            {a.backup.last_at ? (
+              <dl className="m-0 grid gap-x-8 gap-y-3 sm:grid-cols-3">
+                <div><dt className="label">Last backup</dt><dd className="m-0">{formatDate(a.backup.last_at)}</dd></div>
+                <div><dt className="label">Age</dt><dd className="m-0">{a.backup.age_days === 0 ? "Today" : `${a.backup.age_days} day${a.backup.age_days === 1 ? "" : "s"} ago`}</dd></div>
+                <div><dt className="label">Size</dt><dd className="m-0">{formatBytes(a.backup.size_bytes)}</dd></div>
+              </dl>
+            ) : (
+              <p className="m-0 text-muted">No backup has been recorded yet.</p>
+            )}
+            {a.backup.status !== "ok" && (
+              <p className="m-0 mt-4 text-[15px]">
+                {a.backup.status === "stale" ? `The newest backup is more than ${a.backup.warn_after_days} days old. ` : ""}
+                Run <code className="mono">scripts/backup.sh</code> on the server, and copy the result somewhere safe off the machine.
+              </p>
+            )}
+            <p className="m-0 mt-4 text-[14px] text-muted">Only Super Admins see this. The backup script records each finished backup here; the backup files themselves are never visible to the app.</p>
+          </section>
+        )}
       </div>
     </>
   );

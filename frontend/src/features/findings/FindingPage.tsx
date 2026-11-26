@@ -11,6 +11,7 @@ import {
   LoadingRows, NotFoundOrError, Pager, Select, Sheet, TabPanel, Tabs, Textarea,
 } from "../../design/ui";
 import { describe } from "../engagements/EngagementTabs";
+import { announceUndo } from "../../design/undo";
 import { MOVES, MOVE_PRIORITY, MoveDialog, SlaBadge, needsDialog, useQuickMove, type Move } from "../remediation/shared";
 import { FindingStatus, Markdown, SeverityBadge, isConflict, userName } from "./shared";
 
@@ -35,7 +36,12 @@ export function FindingPage() {
   });
   const remove = useMutation({
     mutationFn: () => api("DELETE", `/findings/${id}`),
-    onSuccess: () => { void qc.invalidateQueries({ queryKey: ["findings"] }); nav(`/engagements/${q.data!.engagement.id}`); },
+    onSuccess: () => {
+      const ref = q.data!.ref;
+      void qc.invalidateQueries({ queryKey: ["findings"] });
+      announceUndo(`${ref} deleted.`, () => api("POST", "/findings/restore", { ids: [id] }));
+      nav(`/engagements/${q.data!.engagement.id}`);
+    },
   });
 
   if (q.isPending) return <LoadingRows rows={4} />;
@@ -121,7 +127,7 @@ export function FindingPage() {
           {perms.has("findings.delete") && <Button block variant="danger" onClick={() => { setMore(false); remove.reset(); setDialog("delete"); }}>Delete</Button>}
         </div>
       </Sheet>
-      <ConfirmDialog open={dialog === "delete"} title="Delete finding" body="The finding disappears from every list. Its audit history is kept." confirmLabel="Delete" danger busy={remove.isPending} error={remove.error} onConfirm={() => remove.mutate()} onClose={() => setDialog(null)} />
+      <ConfirmDialog open={dialog === "delete"} title={`Delete ${f.ref}?`} body={`"${f.title}" disappears from every list${f.status === "draft" ? "" : ", and the people assigned stop seeing it"}. Its audit history is kept. You get a few seconds to press Undo straight after; later, only a Super Admin can bring it back.`} confirmLabel="Delete" danger busy={remove.isPending} error={remove.error} onConfirm={() => remove.mutate()} onClose={() => setDialog(null)} />
     </>
   );
 }
