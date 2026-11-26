@@ -14,6 +14,7 @@ export const noFieldErrors = (e: unknown) => (e && !Object.keys((e as { fields?:
 export function invalidateAssets(qc: ReturnType<typeof useQueryClient>, orgId?: string) {
   void qc.invalidateQueries({ queryKey: ["assets"] });
   void qc.invalidateQueries({ queryKey: ["asset-summary"] });
+  void qc.invalidateQueries({ queryKey: ["asset-tags"] });
   void qc.invalidateQueries({ queryKey: ["org-assets", orgId] });
   void qc.invalidateQueries({ queryKey: ["org-assets"] });
 }

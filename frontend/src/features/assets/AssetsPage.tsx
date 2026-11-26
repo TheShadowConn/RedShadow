@@ -1,18 +1,19 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, GitMerge, Plus, Search, Upload } from "lucide-react";
+import { ChevronRight, GitMerge, Plus, Search, Tags, Upload } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { useAuth } from "../../api/auth";
 import { api } from "../../api/client";
 import {
-  ASSET_TYPES, ENVIRONMENTS, type Asset, type AssetSummary, type AssetUsage, type Organisation, type Page,
+  ASSET_TYPES, ENVIRONMENTS, type Asset, type AssetSummary, type AssetTag, type AssetUsage, type Organisation, type Page,
 } from "../../api/types";
 import {
   Alert, Badge, Button, ConfirmDialog, EmptyState, ErrorNote, ErrorState, formatDate, label, LoadingRows, Modal, PageHeader, Pager, Select,
   Sheet, TextInput,
 } from "../../design/ui";
 import { AssetEditor, IdentifierManager, invalidateAssets } from "./AssetEditor";
+import { ManageTagsDialog, TagSelectedDialog } from "./TagDialogs";
 
 const PAGE_SIZE = 25;
 type Scope = "live" | "pending" | "onboarded" | "archived";
@@ -46,7 +47,9 @@ export function AssetsPage() {
   const [scope, setScope] = useState<Scope>(() => (["pending", "onboarded", "archived"].includes(params.get("scope") ?? "") ? (params.get("scope") as Scope) : "live"));
   const [search, setSearch] = useState("");
   const [term, setTerm] = useState("");
-  const [filters, setFilters] = useState({ organisation: "", type: "", environment: "", criticality: "" });
+  const [filters, setFilters] = useState({ organisation: "", type: "", environment: "", criticality: "", tag: "" });
+  const [tagging, setTagging] = useState(false);
+  const [managing, setManaging] = useState(false);
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<string | null>(params.get("asset"));
   const [creating, setCreating] = useState(false);
@@ -62,7 +65,11 @@ export function AssetsPage() {
   for (const [k, v] of Object.entries(filters)) if (v) query.set(k, v);
 
   const list = useQuery({ queryKey: ["assets", query.toString()], queryFn: () => api<Page<Asset>>("GET", `/assets?${query}`), placeholderData: (p) => p });
-  const summary = useQuery({ queryKey: ["asset-summary", filters.organisation], queryFn: () => api<AssetSummary>("GET", `/assets/summary${filters.organisation ? `?organisation=${filters.organisation}` : ""}`) });
+  const summaryQuery = new URLSearchParams();
+  if (filters.organisation) summaryQuery.set("organisation", filters.organisation);
+  if (filters.tag) summaryQuery.set("tag", filters.tag);
+  const summary = useQuery({ queryKey: ["asset-summary", summaryQuery.toString()], queryFn: () => api<AssetSummary>("GET", `/assets/summary?${summaryQuery}`) });
+  const tags = useQuery({ queryKey: ["asset-tags", filters.organisation], queryFn: () => api<AssetTag[]>("GET", `/assets/tags${filters.organisation ? `?organisation=${filters.organisation}` : ""}`) });
   const orgs = useQuery({ queryKey: ["organisations-pick"], queryFn: () => api<Page<Organisation>>("GET", "/organisations?page_size=100&archived=all") });
   const rows = list.data?.results ?? [];
   const setFilter = (k: keyof typeof filters) => (e: { target: { value: string } }) => { setFilters({ ...filters, [k]: e.target.value }); setPage(1); };
@@ -90,6 +97,7 @@ export function AssetsPage() {
         actions={
           <>
             {can("assets.import") && can("imports.create") && <Link to="/imports?new=assets" className="btn btn-secondary"><Upload size={18} aria-hidden /> Import assets</Link>}
+            {can("assets.update") && <Button onClick={() => setManaging(true)}><Tags size={18} aria-hidden /> Manage tags</Button>}
             {can("assets.create") && <Button variant="primary" onClick={() => setCreating(true)}><Plus size={18} aria-hidden /> New asset</Button>}
           </>
         }
@@ -107,8 +115,8 @@ export function AssetsPage() {
             </Button>
           ))}
         </div>
-        <div className="grid grid-cols-2 gap-3 border-b border-line p-4 lg:grid-cols-4">
-          <div className="relative col-span-2 lg:col-span-4">
+        <div className="grid grid-cols-2 gap-3 border-b border-line p-4 lg:grid-cols-5">
+          <div className="relative col-span-2 lg:col-span-5">
             <Search size={18} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted" aria-hidden />
             <TextInput aria-label="Search assets" placeholder="Search name, IP, hostname, URL, tag" className="pl-11" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
@@ -118,6 +126,11 @@ export function AssetsPage() {
           <Select aria-label="Type" value={filters.type} onChange={setFilter("type")}><option value="">All types</option>{ASSET_TYPES.map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
           <Select aria-label="Environment" value={filters.environment} onChange={setFilter("environment")}><option value="">Any environment</option>{ENVIRONMENTS.map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
           <Select aria-label="Criticality" value={filters.criticality} onChange={setFilter("criticality")}><option value="">Any criticality</option>{[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} of 5</option>)}</Select>
+          <Select aria-label="Tag" value={filters.tag} onChange={(e) => { setFilter("tag")(e); setPicked(new Set()); }}>
+            <option value="">Any tag</option>
+            {filters.tag && !tags.data?.some((t) => t.tag === filters.tag) && <option value={filters.tag}>{filters.tag} (0)</option>}
+            {tags.data?.map((t) => <option key={t.tag} value={t.tag}>{t.tag} ({t.assets})</option>)}
+          </Select>
         </div>
 
         {skipped.length > 0 && (
@@ -127,6 +140,7 @@ export function AssetsPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-raised px-4 py-2">
             <label className="check"><input type="checkbox" checked={rows.every((a) => picked.has(a.id))} onChange={(e) => setPicked(e.target.checked ? new Set(rows.map((a) => a.id)) : new Set())} /> Select all on this page{picked.size > 0 && <span className="text-muted">({picked.size} selected)</span>}</label>
             <div className="flex flex-wrap gap-2">
+              {can("assets.update") && scope !== "archived" && <Button size="sm" disabled={pickedRows.length === 0} onClick={() => setTagging(true)}>Tag selected</Button>}
               {canOnboard && <Button size="sm" variant="primary" onClick={() => { bulkRun.reset(); setBulk("onboard"); }}>Onboard selected</Button>}
               {can("assets.archive") && <Button size="sm" disabled={picked.size === 0} onClick={() => { bulkRun.reset(); setBulk(scope === "archived" ? "unarchive" : "archive"); }}>{scope === "archived" ? "Unarchive selected" : "Archive selected"}</Button>}
             </div>
@@ -183,6 +197,16 @@ export function AssetsPage() {
         )}
       </div>
 
+      {tagging && <TagSelectedDialog assets={pickedRows} known={tags.data ?? []} onClose={() => setTagging(false)} onDone={(r) => { setSkipped(r.skipped); setPicked(new Set()); }} />}
+      {managing && (
+        <ManageTagsDialog
+          tags={tags.data ?? []}
+          organisation={filters.organisation}
+          organisationName={orgs.data?.results.find((o) => o.id === filters.organisation)?.name}
+          onClose={() => setManaging(false)}
+          onChanged={(from, to) => { if (filters.tag.toLowerCase() === from.toLowerCase()) { setFilters((f) => ({ ...f, tag: to })); setPage(1); } setPicked(new Set()); }}
+        />
+      )}
       {creating && <AssetEditor onClose={() => setCreating(false)} onSaved={(a) => open(a.id)} />}
       <AssetSheet assetId={selected} onClose={() => open(null)} />
       <ConfirmDialog

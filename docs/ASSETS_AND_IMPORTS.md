@@ -9,6 +9,17 @@ Open **Assets** in the left menu. The list shows every asset you can see, with s
 - **Edit details**, **Archive** and **Delete** are in the detail panel. A deleted asset is gone for good, so deleting is refused while an engagement or a finding uses it: archive it, or merge it into another asset.
 - Pentesters and remediation users see only assets of engagements they work on, and cannot change assets.
 
+### Tags
+
+Tags group assets, for example by department (`service-delivery`, `netops`). Tags are compared without regard to case. A tag exists while at least one asset has it; there is no separate tag list to fill in first.
+
+- **Add:** tick assets, choose **Tag selected**, type one or more tags (comma separated). Also possible in the asset's **Edit details** form and in the `Tags` column of an asset CSV (semicolons).
+- **Count:** pick a tag in the **Any tag** filter. The numbers on All, Onboarded, Not onboarded and Archived then count that tag only (within the chosen organisation).
+- **Remove from some assets:** tick them, choose **Tag selected**, tick the tags under *Remove tags*.
+- **Rename or delete everywhere:** **Manage tags**. It applies to the organisation chosen in the filter, or to all organisations. Renaming onto an existing tag merges the two. Deleting a tag keeps the assets.
+
+Archived assets are never changed; they are listed as skipped, so a tag can stay on them until they are unarchived. Adding, renaming and deleting tags needs `assets.update` (Super Admin by default) and is written to the audit log.
+
 ### Identifiers
 
 One asset can have many identifiers: an IP address, a hostname, a domain, a URL, a MAC address, a cloud resource ID, a repository. Leave the type on **Detect type** and RedShadow works it out. Every identifier is tidied before it is saved (case, trailing slashes, default ports, IPv6 spelling), so `HTTPS://Shop.Acme.test:443/` and `https://shop.acme.test` are the same identifier.

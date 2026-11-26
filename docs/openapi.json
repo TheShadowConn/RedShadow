@@ -485,7 +485,91 @@
         "/api/v1/assets/summary": {
             "get": {
                 "operationId": "assets_summary_retrieve",
-                "description": "Counts for the filter tabs, within the organisation filter but ignoring the other filters.",
+                "description": "Counts for the filter tabs, within the organisation and tag filters but ignoring the other filters.",
+                "tags": [
+                    "assets"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Asset"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/assets/tags": {
+            "get": {
+                "operationId": "assets_tags_retrieve",
+                "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
+                "tags": [
+                    "assets"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Asset"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/assets/tags/assign": {
+            "post": {
+                "operationId": "assets_tags_assign_create",
+                "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
+                "tags": [
+                    "assets"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Asset"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/assets/tags/delete": {
+            "post": {
+                "operationId": "assets_tags_delete_create",
+                "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
+                "tags": [
+                    "assets"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Asset"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/assets/tags/rename": {
+            "post": {
+                "operationId": "assets_tags_rename_create",
+                "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
                 "tags": [
                     "assets"
                 ],
@@ -1037,6 +1121,20 @@
                 ],
                 "responses": {
                     "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/v1/costs": {
+            "get": {
+                "operationId": "costs_retrieve",
+                "description": "All cost lines across engagements with filters (year, month, engagement, category, currency).",
+                "tags": [
+                    "costs"
+                ],
+                "responses": {
+                    "200": {
                         "description": "No response body"
                     }
                 }
@@ -3055,6 +3153,37 @@
                 }
             }
         },
+        "/api/v1/findings/{id}/import-reviewed": {
+            "post": {
+                "operationId": "findings_import_reviewed_create",
+                "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "findings"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Finding"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/findings/{id}/notes": {
             "get": {
                 "operationId": "findings_notes_retrieve",
@@ -3223,6 +3352,48 @@
             "get": {
                 "operationId": "findings_export.csv_retrieve",
                 "description": "CSV of the findings the caller can see, with the list's filters. Needs exports.csv on each engagement.",
+                "tags": [
+                    "findings"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Finding"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/findings/restore": {
+            "post": {
+                "operationId": "findings_restore_create",
+                "description": "Undo a delete (the Undo button): brings deleted findings back. Needs findings.delete on each engagement.",
+                "tags": [
+                    "findings"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Finding"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/findings/similar": {
+            "get": {
+                "operationId": "findings_similar_retrieve",
+                "description": "Existing findings that look like the one being written, to warn before a duplicate is created.",
                 "tags": [
                     "findings"
                 ],
@@ -3714,6 +3885,69 @@
             "get": {
                 "operationId": "imports_asset_template.csv_retrieve",
                 "description": "Base for every model viewset. Forces scoped querysets and per-action permissions.\n\nSubclasses MUST override ``get_queryset`` (starting from a scoped selector) and declare\n``permission_map = {action: permission_code}``. A meta-test asserts every ModelViewSet\nin the project derives from this class.",
+                "tags": [
+                    "imports"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ImportJob"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/imports/clear-history": {
+            "post": {
+                "operationId": "imports_clear_history_create",
+                "description": "Super Admin: remove every finished import from the history. Findings and assets they created stay.",
+                "tags": [
+                    "imports"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ImportJob"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/imports/cvss-guide.csv": {
+            "get": {
+                "operationId": "imports_cvss_guide.csv_retrieve",
+                "description": "CVSS score ranges and the severity each one gives. A CVSS vector sets the severity; if you also give a\nseverity it must match the range.",
+                "tags": [
+                    "imports"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ImportJob"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/imports/cwe-list.csv": {
+            "get": {
+                "operationId": "imports_cwe_list.csv_retrieve",
+                "description": "Every CWE the import accepts. Type either the number or the CWE-79 form in the CWE column.",
                 "tags": [
                     "imports"
                 ],
@@ -6062,6 +6296,10 @@
                         "type": "string",
                         "readOnly": true
                     },
+                    "needs_review": {
+                        "type": "string",
+                        "readOnly": true
+                    },
                     "version": {
                         "type": "integer",
                         "readOnly": true
@@ -6162,6 +6400,9 @@
                     "imported_from": {
                         "type": "string",
                         "readOnly": true
+                    },
+                    "import_issues": {
+                        "readOnly": true
                     }
                 },
                 "required": [
@@ -6182,8 +6423,10 @@
                     "endpoint",
                     "engagement",
                     "id",
+                    "import_issues",
                     "imported_from",
                     "is_overdue",
+                    "needs_review",
                     "permissions",
                     "poc",
                     "possible_duplicates",
@@ -6286,6 +6529,10 @@
                         "type": "string",
                         "readOnly": true
                     },
+                    "needs_review": {
+                        "type": "string",
+                        "readOnly": true
+                    },
                     "version": {
                         "type": "integer",
                         "readOnly": true
@@ -6313,6 +6560,7 @@
                     "engagement",
                     "id",
                     "is_overdue",
+                    "needs_review",
                     "ref",
                     "remediation_owner",
                     "severity",
@@ -6530,10 +6778,11 @@
             "ModeEnum": {
                 "enum": [
                     "all_or_nothing",
-                    "valid_rows_only"
+                    "valid_rows_only",
+                    "everything"
                 ],
                 "type": "string",
-                "description": "* `all_or_nothing` - All or nothing\n* `valid_rows_only` - Valid rows only"
+                "description": "* `all_or_nothing` - All or nothing\n* `valid_rows_only` - Valid rows only\n* `everything` - Everything, fix gaps later"
             },
             "Notification": {
                 "type": "object",

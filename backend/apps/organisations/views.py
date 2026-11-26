@@ -10,7 +10,7 @@ from apps.files import services as file_services
 from apps.files.serializers import UploadSerializer
 from apps.rbac.viewsets import ScopedModelViewSet
 
-from . import assets, selectors, services
+from . import assets, selectors, services, tags
 from .models import AssetIdentifier
 from .serializers import (
     AssetBulkArchiveSerializer,
@@ -20,6 +20,9 @@ from .serializers import (
     AssetMergeSerializer,
     AssetOnboardSerializer,
     AssetSerializer,
+    AssetTagAssignSerializer,
+    AssetTagDeleteSerializer,
+    AssetTagRenameSerializer,
     AssetWriteSerializer,
     ContactCreateSerializer,
     ContactSerializer,
@@ -161,6 +164,10 @@ class AssetViewSet(ScopedModelViewSet):
         "list": "assets.view",
         "retrieve": "assets.view",
         "summary": "assets.view",
+        "tags": "assets.view",
+        "assign_tags": "assets.update",
+        "rename_tag": "assets.update",
+        "delete_tag": "assets.update",
         "usage": "assets.view",
         "create": "assets.create",
         "check_identifiers": "assets.create",
@@ -197,6 +204,8 @@ class AssetViewSet(ScopedModelViewSet):
                 | Q(identifiers__normalized__icontains=term.lower())
                 | Q(tags__icontains=term)
             ).distinct()
+        if p.get("tag", "").strip():
+            qs = qs.filter(pk__in=tags.ids_with_tag(qs, p["tag"]))
         return qs
 
     def get_queryset(self):
@@ -244,11 +253,11 @@ class AssetViewSet(ScopedModelViewSet):
 
     @action(detail=False, methods=["get"])
     def summary(self, request):
-        """Counts for the filter tabs, within the organisation filter but ignoring the other filters."""
+        """Counts for the filter tabs, within the organisation and tag filters but ignoring the other filters."""
         p = self.request.query_params
-        qs = self._base()
-        if p.get("organisation"):
-            qs = qs.filter(organisation_id=p["organisation"]) if _is_uuid(p["organisation"]) else qs.none()
+        qs = self._in_organisation(p.get("organisation"))
+        if p.get("tag", "").strip():
+            qs = qs.filter(pk__in=tags.ids_with_tag(qs, p["tag"]))
         live = qs.filter(archived_at__isnull=True)
         by_status = assets.counts_for(live)
         return Response(
@@ -259,6 +268,32 @@ class AssetViewSet(ScopedModelViewSet):
                 "archived": qs.filter(archived_at__isnull=False).count(),
             }
         )
+
+    def _in_organisation(self, organisation):
+        qs = self._base()
+        if organisation:
+            qs = qs.filter(organisation_id=organisation) if _is_uuid(str(organisation)) else qs.none()
+        return qs
+
+    @action(detail=False, methods=["get"])
+    def tags(self, request):
+        return Response(tags.catalogue(self._in_organisation(request.query_params.get("organisation"))))
+
+    @action(detail=False, methods=["post"], url_path="tags/assign")
+    def assign_tags(self, request):
+        data = _validated(AssetTagAssignSerializer, request)
+        return Response(tags.assign(request, self._base(), data["ids"], data["add"], data["remove"]))
+
+    @action(detail=False, methods=["post"], url_path="tags/rename")
+    def rename_tag(self, request):
+        data = _validated(AssetTagRenameSerializer, request)
+        qs = self._in_organisation(data.get("organisation"))
+        return Response(tags.rename(request, qs, data["tag"], data["new_name"]))
+
+    @action(detail=False, methods=["post"], url_path="tags/delete")
+    def delete_tag(self, request):
+        data = _validated(AssetTagDeleteSerializer, request)
+        return Response(tags.delete(request, self._in_organisation(data.get("organisation")), data["tag"]))
 
     @action(detail=True, methods=["post"])
     def identifiers(self, request, pk=None):

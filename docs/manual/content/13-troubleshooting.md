@@ -9,7 +9,7 @@ The message is the same for a wrong password, an unknown email and a locked acco
 Ask a Super Admin to **Reset two-step verification**. You will enrol again at the next sign-in.
 
 **I was signed out suddenly.**
-Sessions end after 30 minutes without activity and after 12 hours in total. They also end when an administrator changes your role or engagement access, so the new access applies at once.
+Sessions end after 30 minutes without activity and after 12 hours in total. They also end when an administrator changes your role or engagement access, so the new access applies at once. Cloning, deleting or restoring an engagement, or naming yourself its lead, does not sign you out.
 
 ## What I can and cannot see
 
