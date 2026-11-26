@@ -8,9 +8,10 @@ import { api } from "../../api/client";
 import { ENGAGEMENT_TYPES, STATUSES, type Engagement, type EngagementRow, type Organisation, type Page, type User } from "../../api/types";
 import {
   Button, EmptyState, EngagementStatus, ErrorNote, ErrorState, Field, fieldError, formatDay, label, LoadingRows, Modal, PageHeader,
-  Pager, Select, Textarea, TextInput,
+  Pager, Select, TextInput,
 } from "../../design/ui";
 import { ScenarioProgress } from "./ScenariosTab";
+import { MarkdownField } from "./MarkdownField";
 
 const PAGE_SIZE = 25;
 
@@ -143,7 +144,7 @@ export function EngagementFields({ f, set, error }: { f: Record<string, string>;
       </div>
       {(["scope", "out_of_scope", "objectives", "methodology", "rules_of_engagement"] as const).map((k) => (
         <Field key={k} label={{ scope: "In scope", out_of_scope: "Out of scope", objectives: "Objectives", methodology: "Methodology", rules_of_engagement: "Rules of engagement" }[k]} error={fieldError(error, k)}>
-          {(p) => <Textarea {...p} value={f[k]} onChange={set(k)} />}
+          {(p) => <MarkdownField {...p} value={f[k]} onChange={(v) => set(k)({ target: { value: v } })} />}
         </Field>
       ))}
     </>

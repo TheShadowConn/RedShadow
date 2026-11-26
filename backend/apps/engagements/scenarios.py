@@ -31,6 +31,9 @@ TRANSITIONS = {
     "cancelled": {"planned"},
 }
 NEEDS_REASON = {"deferred", "cancelled"}
+# Engagement states a scenario may start from. Starting a scenario means the engagement is in its testing phase
+# ("in_progress"), so the engagement is moved there. Completed and cancelled engagements are never reopened by it.
+AUTO_TESTING_FROM = {"planned", "scheduled", "reporting"}
 
 
 def _check_dates(start, end) -> None:
@@ -143,6 +146,7 @@ def change_scenario_status(
         if to not in TRANSITIONS.get(sc.status, ()):
             raise Conflict(f"A {sc.get_status_display().lower()} scenario cannot become {to.replace('_', ' ')}.")
         before = sc.status
+        moved_from = _enter_testing(request, actor, eng) if to == "in_progress" else None
         sc.status = to
         sc.status_reason = reason if to in NEEDS_REASON else ""
         if to == "tested":
@@ -157,8 +161,31 @@ def change_scenario_status(
         sc.save()
         audit.record("engagement.scenario_status_changed", request=request, entity=eng, engagement=eng,
                      changes={"status": [before, to]},
-                     metadata={"scenario_id": str(sc.pk), "name": sc.name, "reason": reason})  # fmt: skip
+                     metadata={"scenario_id": str(sc.pk), "name": sc.name, "reason": reason,
+                               **({"engagement_moved_from": moved_from} if moved_from else {})})  # fmt: skip
     return sc
+
+
+def _enter_testing(request, actor, eng: Engagement) -> str | None:
+    """Put the (locked) engagement into its testing phase so a started scenario never sits in a stopped engagement.
+
+    Returns the previous status when it had to move, ``None`` when it was already testing.
+    """
+    if eng.status == "in_progress":
+        return None
+    if eng.status not in AUTO_TESTING_FROM:
+        raise Conflict(
+            f"This engagement is {eng.get_status_display().lower()}, so a scenario cannot be started. "
+            "Reopen the engagement first."
+        )
+    old, eng.status = eng.status, "in_progress"
+    eng.version += 1
+    eng.save()
+    audit.record("engagement.status_changed", request=request, entity=eng, engagement=eng,
+                 changes={"status": [old, "in_progress"]}, metadata={"reason": "scenario started"})  # fmt: skip
+    inbox.notify(inbox.engagement_people(eng), "engagement.status", f"{eng.ref} is now in progress",
+                 body=eng.name, link=inbox.eng_link(eng), actor=actor, engagement=eng)
+    return old
 
 
 @refusals_audited

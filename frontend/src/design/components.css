@@ -191,13 +191,22 @@
   font-size: 13px;
   font-weight: 500;
   text-align: left;
-  padding: 10px 16px;
+  padding: 10px 14px;
+  white-space: nowrap;
 }
 .data-table td {
-  padding: 14px 16px;
+  padding: 14px;
   border-top: 1px solid var(--color-line);
   vertical-align: middle;
+  line-height: 1.4;
 }
+/* Cell helpers: no-wrap for short facts (status, counts, dates); long text wraps at words, then anywhere as a last resort */
+.data-table .nw { white-space: nowrap; }
+.data-table .num { white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+.data-table .wrap { min-width: 9rem; overflow-wrap: break-word; word-break: normal; }
+.data-table .wrap-long { min-width: 12rem; overflow-wrap: break-word; word-break: normal; }
+.data-table .wrap-long a { overflow-wrap: anywhere; }
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .data-table tbody tr {
   cursor: pointer;
 }
@@ -226,6 +235,7 @@ dialog.modal {
   width: min(520px, calc(100vw - 32px));
   max-height: calc(100vh - 48px);
 }
+dialog.modal.modal-wide { width: min(1100px, calc(100vw - 24px)); }
 dialog.sheet {
   margin: 0 0 0 auto;
   height: 100vh;
@@ -314,12 +324,16 @@ dialog::backdrop {
 
 /* rendered markdown */
 .md { line-height: 1.6; overflow-wrap: anywhere; }
+/* Engagement text written before markdown existed keeps its line breaks */
+.md-breaks .md p { white-space: pre-line; }
 .md > :first-child { margin-top: 0; }
 .md > :last-child { margin-bottom: 0; }
 .md p, .md ul, .md ol, .md pre, .md blockquote, .md table { margin: 0 0 0.9em; }
 .md ul, .md ol { padding-left: 1.4em; }
 .md ul { list-style: disc; }
 .md ol { list-style: decimal; }
+.md li { margin: 0.3em 0; }
+.md li > ul, .md li > ol { margin: 0.3em 0 0; }
 .md h1, .md h2, .md h3, .md h4 { margin: 1.2em 0 0.5em; font-size: 1.1em; font-weight: 600; }
 .md a { color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; }
 .md code { font-family: var(--font-mono); font-size: 0.9em; background: var(--color-raised); padding: 1px 5px; border-radius: var(--radius-sm); }

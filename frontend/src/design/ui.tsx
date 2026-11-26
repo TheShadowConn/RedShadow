@@ -186,12 +186,12 @@ function useDialog(open: boolean, onClose: () => void) {
   return ref;
 }
 
-function DialogShell({ open, onClose, title, kind, children }: { open: boolean; onClose: () => void; title: string; kind: "modal" | "sheet"; children: ReactNode }) {
+function DialogShell({ open, onClose, title, kind, wide, children }: { open: boolean; onClose: () => void; title: string; kind: "modal" | "sheet"; wide?: boolean; children: ReactNode }) {
   const ref = useDialog(open, onClose);
   return (
     <dialog
       ref={ref}
-      className={kind}
+      className={cx(kind, wide && "modal-wide")}
       aria-label={title}
       onMouseDown={(e) => {
         if (e.target === ref.current) onClose();
@@ -200,7 +200,7 @@ function DialogShell({ open, onClose, title, kind, children }: { open: boolean; 
       {open && (
         <div className={cx("flex flex-col", kind === "sheet" ? "h-full" : "max-h-[calc(100vh-48px)]")}>
           <header className="flex items-center justify-between gap-4 border-b border-line px-6 py-4">
-            <h2 className="text-xl">{title}</h2>
+            <h2 className="min-w-0 text-xl [overflow-wrap:anywhere]">{title}</h2>
             <button type="button" onClick={onClose} aria-label="Close" className="btn btn-secondary btn-icon btn-sm">
               <X size={18} aria-hidden />
             </button>
@@ -212,7 +212,8 @@ function DialogShell({ open, onClose, title, kind, children }: { open: boolean; 
   );
 }
 
-export const Modal = (p: { open: boolean; onClose: () => void; title: string; children: ReactNode }) => <DialogShell {...p} kind="modal" />;
+/** `wide` is for pictures and other content that needs room (up to 1100px). */
+export const Modal = (p: { open: boolean; onClose: () => void; title: string; wide?: boolean; children: ReactNode }) => <DialogShell {...p} kind="modal" />;
 export const Sheet = (p: { open: boolean; onClose: () => void; title: string; children: ReactNode }) => <DialogShell {...p} kind="sheet" />;
 
 export function ConfirmDialog({

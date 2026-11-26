@@ -92,21 +92,25 @@ export function ImportsPage() {
         )}
         {rows.length > 0 && (
           <>
-            <table className="data-table hidden md:table">
-              <thead><tr><th>File</th><th>Kind</th><th>Target</th><th>Status</th><th>Rows</th><th>Imported</th><th>By</th><th>When</th><th><span className="sr-only">Actions</span></th></tr></thead>
-              <tbody>
-                {rows.map((j) => (
-                  <tr key={j.id} onClick={() => nav(`/imports/${j.id}`)}>
-                    <td><Link to={`/imports/${j.id}`} className="font-medium hover:underline" onClick={(e) => e.stopPropagation()}>{j.original_name}</Link>{j.attempt > 1 && <span className="ml-2 text-[13px] text-muted">attempt {j.attempt}</span>}</td>
-                    <td><KindBadge kind={j.kind} /></td>
-                    <td>{targetName(j)}</td><td><ImportStatus status={j.status} /></td>
-                    <td>{j.counts.total ?? "…"}</td><td>{j.counts.imported ?? 0}</td><td>{j.uploaded_by.display_name}</td>
-                    <td className="whitespace-nowrap text-muted">{formatDate(j.created_at)}</td>
-                    <td className="text-right" onClick={(e) => e.stopPropagation()}>{j.can_delete && <Button size="sm" aria-label={`Delete ${j.original_name}`} onClick={() => { remove.reset(); setDeleting(j); }}><Trash2 size={14} aria-hidden /></Button>}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="table-scroll hidden md:block">
+              <table className="data-table min-w-[720px]">
+                <thead><tr><th>File</th><th>Target</th><th>Status</th><th className="text-right">Imported</th><th>Uploaded</th><th><span className="sr-only">Actions</span></th></tr></thead>
+                <tbody>
+                  {rows.map((j) => (
+                    <tr key={j.id} onClick={() => nav(`/imports/${j.id}`)}>
+                      <td className="wrap-long">
+                        <Link to={`/imports/${j.id}`} className="font-medium hover:underline" onClick={(e) => e.stopPropagation()}>{j.original_name}</Link>
+                        <span className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1"><KindBadge kind={j.kind} />{j.attempt > 1 && <span className="text-[13px] text-muted">attempt {j.attempt}</span>}</span>
+                      </td>
+                      <td className="wrap">{targetName(j)}</td>
+                      <td className="nw"><ImportStatus status={j.status} /></td>
+                      <td className="num">{j.counts.imported ?? 0}<span className="text-muted"> of {j.counts.total ?? "…"}</span></td>
+                      <td className="wrap"><span className="block">{j.uploaded_by.display_name}</span><span className="mt-0.5 block whitespace-nowrap text-[14px] text-muted">{formatDate(j.created_at)}</span></td>
+                      <td className="text-right" onClick={(e) => e.stopPropagation()}>{j.can_delete && <Button size="sm" aria-label={`Delete ${j.original_name}`} onClick={() => { remove.reset(); setDeleting(j); }}><Trash2 size={14} aria-hidden /></Button>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table></div>
             <ul className="m-0 list-none divide-y divide-line p-0 md:hidden">
               {rows.map((j) => (
                 <li key={j.id}>

@@ -147,11 +147,11 @@ export function ScenariosTab({ eng }: { eng: Engagement }) {
               </div>
               {s.description && <p className="mt-3 mb-0 whitespace-pre-wrap break-words">{s.description}</p>}
               {s.images.length > 0 && (
-                <ul className="m-0 mt-3 flex list-none flex-wrap gap-2 p-0">
+                <ul className="m-0 mt-4 grid list-none gap-3 p-0 sm:grid-cols-2 xl:grid-cols-3">
                   {s.images.map((im, at) => (
-                    <li key={im.id}>
-                      <button type="button" aria-label={`Open picture ${im.original_name}`} onClick={() => setView({ images: s.images, at })} className="block overflow-hidden rounded-md border border-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
-                        <img src={im.download_url} alt={im.original_name} loading="lazy" className="h-24 w-32 object-cover" />
+                    <li key={im.id} className="min-w-0">
+                      <button type="button" aria-label={`Open picture ${im.original_name}`} onClick={() => setView({ images: s.images, at })} className="block w-full cursor-zoom-in overflow-hidden rounded-md border border-line bg-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+                        <img src={im.download_url} alt={im.original_name} loading="lazy" className="aspect-video w-full object-contain" />
                       </button>
                     </li>
                   ))}
@@ -258,18 +258,18 @@ function ScenarioForm({ eng, scenario, onClose, onDone }: { eng: Engagement; sce
             <h3 id="pics-h" className="m-0 text-[15px] font-medium">Pictures</h3>
             <p className="m-0 text-[14px] text-muted">PNG, JPEG, GIF or WebP. Up to {MAX_PICTURES} per scenario.</p>
           </div>
-          <ul className="m-0 flex list-none flex-wrap gap-3 p-0 empty:hidden">
+          <ul className="m-0 grid list-none gap-3 p-0 empty:hidden sm:grid-cols-2">
             {live?.images.map((im) => (
               <li key={im.id} className="relative">
-                <img src={im.download_url} alt={im.original_name} className="h-20 w-28 rounded-md border border-line object-cover" />
+                <img src={im.download_url} alt={im.original_name} className="aspect-video w-full rounded-md border border-line bg-raised object-contain" />
                 {editing && (
                   <button type="button" aria-label={`Remove picture ${im.original_name}`} disabled={removePicture.isPending} onClick={() => removePicture.mutate(im.id)} className="absolute top-1 right-1 rounded bg-surface/90 p-1 text-fail shadow-sm"><Trash2 size={14} aria-hidden /></button>
                 )}
               </li>
             ))}
             {files.map((f, i) => (
-              <li key={`${f.name}${i}`} className="flex h-20 w-28 flex-col justify-between rounded-md border border-dashed border-line p-2 text-[12px]">
-                <span className="break-all">{f.name}</span>
+              <li key={`${f.name}${i}`} className="flex aspect-video min-w-0 flex-col justify-between rounded-md border border-dashed border-line p-3 text-[13px]">
+                <span className="[overflow-wrap:anywhere]">{f.name}</span>
                 <button type="button" className="self-start text-fail underline" onClick={() => setFiles((l) => l.filter((_, j) => j !== i))}>Remove</button>
               </li>
             ))}
@@ -492,9 +492,9 @@ function Lightbox({ images, at, onClose }: { images: ScenarioImage[]; at: number
   const [i, setI] = useState(at);
   const im = images[i];
   return (
-    <Modal open onClose={onClose} title={im.original_name}>
-      <div className="space-y-5 p-5 sm:p-6">
-        <img src={im.download_url} alt={im.original_name} className="mx-auto max-h-[70vh] max-w-full rounded-md object-contain" />
+    <Modal open wide onClose={onClose} title={im.original_name}>
+      <div className="space-y-4 p-4 sm:p-6" onKeyDown={(e) => { if (e.key === "ArrowLeft" && i > 0) setI(i - 1); if (e.key === "ArrowRight" && i < images.length - 1) setI(i + 1); }}>
+        <img src={im.download_url} alt={im.original_name} className="mx-auto max-h-[78vh] w-full rounded-md object-contain" />
         <div className="flex items-center justify-between gap-3">
           <Button aria-label="Previous picture" disabled={i === 0} onClick={() => setI(i - 1)}><ChevronLeft size={18} aria-hidden /></Button>
           <span className="text-[14px] text-muted">{i + 1} of {images.length}</span>

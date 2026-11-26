@@ -280,3 +280,8 @@ Done on a throwaway `rs_qa` stack (removed with its own volumes only; real `reds
 - New permissions `engagement_scenarios.view` and `engagement_scenarios.manage` (rbac migration 0004); migrations `engagements/0007` and `files/0003`.
 - User manual rebuilt for 1.4.0, with a new Test scenarios chapter.
 - Workflow additions: a starter scenario library (OWASP Top 10, API Top 10, Mobile Top 10, internal network, cloud), a notification when a deferred scenario's date arrives, a "Retest this scenario" shortcut into the Verification queue, and a "Scenarios this week" panel on the Pentester dashboard.
+- **Scenario pictures** are shown large (responsive grid) and open in a wide viewer with keyboard arrows.
+- **Markdown in engagements:** In scope, Out of scope, Objectives, Methodology and Rules of engagement take markdown (bullets, numbers, links, bold, code) through an editor with a toolbar and live preview. Raw HTML and images are dropped and only http(s) and mailto links are kept, both in the browser and in PDF reports. No data migration: stored text is unchanged, and older plain text keeps its line breaks.
+- **Scenario starts testing:** starting a scenario moves its engagement to In progress (audited, with a notification). Completed and cancelled engagements refuse with a clear message.
+- **Dashboard:** uniform stat cards that line up at every width, "Engagements running" names the engagement, and a "Running now" panel lists each running engagement with its running scenarios. Page margins are tighter.
+- **Imports table:** fewer, better-sized columns with sensible wrapping and scrolling on narrow screens.

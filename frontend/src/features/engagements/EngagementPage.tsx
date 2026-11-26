@@ -10,6 +10,7 @@ import {
   Alert, Button, ConfirmDialog, EngagementStatus, ErrorNote, Field, fieldError, NotFoundOrError, formatDay, label, LoadingRows, Modal, Select, TabPanel, Tabs, Textarea, TextInput,
 } from "../../design/ui";
 import { FindingsList } from "../findings/FindingsList";
+import { Markdown } from "../findings/shared";
 import { EngagementFields } from "./EngagementsPage";
 import { ReportsList } from "../reports/ReportsList";
 import { CostTab } from "./CostTab";
@@ -173,7 +174,7 @@ function Overview({ eng }: { eng: Engagement }) {
       {blocks.map(([title, text]) => (
         <section key={title} className="card card-pad">
           <h2 className="text-lg">{title}</h2>
-          <p className="mt-2 whitespace-pre-wrap text-ink">{text || <span className="text-muted">Not written yet.</span>}</p>
+          <div className="md-breaks mt-3 text-ink"><Markdown text={text} empty="Not written yet." /></div>
         </section>
       ))}
     </div>

@@ -514,3 +514,54 @@ def test_pentester_dashboard_this_week(w, admin_client):
     assert block["from"] == monday.isoformat() and block["to"] == (monday + timedelta(days=6)).isoformat()
     assert [i["name"] for i in block["items"]] == ["This week"]
     assert admin_client.get(f"{API}/dashboards/admin").json()["scenarios"]["this_week"] is None
+
+
+def _eng_status(client, eng):
+    return client.get(f"{API}/engagements/{eng.pk}").json()["status"]
+
+
+def test_starting_a_scenario_moves_the_engagement_into_testing(w, admin_client):
+    """A scenario is part of its engagement: starting one puts the engagement in its testing phase (in_progress)."""
+    sid = add(admin_client, w.eng_a, "Start me").json()["id"]
+    assert _eng_status(admin_client, w.eng_a) in ("planned", "scheduled")
+    r = admin_client.post(url(w.eng_a, sid, "/status"), {"status": "in_progress"}, format="json")
+    assert r.status_code == 200 and r.json()["status"] == "in_progress"
+    assert _eng_status(admin_client, w.eng_a) == "in_progress"
+    ev = AuditEvent.objects.filter(action="engagement.status_changed", engagement_id=w.eng_a.pk).latest("id")
+    assert ev.changes["status"][1] == "in_progress" and ev.metadata["reason"] == "scenario started"
+    # already testing: starting another scenario changes nothing and does not raise
+    other = add(admin_client, w.eng_a, "Second").json()["id"]
+    assert admin_client.post(url(w.eng_a, other, "/status"), {"status": "in_progress"}, format="json").status_code == 200
+
+
+def test_scenario_cannot_start_in_a_finished_engagement(w, admin_client):
+    sid = add(admin_client, w.eng_a, "Too late").json()["id"]
+    path = f"{API}/engagements/{w.eng_a.pk}/status"
+    ver = lambda: admin_client.get(f"{API}/engagements/{w.eng_a.pk}").json()["version"]  # noqa: E731
+    admin_client.post(path, {"status": "cancelled", "version": ver()}, format="json")
+    assert _eng_status(admin_client, w.eng_a) == "cancelled"
+    r = admin_client.post(url(w.eng_a, sid, "/status"), {"status": "in_progress"}, format="json")
+    assert r.status_code == 409 and "cannot be started" in r.json()["error"]["message"]
+    assert _eng_status(admin_client, w.eng_a) == "cancelled"
+    assert EngagementScenario.objects.get(pk=sid).status == "planned"  # nothing half-applied
+
+
+def test_dashboard_lists_running_scenarios_under_their_engagement(w, admin_client):
+    sid = add(admin_client, w.eng_a, "Running one").json()["id"]
+    admin_client.post(url(w.eng_a, sid, "/status"), {"status": "in_progress"}, format="json")
+    d = admin_client.get(f"{API}/dashboards/admin").json()
+    assert [s["name"] for s in d["scenarios"]["running"]] == ["Running one"]
+    assert d["scenarios"]["running"][0]["engagement"]["id"] == str(w.eng_a.pk)
+    assert str(w.eng_a.pk) in [e["id"] for e in d["engagements"]["in_progress"]]
+
+
+@pytest.mark.parametrize("field", ["scope", "out_of_scope", "objectives", "methodology", "rules_of_engagement"])
+def test_engagement_markdown_fields_render_safely_in_reports(field):
+    """The five engagement text fields take markdown; server-side rendering keeps bullets and https links only."""
+    from apps.core.markdown import render_markdown
+
+    hostile = "- item one\n- [ok](https://example.com)\n- [bad](javascript:alert(1))\n<script>alert(1)</script><img src=x onerror=alert(1)>"
+    html = render_markdown(hostile)
+    assert "<ul>" in html and html.count("<li>") == 3 and 'href="https://example.com"' in html
+    for needle in ("javascript:", "<script", "<img", "onerror"):
+        assert needle not in html, (field, needle)
