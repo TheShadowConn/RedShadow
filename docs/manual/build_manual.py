@@ -288,7 +288,7 @@ def build() -> None:
   </table>
   <h3>Revision history</h3>
   <table class="wide"><thead><tr><th>Version</th><th>Date</th><th>Change</th><th>Author</th></tr></thead>
-  <tbody><tr><td>{VERSION}</td><td>{TODAY.strftime("%-d %b %Y")}</td><td>All workflows for the four roles, worked example, feature reference. Release 1.4.0 adds test scenarios, role dashboards, the import notice and the About entry.</td><td>Shadowconn</td></tr></tbody></table>
+  <tbody><tr><td>{VERSION}</td><td>{TODAY.strftime("%-d %b %Y")}</td><td>All workflows for the four roles, worked example, feature reference. Release 1.4.0 adds test scenarios, role dashboards, the import notice and the About entry, large scenario pictures, Markdown in the five engagement text sections, engagements that move into testing when a scenario starts, a running-now dashboard panel and a tidier imports table.</td><td>Shadowconn</td></tr></tbody></table>
   <h3>Who should read what</h3>
   <table class="wide"><thead><tr><th>Role</th><th>Purpose</th><th>Chapters</th></tr></thead><tbody>{role_rows}</tbody></table>
   <p class="muted small">Role names match the application. "Remediation Owner" is the person holding the Remediation role.

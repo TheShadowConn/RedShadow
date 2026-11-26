@@ -62,7 +62,7 @@ Open **Organisations** and select **New organisation**. Add the name and industr
 
 1. Open **Engagements** and select **New engagement**.
 2. Choose the **organisation**, the **type** (web, API, mobile, internal network, external network, cloud, red team, social engineering, code review, wireless or other), the **start** and **end dates** and the **lead**.
-3. Fill in **scope**, **out of scope**, **objectives**, **methodology** and **rules of engagement**.
+3. Fill in **scope**, **out of scope**, **objectives**, **methodology** and **rules of engagement**. Each of these five boxes takes Markdown: use the toolbar buttons for bold, italic, bulleted lists, numbered lists, links and code, or type the syntax yourself (`- item`, `1. item`, `[text](https://example.com)`). **Preview** shows how it will look. Raw HTML and images are not shown, and only `http`, `https` and `mailto` links work, so a pasted `javascript:` link is shown as plain text. The same rules apply in the PDF report.
 4. Select **Create**. The reference, for example `RS-E-2026-0001`, is assigned for you.
 
 The **lead is required**. The lead is added to the team and notified.
@@ -79,7 +79,7 @@ The **lead is required**. The lead is added to the team and notified.
 
 The buttons at the top of the engagement page follow the status rules in Chapter 3: **Move to reporting**, **Cancel engagement**, **Edit**, **Archive**, **Open in calendar**.
 
-- **Overview**: dates, lead, type, scope, out of scope, objectives, methodology.
+- **Overview**: dates, lead, type, and the five text sections (scope, out of scope, objectives, methodology, rules of engagement) with their Markdown formatting, bullets and links.
 - **Scope and assets**: link organisation assets as **in scope** or **out of scope** with a note, and unlink them. Findings can only point at in-scope assets.
 - **Findings**: all findings of the engagement with the same filters as the Findings page.
 - **Reports**: reports built for this engagement.
@@ -124,7 +124,7 @@ Open **Calendar** to see scheduled, in-progress, reporting and completed engagem
 
 ## Dashboard
 
-The **Administration** dashboard shows open, overdue and due-soon findings, items waiting for verification, running engagements, severity and status charts, a twelve-week trend, fix-deadline compliance, upcoming engagements and the latest activity. Each number equals the same filter on the matching list page.
+The **Administration** dashboard shows open, overdue and due-soon findings, items waiting for verification, running engagements (the card names the engagement, and a **Running now** panel lists each running engagement with the scenarios running inside it), severity and status charts, a twelve-week trend, fix-deadline compliance, upcoming engagements and the latest activity. Each number equals the same filter on the matching list page. The cards across the top are the same size and line up on desktop, laptop and phone.
 
 The **Engagement cost** panel shows the total cost for every engagement you can see, one line per currency, and the highest-cost engagements. It appears only for roles that hold `engagement_costs.view`.
 
