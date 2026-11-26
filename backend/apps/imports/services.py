@@ -733,7 +733,9 @@ def _delete_one(request, job: ImportJob, *, history: bool) -> None:
         metadata={"file": job.original_name, "status": job.status, "error": job.error, "attempts": job.attempt,
                   "findings_kept": kept, "asset_rows": assets_kept},
     )  # fmt: skip
-    job.findings.update(import_job=None)  # the findings stay; only the pointer to the deleted import goes
+    # The findings stay; only the pointer to the deleted import goes. This includes findings that were deleted
+    # earlier: they are only hidden, still point here, and would otherwise block deleting the import.
+    Finding.all_objects.filter(import_job=job).update(import_job=None)
     job.rows.all().delete()
     job.attempts.all().delete()
     job.delete()

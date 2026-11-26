@@ -98,6 +98,25 @@ class TestImportHistory:
         ev = AuditEvent.objects.get(action="import.history_deleted")
         assert ev.metadata["findings_kept"] == 1
 
+    def test_deleting_an_import_whose_findings_were_deleted_first(self, w, admin_client, p1c):
+        """Findings are only hidden when deleted; they must not block removing the import they came from."""
+        job = prepared(p1c, w.eng_a, [GOOD, ["Second", "low", "", "", "", "", "", ""]])
+        assert commit(p1c, job).status_code == 202
+        first = Finding.objects.get(title="SQL injection")
+        assert admin_client.delete(f"{API}/findings/{first.pk}").status_code == 204  # deleted before the import
+        assert admin_client.delete(f"{API}/imports/{job['id']}").status_code == 204
+        assert not ImportJob.objects.filter(pk=job["id"]).exists()
+        assert Finding.all_objects.get(pk=first.pk).deleted_at is not None  # still deleted, no longer linked
+        assert Finding.all_objects.get(pk=first.pk).import_job_id is None
+        assert Finding.objects.get(title="Second").import_job_id is None
+
+    def test_clear_history_when_every_finding_was_deleted(self, w, admin_client, p1c):
+        job = prepared(p1c, w.eng_a, [GOOD])
+        commit(p1c, job)
+        f = Finding.objects.get(title="SQL injection")
+        assert admin_client.delete(f"{API}/findings/{f.pk}").status_code == 204
+        assert admin_client.post(f"{API}/imports/clear-history", {}, format="json").json() == {"deleted": 1}
+
     def test_a_pentester_cannot_delete_a_completed_import(self, w, p1c):
         job = prepared(p1c, w.eng_a, [GOOD])
         commit(p1c, job)
