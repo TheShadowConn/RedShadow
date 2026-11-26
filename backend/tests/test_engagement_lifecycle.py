@@ -4,7 +4,7 @@ import pytest
 
 from apps.audit.models import AuditEvent
 from apps.engagements.models import Engagement, EngagementMembership
-from tests.conftest import make_user, signed_in
+from tests.conftest import make_role, make_user, signed_in
 from tests.test_findings import furl, make
 from tests.world import build_world
 
@@ -175,3 +175,40 @@ def mine_count(user, kind):
     from apps.notifications.models import Notification
 
     return Notification.objects.filter(recipient=user, kind=kind).count()
+
+
+@pytest.mark.django_db
+class TestActorStaysSignedIn:
+    """Team changes sign the affected people out, but never the person who made the change."""
+
+    me = f"{API}/auth/me"
+
+    def test_delete_and_restore_by_a_team_member(self, admin_client, w):
+        assert admin_client.post(url(w.eng_a, "/join"), {}, format="json").status_code in (200, 201)
+        member = signed_in(w.p1)
+        w.eng_a.refresh_from_db()
+        body = {"version": w.eng_a.version, "confirm_ref": w.eng_a.ref}
+        assert admin_client.post(url(w.eng_a, "/delete"), body, format="json").status_code == 204
+        assert admin_client.get(self.me).status_code == 200
+        assert member.get(self.me).status_code in (401, 403)
+        member = signed_in(w.p1)
+        assert admin_client.post(url(w.eng_a, "/restore"), {}, format="json").status_code == 200
+        assert admin_client.get(self.me).status_code == 200
+        assert member.get(self.me).status_code in (401, 403)
+
+    def test_clone_by_a_team_member(self, admin_client, w):
+        assert admin_client.post(url(w.eng_a, "/join"), {}, format="json").status_code in (200, 201)
+        member = signed_in(w.p1)
+        body = {"name": "Copy", "start_date": w.today, "end_date": w.today, "lead": str(w.p1.pk)}
+        assert admin_client.post(url(w.eng_a, "/clone"), body, format="json").status_code == 201
+        assert admin_client.get(self.me).status_code == 200
+        assert member.get(self.me).status_code in (401, 403)
+
+    def test_actor_naming_themself_lead_stays_signed_in(self, w):
+        role = make_role("Planner", ["engagements.view", "engagements.create", "organisations.view", "organisations.update"])
+        planner = make_user("planner@example.com", role)
+        client = signed_in(planner)
+        body = {**w.base, "organisation": str(w.org_a.pk), "name": "Mine", "lead": str(planner.pk)}
+        r = client.post(f"{API}/engagements", body, format="json")
+        assert r.status_code == 201, r.content
+        assert client.get(self.me).status_code == 200

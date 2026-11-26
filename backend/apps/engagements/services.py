@@ -97,7 +97,11 @@ def _require_engagement_perm(request, actor, eng: Engagement, code: str, action:
         _refuse(action, "You do not have permission to perform this action.", eng)
 
 
-def _bump_sessions(user_id) -> None:
+def _bump_sessions(user_id, actor=None) -> None:
+    """Sign a user out so new access applies. The person making the change stays signed in:
+    access is checked on every request, so their session needs no reset."""
+    if actor is not None and user_id == actor.pk:
+        return
     User.objects.filter(pk=user_id).update(session_version=F("session_version") + 1)
 
 
@@ -110,7 +114,7 @@ def _ensure_member(request, actor, eng: Engagement, user: User) -> None:
     if created:
         audit.record("engagement.member_added", request=request, entity=eng, engagement=eng,
                      metadata={"user": user.email, "via": "lead"})  # fmt: skip
-        _bump_sessions(user.pk)
+        _bump_sessions(user.pk, actor)
         inbox.notify([user], "engagement.added", f"You were added to {eng.ref}", body=eng.name,
                      link=inbox.eng_link(eng), actor=actor, engagement=eng)
 
@@ -165,7 +169,7 @@ def clone_engagement(request, actor, src: Engagement, data: dict) -> Engagement:
             )
             if created:
                 added.append(m.user)
-                _bump_sessions(m.user_id)
+                _bump_sessions(m.user_id, actor)
         links = EngagementAsset.objects.filter(
             engagement=src, asset__archived_at__isnull=True, asset__onboarding_status="onboarded"
         ).select_related("asset")
@@ -323,7 +327,7 @@ def delete_engagement(request, actor, eng: Engagement, version: int, confirm_ref
         inbox.notify(inbox.engagement_people(eng), "engagement.deleted", f"{eng.ref} was deleted", body=eng.name,
                      actor=actor, engagement=eng)
         for user_id in EngagementMembership.objects.filter(engagement=eng).values_list("user_id", flat=True):
-            _bump_sessions(user_id)
+            _bump_sessions(user_id, actor)
 
 
 @refusals_audited
@@ -346,7 +350,7 @@ def restore_engagement(request, actor, eng: Engagement) -> Engagement:
         inbox.notify(inbox.engagement_people(eng), "engagement.restored", f"{eng.ref} was restored", body=eng.name,
                      link=inbox.eng_link(eng), actor=actor, engagement=eng)
         for user_id in EngagementMembership.objects.filter(engagement=eng).values_list("user_id", flat=True):
-            _bump_sessions(user_id)
+            _bump_sessions(user_id, actor)
     return eng
 
 

@@ -298,5 +298,5 @@ Done on a throwaway `rs_qa` stack (removed with its own volumes only; real `reds
 - Assets page: **Any tag** filter (the tab counts follow it), **Tag selected** (add and remove on ticked assets), **Manage tags** (rename, merge, delete).
 - API: `GET /assets/tags`, `POST /assets/tags/assign|rename|delete`, `?tag=` on `GET /assets` and `/assets/summary` (`docs/API.md`). No migration: tags stay on `Asset.tags` (`apps/organisations/tags.py`).
 - Verified: backend 1085 passed, 1 skipped; ruff, `tsc`, build clean; end-to-end sweep of write routes on a throwaway stack (257 requests, no unexpected failures); tag screens and main pages checked in the browser.
-- Found, not changed (older behaviour): cloning, deleting or restoring an engagement signs the acting user out when they are on its team.
+- Fixed: cloning, deleting or restoring an engagement, or naming yourself lead, no longer signs the acting user out. Other affected users are still signed out (`_bump_sessions` in `engagements/services.py`).
 
