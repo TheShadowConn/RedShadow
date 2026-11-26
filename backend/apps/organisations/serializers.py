@@ -145,6 +145,41 @@ class AssetBulkArchiveSerializer(StrictSerializer):
     archived = serializers.BooleanField()
 
 
+class _TagNameField(serializers.CharField):
+    """A tag written through the tag actions. Commas and semicolons separate tags in forms and CSV files."""
+
+    def __init__(self, **kwargs):
+        super().__init__(max_length=40, **kwargs)
+
+    def to_internal_value(self, data):
+        value = super().to_internal_value(data)
+        if "," in value or ";" in value:
+            raise serializers.ValidationError("A tag cannot contain a comma or a semicolon.")
+        return value
+
+
+class AssetTagAssignSerializer(StrictSerializer):
+    ids = serializers.ListField(child=serializers.UUIDField(), min_length=1, max_length=500)
+    add = serializers.ListField(child=_TagNameField(), required=False, default=list, max_length=20)
+    remove = serializers.ListField(child=serializers.CharField(max_length=40), required=False, default=list)
+
+    def validate(self, attrs):
+        if not attrs.get("add") and not attrs.get("remove"):
+            raise serializers.ValidationError({"add": ["Give a tag to add or remove."]})
+        return attrs
+
+
+class AssetTagRenameSerializer(StrictSerializer):
+    tag = serializers.CharField(max_length=40)
+    new_name = _TagNameField()
+    organisation = serializers.UUIDField(required=False)
+
+
+class AssetTagDeleteSerializer(StrictSerializer):
+    tag = serializers.CharField(max_length=40)
+    organisation = serializers.UUIDField(required=False)
+
+
 class AssetMergeSerializer(StrictSerializer):
     source = serializers.UUIDField()
 

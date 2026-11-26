@@ -6,8 +6,12 @@ Base path `/api/v1`. Session cookie plus CSRF header, error envelope `{"error": 
 
 | Method and path | Permission | Purpose |
 |---|---|---|
-| `GET /assets` | `assets.view` (engagement scope) | Paged list. Query: `search` (name, identifier, any identifier, tag), `organisation`, `type`, `environment`, `criticality` (1 to 5), `onboarding_status` (`onboarded`, `pending`), `origin`, `archived` (`true` or `all`), `ordering` (`name`, `type`, `criticality`, `created`), `page`, `page_size`. |
-| `GET /assets/summary` | `assets.view` | `{total, onboarded, pending, archived}` for the filter tabs. Optional `organisation`. |
+| `GET /assets` | `assets.view` (engagement scope) | Paged list. Query: `search` (name, identifier, any identifier, tag), `organisation`, `type`, `environment`, `criticality` (1 to 5), `onboarding_status` (`onboarded`, `pending`), `origin`, `archived` (`true` or `all`), `ordering` (`name`, `type`, `criticality`, `created`), `tag` (exact tag, any case), `page`, `page_size`. |
+| `GET /assets/summary` | `assets.view` | `{total, onboarded, pending, archived}` for the filter tabs. Optional `organisation`, `tag`. |
+| `GET /assets/tags` | `assets.view` (engagement scope) | Tags in use: `[{tag, assets, onboarded, archived}]`, only from assets the caller can see. `assets` and `onboarded` count live assets. Optional `organisation`. |
+| `POST /assets/tags/assign` | `assets.update` | `{ids, add?: [...], remove?: [...]}` returns `{updated, skipped: [{id, name, reason}], not_found}`. An added tag takes the spelling already in use. No commas or semicolons, 40 characters, 20 tags per asset. |
+| `POST /assets/tags/rename` | `assets.update` | `{tag, new_name, organisation?}` returns `{updated, skipped}`. Renaming onto an existing tag merges them. 404 for an unknown tag. |
+| `POST /assets/tags/delete` | `assets.update` | `{tag, organisation?}` returns `{updated, skipped}`. Takes the tag off assets; assets stay. 404 for an unknown tag. |
 | `POST /assets` | `assets.create` | Body `{organisation, name, type, environment?, criticality?, tags?, identifiers?: [{kind?, value, is_primary?}], identifier?}`. `kind` is detected when omitted. The older single `identifier` text still works and becomes the primary identifier. 400 with `fields.identifiers` when a value is invalid or belongs to another asset (the message names it). Created assets are onboarded. |
 | `GET /assets/{id}` | `assets.view` | Includes `identifiers[]`, `onboarding_status`, `origin`, `engagement_count`. |
 | `PATCH /assets/{id}` | `assets.update` | `name, type, environment, criticality, tags`, and the older `identifier` (adds or promotes a primary, never drops identifiers). Identifiers are changed through the endpoints below. |

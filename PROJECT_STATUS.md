@@ -292,3 +292,11 @@ Done on a throwaway `rs_qa` stack (removed with its own volumes only; real `reds
 - **Import delete fix:** deleting an import whose findings had already been deleted failed with "Internal server error" (a deleted finding is only hidden and still pointed at the import). Deleting an import, or clearing the history, now also clears that link on hidden findings.
 - **Safety and awareness additions (2026-11-26):** (1) **Undo after delete:** deleting a finding (or several) shows an Undo bar for about 12 seconds, backed by `POST /findings/restore` (needs `findings.delete`, audited as `finding.restored`); the delete dialogs name the finding. (2) **Duplicate warning while typing** on the New finding form (`GET /findings/similar`: same title, same asset and endpoint, or shared title words; only findings the caller can see; never blocks saving). (3) **Backup status on the About page** for Super Admins: `scripts/backup.sh` calls `manage.py record_backup` (audit event `system.backup_completed`), the About API returns a `backup` block (`BACKUP_WARN_DAYS`, default 7).
 - **Imports table:** fewer, better-sized columns with sensible wrapping and scrolling on narrow screens.
+
+## Asset tags: filter and management (2026-11-26)
+
+- Assets page: **Any tag** filter (the tab counts follow it), **Tag selected** (add and remove on ticked assets), **Manage tags** (rename, merge, delete).
+- API: `GET /assets/tags`, `POST /assets/tags/assign|rename|delete`, `?tag=` on `GET /assets` and `/assets/summary` (`docs/API.md`). No migration: tags stay on `Asset.tags` (`apps/organisations/tags.py`).
+- Verified: backend 1085 passed, 1 skipped; ruff, `tsc`, build clean; end-to-end sweep of write routes on a throwaway stack (257 requests, no unexpected failures); tag screens and main pages checked in the browser.
+- Found, not changed (older behaviour): cloning, deleting or restoring an engagement signs the acting user out when they are on its team.
+

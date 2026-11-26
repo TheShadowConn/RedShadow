@@ -122,6 +122,8 @@ export type Asset = {
 };
 
 export type AssetSummary = { total: number; onboarded: number; pending: number; archived: number };
+export type AssetTag = { tag: string; assets: number; onboarded: number; archived: number };
+export type TagResult = { updated: number; skipped: Array<{ id: string; name: string; reason: string }>; not_found?: number };
 export type AssetUsage = { engagements: number; findings: number; identifiers: number };
 export type IdentifierCheck = {
   index: number;

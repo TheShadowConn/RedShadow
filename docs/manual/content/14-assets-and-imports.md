@@ -19,6 +19,21 @@ One asset can have several **identifiers**: an IP address, a hostname, a domain,
 | Bulk | Tick assets in the list and choose *Archive selected*, *Unarchive selected* or *Onboard selected*. Assets that cannot be changed are reported. |
 | Delete | Allowed only when no engagement and no finding uses the asset. Otherwise archive it or merge it. |
 
+## Tags
+
+Tags group assets, for example by department: `service-delivery`, `netops`. Capital and small letters count as the same tag. A tag exists as long as one asset carries it.
+
+| To do this | Steps |
+|---|---|
+| Add tags to many assets | Tick the assets, choose **Tag selected**, type the tags separated by commas, **Save tags**. |
+| Add or change on one asset | Open the asset and choose **Edit details**, or fill the *Tags* column of an asset import (semicolons). |
+| Remove from some assets | Tick them, choose **Tag selected**, tick the tags under *Remove tags*, **Save tags**. |
+| Rename or merge everywhere | **Manage tags**, then **Rename**. Typing the name of another tag merges the two. |
+| Delete everywhere | **Manage tags**, then **Delete**. The assets stay. |
+| Count a team's assets | Pick the tag in the **Any tag** filter and read the numbers on the *All assets* and *Onboarded* tabs. |
+
+*Manage tags* works on the organisation chosen in the filter, or on all organisations. Archived assets are never changed and are reported as skipped. An asset holds up to 20 tags of 40 characters. Tag changes need the *Edit assets* permission and are written to the audit log.
+
 ## Importing assets
 
 Choose **Imports**, then **Import assets**, pick the organisation and the CSV file. A template is available for download. It has five plain columns: **Name**, **Asset type**, **Environment**, **Criticality** and **Identifiers**. Put every address of an asset in the Identifiers cell, separated by semicolons (for example `10.0.0.5; web01.acme.test`); RedShadow works out what each one is.

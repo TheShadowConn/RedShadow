@@ -67,6 +67,8 @@ The comparison is general. Check any tool against your own needs.
 
 ## Assets and imports
 
+Group assets with tags: add them to many assets at once, rename, merge or delete them, and filter the list to count what one team has onboarded.
+
 Assets can have several identifiers (IP address, hostname, domain, URL ...). Each identifier belongs to one asset per organisation, so the same system is never created twice. Import assets from CSV without onboarding them first: rows are matched by identifier, new assets arrive not onboarded, and a Super Admin onboards them later. Failed or partly failed imports can be corrected and re-uploaded into the same import, retried, or deleted, and deactivated users can be deleted with safeguards.
 
 ## Engagements, notifications and accounts (1.3.0)
