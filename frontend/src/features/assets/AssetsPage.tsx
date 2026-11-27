@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, GitMerge, Plus, Search, Tags, Upload } from "lucide-react";
+import { ChevronRight, Download, GitMerge, Plus, Search, Tags, Upload } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { useAuth } from "../../api/auth";
-import { api } from "../../api/client";
+import { api, downloadFile } from "../../api/client";
 import {
   ASSET_TYPES, ENVIRONMENTS, type Asset, type AssetSummary, type AssetTag, type AssetUsage, type Organisation, type Page, type TagResult,
 } from "../../api/types";
@@ -79,6 +79,17 @@ export function AssetsPage() {
   const filtered = !!(term || Object.values(filters).some(Boolean));
   const open = (id: string | null) => { setSelected(id); setParams(id ? { asset: id } : {}, { replace: true }); };
 
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<unknown>(null);
+  async function exportCsv() {
+    const x = new URLSearchParams(query);
+    x.delete("page");
+    x.delete("page_size");
+    setExporting(true);
+    setExportError(null);
+    try { await downloadFile(`/assets/export.csv?${x}`, "redshadow-assets.csv"); } catch (e) { setExportError(e); } finally { setExporting(false); }
+  }
+
   const [skipped, setSkipped] = useState<Array<{ name: string; reason: string }>>([]);
   const bulkRun = useMutation({
     mutationFn: (kind: "onboard" | "archive" | "unarchive") =>
@@ -100,6 +111,7 @@ export function AssetsPage() {
         actions={
           <>
             {can("assets.import") && can("imports.create") && <Link to="/imports?new=assets" className="btn btn-secondary"><Upload size={18} aria-hidden /> Import assets</Link>}
+            {can("exports.csv") && <Button onClick={exportCsv} loading={exporting}><Download size={18} aria-hidden /> Export CSV</Button>}
             {can("assets.update") && <Button onClick={() => setManaging(true)}><Tags size={18} aria-hidden /> Manage tags</Button>}
             {can("assets.create") && <Button variant="primary" onClick={() => setCreating(true)}><Plus size={18} aria-hidden /> New asset</Button>}
           </>
@@ -109,6 +121,8 @@ export function AssetsPage() {
       {summary.data && summary.data.pending > 0 && scope !== "pending" && (
         <div className="mb-6"><Alert tone="warn"><p className="m-0"><strong className="font-medium">{summary.data.pending} asset{summary.data.pending === 1 ? " is" : "s are"} not onboarded yet.</strong> They came in through an import and cannot join an engagement until someone checks their details and onboards them. <button type="button" className="text-accent underline" onClick={() => { setScope("pending"); setPage(1); }}>Show them</button></p></Alert></div>
       )}
+
+      {!!exportError && <div className="mb-6"><ErrorNote error={exportError} /></div>}
 
       <div className="card overflow-hidden">
         <div className="flex flex-wrap gap-2 border-b border-line p-4" role="group" aria-label="Show assets">

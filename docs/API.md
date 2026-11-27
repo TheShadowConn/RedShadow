@@ -147,4 +147,4 @@ Tags keep one spelling per organisation: create, edit and import reuse the spell
 | `GET /findings`, `/findings/export.csv` | as before | New filters `tag` and `untagged=true` (by the asset's tags). |
 | `POST /reports` | as before | `filters.tags` limits the report to assets with any of those tags. The CSV has an `asset_tags` column. |
 | `POST /imports` | `imports.create` | Also accepts `.nessus` and `.xml` (Nessus, Burp, Nmap), 50 MB. `include_info` keeps informational results. |
-
+| `GET /assets/export.csv` | `exports.csv` | CSV of visible assets with the list's filters. Without access to all engagements, only assets of engagements where the caller may export. Audited as `asset.exported`. |

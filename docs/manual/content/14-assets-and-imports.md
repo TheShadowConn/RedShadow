@@ -19,6 +19,10 @@ One asset can have several **identifiers**: an IP address, a hostname, a domain,
 | Bulk | Tick assets in the list and choose *Archive selected*, *Unarchive selected* or *Onboard selected*. Assets that cannot be changed are reported. |
 | Delete | Allowed only when no engagement and no finding uses the asset. Otherwise archive it or merge it. |
 
+## Exporting assets
+
+**Export CSV** on the Assets page downloads the assets you are looking at: the search, filters and tag you chose apply. The columns are Name, Asset type, Environment, Criticality, Identifiers, Tags, Organisation, Onboarded and Archived. The file can be imported again. It needs the *Export CSV* permission, contains only assets you may export, and each export is written to the audit log.
+
 ## Tags and departments
 
 A tag groups assets. Use one tag per department or team, such as `IT Help Desk` or `Network Engineering`. An asset can carry several tags. Capital and small letters count as the same tag, and the spelling already in use is kept. A tag exists as long as one asset carries it.

@@ -5,18 +5,33 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 DRILL=redshadow_drill
+# The stack being backed up. Everything seeded and cleaned up below belongs to this project only.
+SRC="${COMPOSE_PROJECT_NAME:-redshadow}"
 TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
+
+# Take the seeded rows and files out of the source stack again, also when a check fails part way.
+cleanup() {
+    rm -rf "$TMP"
+    docker compose -p "$SRC" exec -T db psql -U redshadow_admin -d redshadow >/dev/null 2>&1 <<'SQL' || true
+DROP TABLE IF EXISTS drill_marker;
+DELETE FROM files_attachment WHERE id = '00000000-0000-4000-8000-0000000d0003';
+DELETE FROM engagements_engagement WHERE id = '00000000-0000-4000-8000-0000000d0002';
+DELETE FROM organisations_organisation WHERE id = '00000000-0000-4000-8000-0000000d0001';
+SQL
+    docker run --rm -v "${SRC}_media:/data" alpine:3.20 sh -c \
+        'rm -f /data/drill.txt /data/2000/01/00000000-0000-4000-8000-0000000d0003; rmdir /data/2000/01 /data/2000 2>/dev/null' >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
 
 docker compose exec -T db psql -U redshadow_admin -d redshadow -c \
     "DROP TABLE IF EXISTS drill_marker; CREATE TABLE drill_marker(v text); INSERT INTO drill_marker VALUES ('drill-ok');" >/dev/null
-docker run --rm -v redshadow_media:/data alpine:3.20 sh -c 'echo drill-media > /data/drill.txt && chown 10001:10001 /data/drill.txt'
+docker run --rm -v ${SRC}_media:/data alpine:3.20 sh -c 'echo drill-media > /data/drill.txt && chown 10001:10001 /data/drill.txt'
 
 # A real attachment: organisation, engagement, attachment row (plain SQL, so the live audit log is untouched)
 # plus its blob in the media volume under a storage key, with the SHA-256 recorded in the row.
 ORG=00000000-0000-4000-8000-0000000d0001; ENG=00000000-0000-4000-8000-0000000d0002
 ATT=00000000-0000-4000-8000-0000000d0003; KEY="2000/01/$ATT"
-docker run --rm -v redshadow_media:/data alpine:3.20 sh -c \
+docker run --rm -v ${SRC}_media:/data alpine:3.20 sh -c \
     "mkdir -p /data/2000/01 && printf 'drill attachment payload' > /data/$KEY && chmod 644 /data/$KEY && chown -R 10001:10001 /data/2000"
 SHA="$(printf 'drill attachment payload' | shasum -a 256 | cut -d' ' -f1)"
 docker compose exec -T db psql -U redshadow_admin -d redshadow -v ON_ERROR_STOP=1 >/dev/null <<SQL
@@ -72,9 +87,9 @@ INSERT INTO engagements_engagement (id, created_at, updated_at, ref, organisatio
     '2000-01-01', '2000-01-02', '', '', '', '', '', 1);
 INSERT INTO findings_finding (id, created_at, updated_at, ref, title, description, technical_details, poc, recommendation,
     "references", severity, cvss_version, cvss_vector, endpoint, status, discovered_at, dedupe_hash, source, version,
-    engagement_id, reported_by_id, risk_acceptance_reason)
+    engagement_id, reported_by_id, risk_acceptance_reason, import_issues)
     VALUES ('$FFND', now(), now(), 'RS-F-DRILL1', 'Drill finding', 'd', '', '', 'r', '[]', 'low', '', '', '', 'draft',
-    '2000-01-01', 'drillhash', 'manual', 1, '$FENG', (SELECT id FROM accounts_user LIMIT 1), '');
+    '2000-01-01', 'drillhash', 'manual', 1, '$FENG', (SELECT id FROM accounts_user LIMIT 1), '', '[]');
 INSERT INTO findings_findingnote (id, created_at, updated_at, kind, body, author_id, finding_id)
     VALUES ('$FNOTE', now(), now(), 'technical', 'original', (SELECT id FROM accounts_user LIMIT 1), '$FFND');
 SQL
@@ -89,10 +104,4 @@ echo "restored db row, media file and readiness verified"
 
 echo "==> cleanup (drill project only)"
 docker compose -p "$DRILL" down -v >/dev/null
-docker compose -p redshadow exec -T db psql -U redshadow_admin -d redshadow -c "DROP TABLE drill_marker" >/dev/null
-docker run --rm -v redshadow_media:/data alpine:3.20 sh -c "rm -f /data/drill.txt /data/$KEY && rmdir /data/2000/01 /data/2000 2>/dev/null || true"
-docker compose -p redshadow exec -T db psql -U redshadow_admin -d redshadow -v ON_ERROR_STOP=1 >/dev/null <<SQL
-DELETE FROM files_attachment WHERE id = '$ATT'; DELETE FROM engagements_engagement WHERE id = '$ENG';
-DELETE FROM organisations_organisation WHERE id = '$ORG';
-SQL
 echo "DRILL PASSED"

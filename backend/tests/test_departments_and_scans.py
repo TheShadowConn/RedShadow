@@ -95,6 +95,12 @@ class TestParsers:
         with pytest.raises(ParseError):
             scans.parse(data, "findings")
 
+    def test_an_address_is_never_a_hostname(self):
+        data = NESSUS.replace(b'<ReportHost name="10.0.0.5">', b'<ReportHost name="10.0.0.99">')
+        data = data.replace(b'<tag name="host-fqdn">web01.acme.test</tag>', b"")
+        (row,) = table(scans.parse(data, "assets"))
+        assert (row["IP address"], row["Hostname"]) == ("10.0.0.5", "")
+
     def test_hosts_of_a_nessus_file_as_assets(self):
         (row,) = table(scans.parse(NESSUS, "assets"))
         assert row["Name"] == "web01.acme.test" and row["IP address"] == "10.0.0.5"
@@ -169,6 +175,11 @@ class TestScanImport:
         assert job["status"] == "failed" and "not allowed" in job["error"]
 
 
+    @pytest.mark.parametrize("body", [[1, 2], "text", 5])
+    def test_a_body_that_is_not_an_object_is_refused(self, w, admin_client, body):
+        assert admin_client.post(f"{API}/imports", body, format="json").status_code == 400
+
+
 @pytest.mark.django_db
 class TestDepartments:
     def add(self, w, severity="high"):
@@ -203,3 +214,26 @@ class TestDepartments:
     def test_report_filter(self, w):
         assert builder.normalise_filters({"tags": [" PCI "]})["tags"] == ["PCI"]
         assert "tags" not in builder.normalise_filters({})
+
+
+@pytest.mark.django_db
+class TestAssetExport:
+    def text(self, client, query=""):
+        r = client.get(f"{API}/assets/export.csv{query}")
+        assert r.status_code == 200, r.content
+        return b"".join(r.streaming_content).decode("utf-8-sig")
+
+    def test_export_follows_filters(self, w, admin_client):
+        everything = self.text(admin_client)
+        assert "Acme shop" in everything and "Borealis core" in everything and "IT Help Desk; PCI" in everything
+        assert "Borealis core" not in self.text(admin_client, "?tag=pci")
+
+    def test_export_is_scoped(self, w):
+        out = self.text(signed_in(w.p1))
+        assert "Acme shop" in out and "Borealis core" not in out
+
+    def test_export_can_be_imported_again(self, w, admin_client):
+        data = self.text(admin_client, f"?organisation={w.org_a.pk}").encode()
+        r = send(admin_client, data, "assets.csv", kind="assets", organisation=str(w.org_a.pk))
+        job = run(admin_client, r.json())
+        assert job["counts"]["invalid"] == 0 and job["counts"]["to_create"] == 0, job["counts"]

@@ -79,7 +79,8 @@ class ImportJobViewSet(ScopedModelViewSet):
     parser_classes = [MultiPartParser, *ScopedModelViewSet.parser_classes]
 
     def create(self, request, *args, **kwargs):
-        if request.data.get("kind") == "assets":
+        body = request.data
+        if hasattr(body, "get") and body.get("kind") == "assets":  # a JSON list or text is refused below
             data = _validated(AssetUploadSerializer, request)
             job = services.create_asset_upload(request, request.user, data["organisation"], data["file"])
         else:

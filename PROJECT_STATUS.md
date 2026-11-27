@@ -304,3 +304,7 @@ Done on a throwaway `rs_qa` stack (removed with its own volumes only; real `reds
 ## Release 1.5.0 (2026-11-27)
 
 Asset tags as departments (picker, column, filter bar, engagement scope, import template), Departments page, `tag` filters on findings and reports, Nessus/Burp/Nmap import (ADR-0024). New dependency `defusedxml`. No migration. Manual updated. Not done: verification against real scanner exports.
+
+## Release 1.5.1 (2026-11-27)
+
+Asset CSV export. Fixed: non-object import body 500; IP address read as hostname in scans; email could not leave the internal network (new opt-in `docker-compose.email.yml`); backup drill outdated and could write to the real media volume when run for another project; Add member and Remove offered your own account; Publish did not say which fields were missing. Checked: MFA and recovery codes, notification email to a local sink, backup drill on a test stack, destructive buttons and main forms. Not checked: real scanner exports, Safari and Firefox, a real mail server.

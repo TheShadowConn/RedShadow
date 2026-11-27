@@ -19,6 +19,12 @@ type Tab = "details" | "timeline" | "notes" | "evidence" | "history";
 const EDITABLE = new Set(["draft", "open", "in_progress", "reopened"]);
 const MAX_BYTES = 25 * 1024 * 1024;
 
+/** The API's field messages as one sentence each, for actions that have no form to show them beside. */
+function missingFields(error: unknown): string {
+  const fields = (error as { fields?: Record<string, unknown> } | null)?.fields ?? {};
+  return Object.entries(fields).map(([k, v]) => `${k[0].toUpperCase()}${k.slice(1).replace(/_/g, " ")}: ${([v].flat()[0] as string)}`).join(" ");
+}
+
 export function FindingPage() {
   const { id } = useParams();
   const nav = useNavigate();
@@ -91,7 +97,7 @@ export function FindingPage() {
         </div>
       )}
       {lock && <div className="mb-4"><Alert tone="warn">{lock}</Alert></div>}
-      {quick.error && <div className="mb-4">{isConflict(quick.error) ? <Alert tone="error">Someone else changed this finding. It was reloaded, try again.</Alert> : <ErrorNote error={quick.error} />}</div>}
+      {quick.error && <div className="mb-4">{isConflict(quick.error) ? <Alert tone="error">Someone else changed this finding. It was reloaded, try again.</Alert> : missingFields(quick.error) ? <Alert tone="error">This finding cannot move yet. {missingFields(quick.error)} Choose <strong>Edit</strong> to fill it in.</Alert> : <ErrorNote error={quick.error} />}</div>}
       <RetestNotice f={f} />
       {f.status === "risk_accepted" && f.risk_accepted_until && <div className="mb-4"><Alert tone="warn">Risk accepted until {formatDay(f.risk_accepted_until)}. It reopens automatically after that date.{f.risk_acceptance_reason ? ` Reason: ${f.risk_acceptance_reason}` : ""}</Alert></div>}
       {f.possible_duplicates.length > 0 && (

@@ -1,11 +1,18 @@
 from django.db.models import Count, Q
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 
+from apps.audit import service as audit
+from apps.core.csvout import write_csv
+from apps.core.errors import Conflict
+from apps.engagements.models import EngagementAsset
+from apps.engagements.selectors import scope_engagements
 from apps.files import services as file_services
 from apps.files.serializers import UploadSerializer
 from apps.findings.selectors import scope_findings
@@ -34,6 +41,11 @@ from .serializers import (
     OrganisationSerializer,
     OrganisationWriteSerializer,
 )
+
+EXPORT_MAX_ROWS = 50_000
+EXPORT_COLUMNS = [
+    "Name", "Asset type", "Environment", "Criticality", "Identifiers", "Tags", "Organisation", "Onboarded", "Archived",
+]  # fmt: skip
 
 
 def _validated(serializer_class, request, partial=False) -> dict:
@@ -167,6 +179,7 @@ class AssetViewSet(ScopedModelViewSet):
         "summary": "assets.view",
         "tags": "assets.view",
         "departments": "assets.view",
+        "export": "exports.csv",
         "assign_tags": "assets.update",
         "rename_tag": "assets.update",
         "delete_tag": "assets.update",
@@ -284,6 +297,55 @@ class AssetViewSet(ScopedModelViewSet):
     @action(detail=False, methods=["get"])
     def tags(self, request):
         return Response(tags.catalogue(self._in_organisation(request.query_params.get("organisation"))))
+
+    @action(detail=False, methods=["get"], url_path="export.csv", url_name="export")
+    def export(self, request):
+        """CSV of the assets the caller can see, with the list's filters. The first six columns are those of the
+        import template, so the file can be imported again."""
+        p = request.query_params
+        qs = self._filtered(self._base(), p)
+        if p.get("archived") == "true":
+            qs = qs.filter(archived_at__isnull=False)
+        elif p.get("archived") != "all":
+            qs = qs.filter(archived_at__isnull=True)
+        if not request.user.role.all_engagements:
+            allowed = scope_engagements(request.user, "exports.csv")
+            qs = qs.filter(pk__in=EngagementAsset.objects.filter(engagement__in=allowed).values("asset_id"))
+        total = qs.count()
+        if total > EXPORT_MAX_ROWS:
+            raise Conflict(f"{total} assets match. Narrow the filters to {EXPORT_MAX_ROWS} or fewer.")
+        qs = qs.select_related("organisation").prefetch_related("identifiers").order_by("organisation__name", "name")
+        rows = (
+            [
+                a.name,
+                a.get_type_display(),
+                a.environment,
+                a.criticality,
+                "; ".join(i.value for i in a.identifiers.all()),
+                "; ".join(a.tags),
+                a.organisation.name,
+                "yes" if a.onboarding_status == "onboarded" else "no",
+                "yes" if a.is_archived else "no",
+            ]
+            for a in qs.iterator(chunk_size=1000)
+        )
+        handle, digest, count = write_csv(EXPORT_COLUMNS, rows)
+        audit.record(
+            "asset.exported",
+            request=request,
+            entity_type="assetexport",
+            entity_label="Assets CSV",
+            metadata={"rows": count, "sha256": digest},
+        )
+        response = FileResponse(
+            handle,
+            content_type="text/csv; charset=utf-8",
+            as_attachment=True,
+            filename=f"redshadow-assets-{timezone.now():%Y%m%d-%H%M%S}.csv",
+        )
+        response["Cache-Control"] = "no-store"
+        response["X-Content-Type-Options"] = "nosniff"
+        return response
 
     @action(detail=False, methods=["get"])
     def departments(self, request):
