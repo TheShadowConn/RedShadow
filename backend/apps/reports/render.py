@@ -124,7 +124,7 @@ def render_pdf(ctx: dict, template) -> tuple[bytes, int]:
 
 
 CSV_COLUMNS = [
-    "reference", "title", "severity", "cvss_score", "cvss_vector", "cwe", "status", "asset", "endpoint",
+    "reference", "title", "severity", "cvss_score", "cvss_vector", "cwe", "status", "asset", "asset_tags", "endpoint",
     "assigned_pentester", "remediation_owner", "discovered_at", "due_date", "resolved_at", "verified_at",
     "closed_at", "overdue", "description", "recommendation", "references",
 ]  # fmt: skip
@@ -148,6 +148,7 @@ def render_csv(ctx: dict) -> tuple[bytes, int]:
             f["cwe"],
             f["status"],
             f["asset"],
+            f["asset_tags"],
             f["endpoint"],
             f["assigned_pentester"],
             f["remediation_owner"],

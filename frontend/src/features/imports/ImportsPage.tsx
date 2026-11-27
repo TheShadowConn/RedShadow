@@ -14,6 +14,7 @@ import { ImportKindChip, ImportKindToast } from "./ImportNotice";
 
 const PAGE_SIZE = 25;
 const MAX_BYTES = 10 * 1024 * 1024;
+const MAX_SCAN_BYTES = 50 * 1024 * 1024; // Nessus, Burp and Nmap files
 const TONE: Record<string, "ok" | "warn" | "fail" | "info"> = {
   uploaded: "info", parsing: "warn", parsed: "info", validating: "warn", previewed: "info", importing: "warn", completed: "ok", failed: "fail", cancelled: "info",
 };
@@ -71,7 +72,7 @@ export function ImportsPage() {
     <>
       <PageHeader
         title="Imports"
-        lead="Bring findings or assets in from a CSV file. Findings arrive as drafts for a pentester to review. Assets arrive not onboarded, matched by their identifiers so nothing is created twice."
+        lead="Bring findings or assets in from a CSV file or a Nessus, Burp or Nmap result. Findings arrive as drafts for a pentester to review. Assets arrive not onboarded, matched by their identifiers so nothing is created twice."
         actions={
           <>
             {canClear && <Button onClick={() => { clear.reset(); setClearing(true); }}><Trash2 size={18} aria-hidden /> Clear history</Button>}
@@ -93,7 +94,7 @@ export function ImportsPage() {
         {list.data && rows.length === 0 && (
           <EmptyState
             title={filtered ? "No imports match" : "No imports yet"}
-            body={filtered ? "Try a different search or clear a filter." : "Upload a CSV to map its columns, check every row and import the valid ones."}
+            body={filtered ? "Try a different search or clear a filter." : "Upload a CSV or scanner file to map its columns, check every row and import the valid ones."}
             action={!filtered && canFindings ? <Button variant="primary" onClick={() => start("findings")}>Import findings</Button> : undefined}
           />
         )}
@@ -167,8 +168,9 @@ export function useFilePicker() {
   function pick(f: File | undefined) {
     if (!f) return setFile(null);
     if (f.size === 0) return (setFile(null), setProblem("That file is empty."));
-    if (f.size > MAX_BYTES) return (setFile(null), setProblem(`${f.name} is ${formatBytes(f.size)}. The limit is 10 MB.`));
-    if (!/\.(csv|tsv|txt)$/i.test(f.name)) return (setFile(null), setProblem("Choose a .csv file."));
+    if (!/\.(csv|tsv|txt|nessus|xml)$/i.test(f.name)) return (setFile(null), setProblem("Choose a .csv, .nessus or .xml file."));
+    const limit = /\.(nessus|xml)$/i.test(f.name) ? MAX_SCAN_BYTES : MAX_BYTES;
+    if (f.size > limit) return (setFile(null), setProblem(`${f.name} is ${formatBytes(f.size)}. The limit is ${limit / 1024 / 1024} MB.`));
     setProblem(null);
     setFile(f);
   }
@@ -186,6 +188,8 @@ function UploadProgress({ progress }: { progress: number | null }) {
 
 function NewImport({ kind, onDone, onCancel }: { kind: "findings" | "assets"; onDone: (id: string) => void; onCancel: () => void }) {
   const [target, setTarget] = useState("");
+  const [includeInfo, setIncludeInfo] = useState(false);
+  const isScan = (name?: string) => /\.(nessus|xml)$/i.test(name ?? "");
   const [progress, setProgress] = useState<number | null>(null);
   const [dlError, setDlError] = useState<unknown>(null);
   const picker = useFilePicker();
@@ -195,7 +199,7 @@ function NewImport({ kind, onDone, onCancel }: { kind: "findings" | "assets"; on
   const orgs = useQuery({ queryKey: ["organisations-pick"], queryFn: () => api<Page<Organisation>>("GET", "/organisations?page_size=100"), enabled: isAssets });
   const options = engagements.data?.results.filter((e) => !e.archived_at && e.status !== "cancelled") ?? [];
   const send = useMutation({
-    mutationFn: () => upload<ImportJob>("POST", "/imports", picker.file!, setProgress, isAssets ? { kind: "assets", organisation: target } : { engagement: target }),
+    mutationFn: () => upload<ImportJob>("POST", "/imports", picker.file!, setProgress, isAssets ? { kind: "assets", organisation: target } : { engagement: target, ...(includeInfo && isScan(picker.file!.name) ? { include_info: "true" } : {}) }),
     onSuccess: (job) => onDone(job.id),
     onSettled: () => setProgress(null),
   });
@@ -230,13 +234,17 @@ function NewImport({ kind, onDone, onCancel }: { kind: "findings" | "assets"; on
         </Field>
       )}
       <div className="flex flex-col items-start gap-2">
-        <span className="label">CSV file</span>
-        <input ref={input} type="file" accept=".csv,.tsv,.txt,text/csv" className="sr-only" aria-label="Choose CSV file" onChange={(e) => { send.reset(); picker.pick(e.target.files?.[0]); }} />
+        <span className="label">CSV or scanner file</span>
+        <p className="m-0 text-[14px] text-muted">{isAssets ? "CSV up to 10 MB, or the hosts of a Nmap (-oX), Nessus or Burp file up to 50 MB." : "CSV up to 10 MB, or a Nessus (.nessus) or Burp (XML issues) file up to 50 MB. Each host must already be an in-scope asset; import the same file as assets first if it is not."}</p>
+        {!isAssets && isScan(picker.file?.name) && (
+          <label className="check"><input type="checkbox" checked={includeInfo} onChange={(e) => setIncludeInfo(e.target.checked)} /> Include informational results</label>
+        )}
+        <input ref={input} type="file" accept=".csv,.tsv,.txt,.nessus,.xml,text/csv" className="sr-only" aria-label="Choose CSV or scanner file" onChange={(e) => { send.reset(); picker.pick(e.target.files?.[0]); }} />
         <div className="flex flex-wrap items-center gap-3">
           <Button onClick={() => input.current?.click()}>{picker.file ? "Choose another file" : "Choose file"}</Button>
           {picker.file && <span className="break-all">{picker.file.name} <span className="text-muted">({formatBytes(picker.file.size)})</span></span>}
         </div>
-        <p className="m-0 text-[14px] text-muted">UTF-8 or Windows-1252, comma, semicolon or tab separated, first row holds the column names. Up to 10 MB and 50,000 rows.</p>
+        <p className="m-0 text-[14px] text-muted">CSV files: UTF-8 or Windows-1252, comma, semicolon or tab separated, first row holds the column names. Up to 10 MB and 50,000 rows.</p>
         <button type="button" className="inline-flex min-h-11 items-center gap-2 text-accent hover:underline" onClick={() => downloadFile(isAssets ? "/imports/asset-template.csv" : "/imports/template.csv").catch(setDlError)}><Download size={16} aria-hidden /> Download a template</button>
         {!isAssets && (
           <p className="m-0 flex flex-wrap gap-x-5 gap-y-1 text-[14px]">
@@ -270,7 +278,7 @@ export function ReuploadPanel({ job, onDone }: { job: ImportJob; onDone: () => v
       <p className="m-0 text-muted">Fix the rows in your spreadsheet and upload the whole file again. It goes into this same import as attempt {job.attempt + 1}, with the same columns. Rows that were already imported are recognised and skipped, so nothing is created twice.</p>
       <ErrorNote error={send.error} />
       {picker.problem && <Alert tone="error">{picker.problem}</Alert>}
-      <input ref={input} type="file" accept=".csv,.tsv,.txt,text/csv" className="sr-only" aria-label="Choose corrected CSV file" onChange={(e) => { send.reset(); picker.pick(e.target.files?.[0]); }} />
+      <input ref={input} type="file" accept=".csv,.tsv,.txt,.nessus,.xml,text/csv" className="sr-only" aria-label="Choose corrected file" onChange={(e) => { send.reset(); picker.pick(e.target.files?.[0]); }} />
       <div className="flex flex-wrap items-center gap-3">
         <Button onClick={() => input.current?.click()}>{picker.file ? "Choose another file" : "Choose corrected file"}</Button>
         {picker.file && <span className="break-all">{picker.file.name} <span className="text-muted">({formatBytes(picker.file.size)})</span></span>}

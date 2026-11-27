@@ -25,15 +25,16 @@ from apps.core.errors import Conflict
 from apps.core.storage import get_storage
 from apps.engagements.models import Engagement, EngagementAsset
 from apps.findings import cvss
-from apps.findings.models import Finding
+from apps.findings.models import CWE, Finding
 from apps.findings.selectors import scope_findings
 from apps.findings.services import reserve_refs
 from apps.organisations import assets as asset_ops
 from apps.organisations import identifiers as ident
+from apps.organisations import tags as asset_tags
 from apps.organisations.models import Asset, Organisation
 from apps.rbac.authz import has_engagement_perm, has_platform_perm
 
-from . import parsing
+from . import parsing, scans
 from .asset_import import AssetRowValidator, Matcher, describe
 from .mapping import clean_mapping
 from .models import ImportAttempt, ImportJob, ImportMapping, ImportRow
@@ -123,17 +124,18 @@ def _sync_attempt(job_id) -> None:
 def _read_upload(uploaded) -> tuple[str, bytes]:
     name = (uploaded.name or "").rsplit("/", 1)[-1][:255]
     ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
-    if ext not in parsing.EXTENSIONS:
-        raise ValidationError({"file": ["Upload a .csv file."]})
-    if uploaded.size > parsing.MAX_BYTES:
-        raise ValidationError({"file": [f"The file is larger than {parsing.MAX_BYTES // (1024 * 1024)} MB."]})
+    if ext not in parsing.EXTENSIONS | scans.EXTENSIONS:
+        raise ValidationError({"file": ["Upload a .csv, .nessus or .xml file."]})
+    limit = scans.MAX_BYTES if ext in scans.EXTENSIONS else parsing.MAX_BYTES
+    if uploaded.size > limit:
+        raise ValidationError({"file": [f"The file is larger than {limit // (1024 * 1024)} MB."]})
     data = uploaded.read()
     if not data:
         raise ValidationError({"file": ["The file is empty."]})
     return name, data
 
 
-def _store(request, actor, name: str, data: bytes, **target) -> ImportJob:
+def _store(request, actor, name: str, data: bytes, *, include_info: bool = False, **target) -> ImportJob:
     digest = hashlib.sha256(data).hexdigest()
     key = get_storage().save(data)
     with transaction.atomic():
@@ -143,6 +145,7 @@ def _store(request, actor, name: str, data: bytes, **target) -> ImportJob:
             uploaded_by=actor,
             original_name=name,
             storage_key=key,
+            mapping={"include_info": True} if include_info else {},
             file_sha256=digest,
             file_size=len(data),
             started_at=timezone.now(),
@@ -161,7 +164,7 @@ def _store(request, actor, name: str, data: bytes, **target) -> ImportJob:
     return job
 
 
-def create_upload(request, actor, eng: Engagement, uploaded) -> ImportJob:
+def create_upload(request, actor, eng: Engagement, uploaded, include_info: bool = False) -> ImportJob:
     if not has_engagement_perm(actor, eng.pk, "imports.create"):
         _deny(request, eng, "import.upload_denied", "You do not have permission to import into this engagement.", eng)
     if eng.is_archived:
@@ -169,7 +172,7 @@ def create_upload(request, actor, eng: Engagement, uploaded) -> ImportJob:
     name, data = _read_upload(uploaded)
     if _busy(engagement_id=eng.pk):
         raise Conflict("Another import into this engagement is still running. Wait for it to finish.")
-    return _store(request, actor, name, data, engagement=eng)
+    return _store(request, actor, name, data, include_info=include_info, engagement=eng)
 
 
 def create_asset_upload(request, actor, org: Organisation, uploaded) -> ImportJob:
@@ -192,7 +195,16 @@ def parse_job(job_id) -> None:
         job.status = "parsing"
         job.save(update_fields=["status", "updated_at"])
     try:
-        parsed = parsing.parse(get_storage().read(job.storage_key))
+        data = get_storage().read(job.storage_key)
+        if scans.is_scan(data) and job.original_name.rsplit(".", 1)[-1].lower() in scans.EXTENSIONS:
+            parsed = scans.parse(
+                data,
+                job.kind,
+                include_info=bool(job.mapping.get("include_info")),
+                known_cwes=set(CWE.objects.values_list("pk", flat=True)),
+            )
+        else:
+            parsed = parsing.parse(data)
         sample, total, batch = [], 0, []
         with transaction.atomic():
             for line, cells in parsed.rows:
@@ -224,6 +236,11 @@ def parse_job(job_id) -> None:
         _fail(job, "The file could not be read.")
 
 
+def _options(job: ImportJob) -> dict:
+    """Upload choices kept beside the column mapping, so a retry or corrected file keeps them."""
+    return {k: v for k, v in job.mapping.items() if k == "include_info"}
+
+
 def _auto_validate(job: ImportJob) -> None:
     """After a corrected file: reuse the earlier column mapping when the new file still fits it."""
     if job.attempt < 2 or not job.mapping.get("column_map"):
@@ -235,8 +252,9 @@ def _auto_validate(job: ImportJob) -> None:
         )
     except ValidationError:
         return  # the new file's columns changed: the user maps them again
+    kept = {**_options(fresh), "column_map": cleaned, "value_map": values}
     ImportJob.objects.filter(pk=job.pk, status="parsed").update(
-        status="validating", mapping={"column_map": cleaned, "value_map": values}, updated_at=timezone.now()
+        status="validating", mapping=kept, updated_at=timezone.now()
     )
     _enqueue("validate_job", job.pk)
 
@@ -269,7 +287,7 @@ def set_mapping(request, actor, job: ImportJob, column_map: dict, value_map: dic
         if _busy(**_target(job), exclude=job.pk):
             raise Conflict("Another import into this target is still running. Wait for it to finish.")
         cleaned, values = clean_mapping(job.headers, column_map, value_map, job.kind)
-        job.mapping = {"column_map": cleaned, "value_map": values}
+        job.mapping = {**_options(job), "column_map": cleaned, "value_map": values}
         job.status, job.started_at = "validating", timezone.now()
         job.version += 1
         job.save()
@@ -604,6 +622,7 @@ def _run_asset_import(job: ImportJob) -> None:
             if org.is_archived:
                 raise ImportAbort("The organisation was archived before the import ran.")
             matcher = Matcher(org.pk)
+            known_tags = asset_tags.spellings(Asset.objects.filter(organisation=org))
             created = merged = skipped = lost = 0
             pending: list[ImportRow] = []
 
@@ -653,7 +672,7 @@ def _run_asset_import(job: ImportJob) -> None:
                             type=m["type"],
                             environment=m["environment"],
                             criticality=m["criticality"],
-                            tags=m["tags"],
+                            tags=asset_tags.canonical(known_tags, m["tags"]),
                             origin="import",
                             onboarding_status="pending",
                         )

@@ -114,7 +114,7 @@ class TestUploadAndMapping:
         r = admin_client.get(f"{API}/imports/asset-template.csv")
         text = b"".join(r.streaming_content).decode()
         assert r.status_code == 200
-        assert text.splitlines()[0].strip() == "Name,Asset type,Environment,Criticality,Identifiers"
+        assert text.splitlines()[0].strip() == "Name,Asset type,Environment,Criticality,Identifiers,Tags"
         assert len(text.splitlines()) == 4
 
     def test_template_imports_as_downloaded(self, w, admin_client):
@@ -125,7 +125,7 @@ class TestUploadAndMapping:
         rows = list(csv.reader(io.StringIO(text)))
         job = upload(admin_client, w.org_a, rows[1:], header=rows[0]).json()
         mapping = job["suggested_mapping"]
-        assert set(mapping) == {"name", "type", "environment", "criticality", "identifiers"}
+        assert set(mapping) == {"name", "type", "environment", "criticality", "identifiers", "tags"}
         r = admin_client.post(f"{API}/imports/{job['id']}/mapping", {"column_map": mapping, "value_map": {}}, format="json")
         assert r.status_code == 202, r.content
         job = admin_client.get(f"{API}/imports/{job['id']}").json()

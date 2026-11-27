@@ -18,6 +18,7 @@ RedShadow depends on the open-source components below. They are installed from t
 | cryptography | Apache-2.0 or BSD-3-Clause |
 | Pillow | MIT-CMU (HPND) |
 | cvss | LGPL-3.0 (used unmodified as a dependency) |
+| defusedxml | PSF-2.0 |
 | nh3 | MIT |
 | Markdown | BSD-3-Clause |
 | WeasyPrint | BSD-3-Clause |

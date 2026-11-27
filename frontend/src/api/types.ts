@@ -231,7 +231,7 @@ export type Member = {
 
 export type ScopeLink = {
   id: string;
-  asset: { id: string; name: string; type: string; identifier: string; identifiers: string[]; environment: string; criticality: number; archived: boolean };
+  asset: { id: string; name: string; type: string; identifier: string; identifiers: string[]; tags: string[]; environment: string; criticality: number; archived: boolean };
   in_scope: boolean;
   notes: string;
 };
@@ -545,7 +545,7 @@ export type ImportRow = {
   asset: {
     action: "create" | "merge" | "merge_in_file" | "known" | "known_in_file" | "";
     identifiers: Array<{ kind: string; value: string }>;
-    new_identifiers: number;
+    tags?: string[]; new_identifiers: number;
     type: string | null;
     asset: { id: string; name: string } | null;
     target_line: number | null;

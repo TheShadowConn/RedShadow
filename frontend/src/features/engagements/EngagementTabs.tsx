@@ -12,6 +12,7 @@ import {
   Alert, Badge, Button, ConfirmDialog, EmptyState, ErrorNote, ErrorState, Field, fieldError, formatBytes, formatDate, label,
   LoadingRows, Modal, Pager, Select, Textarea,
 } from "../../design/ui";
+import { TagList } from "../assets/Tags";
 
 const noFieldErrors = (e: unknown) => (e && !Object.keys((e as { fields?: object }).fields ?? {}).length ? e : null);
 const ReadOnlyNote = () => <Alert tone="warn">This engagement is archived. It is read-only.</Alert>;
@@ -45,6 +46,7 @@ export function ScopeTab({ eng }: { eng: Engagement }) {
                 <div className="min-w-0">
                   <p className="m-0 font-medium">{l.asset.name} <Badge tone={l.in_scope ? "ok" : "fail"}>{l.in_scope ? "In scope" : "Out of scope"}</Badge></p>
                   <p className="m-0 break-all text-[14px] text-muted">{label(ASSET_TYPES, l.asset.type)} · {label(ENVIRONMENTS, l.asset.environment)}</p>
+                  {l.asset.tags.length > 0 && <p className="m-0 mt-2"><TagList tags={l.asset.tags} /></p>}
                   {l.asset.identifiers.length > 0 && <p className="m-0 mt-1 flex flex-wrap gap-x-3 gap-y-1">{l.asset.identifiers.map((v) => <span key={v} className="mono break-all text-[13px] text-muted">{v}</span>)}</p>}
                 </div>
                 {writable && (
@@ -78,8 +80,9 @@ function LinkAsset({ eng, linked, onClose, onDone }: { eng: Engagement; linked: 
         <ErrorNote error={noFieldErrors(save.error)} />
         <ErrorNote error={assets.error} />
         <Field label="Asset" error={fieldError(save.error, "asset")} hint={assets.data && options.length === 0 ? "Every onboarded asset of this organisation is already linked." : waiting > 0 ? `${waiting} imported asset${waiting === 1 ? " is" : "s are"} not onboarded yet and cannot be added until onboarded.` : undefined}>
-          {(p) => <Select {...p} required value={assetId} onChange={(e) => setAssetId(e.target.value)}><option value="" disabled>Choose an asset</option>{options.map((a) => <option key={a.id} value={a.id}>{a.name} ({label(ASSET_TYPES, a.type)})</option>)}</Select>}
+          {(p) => <Select {...p} required value={assetId} onChange={(e) => setAssetId(e.target.value)}><option value="" disabled>Choose an asset</option>{options.map((a) => <option key={a.id} value={a.id}>{a.name} ({label(ASSET_TYPES, a.type)}){a.tags.length > 0 ? ` · ${a.tags.join(", ")}` : ""}</option>)}</Select>}
         </Field>
+        {!!options.find((a) => a.id === assetId)?.tags.length && <TagList tags={options.find((a) => a.id === assetId)!.tags} />}
         <label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={inScope} onChange={(e) => setInScope(e.target.checked)} /> In scope (untick to record it as explicitly out of scope)</label>
         <Field label="Notes" hint="Optional" error={fieldError(save.error, "notes")}>{(p) => <Textarea {...p} rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />}</Field>
         <div className="flex flex-wrap justify-end gap-3"><Button onClick={onClose}>Cancel</Button><Button type="submit" variant="primary" loading={save.isPending} disabled={!assetId}>Add asset</Button></div>

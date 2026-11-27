@@ -8,9 +8,10 @@ from rest_framework.response import Response
 
 from apps.files import services as file_services
 from apps.files.serializers import UploadSerializer
+from apps.findings.selectors import scope_findings
 from apps.rbac.viewsets import ScopedModelViewSet
 
-from . import assets, selectors, services, tags
+from . import assets, departments, selectors, services, tags
 from .models import AssetIdentifier
 from .serializers import (
     AssetBulkArchiveSerializer,
@@ -165,6 +166,7 @@ class AssetViewSet(ScopedModelViewSet):
         "retrieve": "assets.view",
         "summary": "assets.view",
         "tags": "assets.view",
+        "departments": "assets.view",
         "assign_tags": "assets.update",
         "rename_tag": "assets.update",
         "delete_tag": "assets.update",
@@ -206,6 +208,8 @@ class AssetViewSet(ScopedModelViewSet):
             ).distinct()
         if p.get("tag", "").strip():
             qs = qs.filter(pk__in=tags.ids_with_tag(qs, p["tag"]))
+        if p.get("untagged") == "true":
+            qs = qs.filter(pk__in=tags.ids_without_tags(qs))
         return qs
 
     def get_queryset(self):
@@ -258,6 +262,8 @@ class AssetViewSet(ScopedModelViewSet):
         qs = self._in_organisation(p.get("organisation"))
         if p.get("tag", "").strip():
             qs = qs.filter(pk__in=tags.ids_with_tag(qs, p["tag"]))
+        if p.get("untagged") == "true":
+            qs = qs.filter(pk__in=tags.ids_without_tags(qs))
         live = qs.filter(archived_at__isnull=True)
         by_status = assets.counts_for(live)
         return Response(
@@ -278,6 +284,20 @@ class AssetViewSet(ScopedModelViewSet):
     @action(detail=False, methods=["get"])
     def tags(self, request):
         return Response(tags.catalogue(self._in_organisation(request.query_params.get("organisation"))))
+
+    @action(detail=False, methods=["get"])
+    def departments(self, request):
+        """Findings per tag. Assets and findings are both limited to what the caller can see."""
+        organisation = request.query_params.get("organisation")
+        qs = self._in_organisation(organisation)
+        findings = scope_findings(request.user)
+        if organisation:
+            findings = (
+                findings.filter(engagement__organisation_id=organisation)
+                if _is_uuid(str(organisation))
+                else findings.none()
+            )
+        return Response(departments.overview(qs, findings))
 
     @action(detail=False, methods=["post"], url_path="tags/assign")
     def assign_tags(self, request):

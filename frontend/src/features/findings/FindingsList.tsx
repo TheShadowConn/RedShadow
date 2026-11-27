@@ -10,11 +10,12 @@ import {
   Alert, Button, ConfirmDialog, EmptyState, ErrorNote, ErrorState, formatDay, LoadingRows, Modal, Pager, Select, TextInput,
 } from "../../design/ui";
 import { announceUndo } from "../../design/undo";
+import { TagList } from "../assets/Tags";
 import { FindingStatus, SeverityBadge, userName } from "./shared";
 
 const PAGE_SIZE = 25;
-type Filters = { search: string; severity: string[]; status: string; engagement: string; mine: boolean; review: boolean; ordering: string };
-const EMPTY: Filters = { search: "", severity: [], status: "", engagement: "", mine: false, review: false, ordering: "-severity" };
+type Filters = { search: string; severity: string[]; status: string; engagement: string; mine: boolean; review: boolean; ordering: string; tag: string; untagged: boolean };
+const EMPTY: Filters = { search: "", severity: [], status: "", engagement: "", mine: false, review: false, ordering: "-severity", tag: "", untagged: false };
 
 /** Findings table with filters, paging and bulk actions. Pass `engagement` to lock it to one engagement. */
 export function FindingsList({ engagement }: { engagement?: Engagement }) {
@@ -28,6 +29,8 @@ export function FindingsList({ engagement }: { engagement?: Engagement }) {
     status: engagement ? "" : (params.get("status") ?? ""),
     mine: !engagement && params.get("assigned") === "me",
     review: params.get("needs_review") === "true",
+    tag: engagement ? "" : (params.get("tag") ?? ""),
+    untagged: !engagement && params.get("untagged") === "true",
   }));
   const [page, setPage] = useState(1);
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -50,8 +53,10 @@ export function FindingsList({ engagement }: { engagement?: Engagement }) {
   if (f.status) qs.set("status", f.status);
   if (f.mine) qs.set("assigned", "me");
   if (f.review) qs.set("needs_review", "true");
+  if (f.tag) qs.set("tag", f.tag);
+  if (f.untagged) qs.set("untagged", "true");
   const list = useQuery({ queryKey: ["findings", qs.toString()], queryFn: () => api<Page<FindingRow>>("GET", `/findings?${qs}`), placeholderData: (p) => p });
-  const filtered = !!(f.search || f.severity.length || f.status || f.engagement || f.mine || f.review);
+  const filtered = !!(f.tag || f.untagged || f.search || f.severity.length || f.status || f.engagement || f.mine || f.review);
   const rows = list.data?.results ?? [];
   const canBulk = can("findings.bulk_update");
   const canCreate = engagement ? engagement.permissions.includes("findings.create") && !engagement.archived_at : can("findings.create");
@@ -77,6 +82,8 @@ export function FindingsList({ engagement }: { engagement?: Engagement }) {
     if (f.status) x.set("status", f.status);
     if (f.mine) x.set("assigned", "me");
     if (f.review) x.set("needs_review", "true");
+    if (f.tag) x.set("tag", f.tag);
+    if (f.untagged) x.set("untagged", "true");
     setExporting(true);
     setExportError(null);
     try { await downloadFile(`/findings/export.csv?${x}`, "redshadow-findings.csv"); } catch (e) { setExportError(e); } finally { setExporting(false); }
@@ -112,6 +119,12 @@ export function FindingsList({ engagement }: { engagement?: Engagement }) {
               <option value="title">Title A to Z</option>
             </Select>
           </div>
+          {(f.tag || f.untagged) && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="label">Department</span>
+              <TagList tags={[f.tag || "Untagged"]} onRemove={() => update({ tag: "", untagged: false })} />
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
             <fieldset className="m-0 flex min-w-0 flex-wrap items-center gap-x-4 border-0 p-0">
               <legend className="sr-only">Severity</legend>

@@ -10,6 +10,7 @@ segno>=1.6,<2
 cryptography>=43
 Pillow>=13,<14
 cvss>=3.2,<4
+defusedxml>=0.7.1,<1
 nh3>=0.2.18,<1
 markdown>=3.7,<4
 weasyprint>=70,<71

@@ -5,7 +5,7 @@
 | Concept | What it is | Notes |
 |---|---|---|
 | **Organisation** | A client or business unit you test. | Archived, never deleted, so history stays intact. Holds contacts, assets and an optional logo. |
-| **Asset** | Something that can be tested: web app, API, host, network range, mobile app, cloud account, source repo, wireless, IoT, Active Directory, thick client, other. | Has an environment (production, staging, development), a criticality from 1 to 5 and tags. |
+| **Asset** | Something that can be tested: web app, API, host, network range, mobile app, cloud account, source repo, wireless, IoT, Active Directory, thick client, other. | Has an environment (production, staging, development), a criticality from 1 to 5 and tags, which mark the departments that own it. |
 | **Engagement** | One penetration test for one organisation. | Reference such as `RS-E-2026-0001`. Has dates, a lead, scope, rules of engagement, team and a status. |
 | **Finding** | One vulnerability inside an engagement. | Reference such as `RS-F-000001`. Has severity, status, owner, due date, evidence and notes. |
 | **Evidence** | A file attached to a finding. | Screenshots, PDFs, packet captures and more. Checked and stored safely. |

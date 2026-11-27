@@ -17,6 +17,7 @@ from apps.core.errors import Conflict
 from apps.engagements.models import EngagementAsset
 
 from . import identifiers as ident
+from . import tags
 from .models import Asset, AssetIdentifier, Organisation
 
 MAX_IDENTIFIERS = 50
@@ -279,6 +280,9 @@ def create_asset(request, actor, org: Organisation, data: dict, *, pending: bool
         assert_free(org.pk, prepared)
         now = timezone.now()
         fields = {f: data[f] for f in ASSET_FIELDS if f in data and f != "identifier"}
+        if fields.get("tags"):
+            known = tags.spellings(Asset.objects.filter(organisation=org))
+            fields["tags"] = tags.canonical(known, fields["tags"])
         asset = Asset.objects.create(
             organisation=org,
             origin="import" if pending else "manual",
@@ -401,7 +405,7 @@ def merge_assets(request, actor, target: Asset, source: Asset) -> Asset:
                 link.delete()
             links += 1
         findings = Finding.all_objects.filter(asset=source).update(asset=target)
-        merged_tags = list(dict.fromkeys([*target.tags, *source.tags]))[:20]
+        merged_tags = tags.canonical({}, [*target.tags, *source.tags])[:20]
         target.tags = merged_tags
         target.save(update_fields=["tags", "updated_at"])
         _ensure_primary(target)

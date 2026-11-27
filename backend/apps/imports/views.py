@@ -84,7 +84,9 @@ class ImportJobViewSet(ScopedModelViewSet):
             job = services.create_asset_upload(request, request.user, data["organisation"], data["file"])
         else:
             data = _validated(UploadSerializer, request)
-            job = services.create_upload(request, request.user, data["engagement"], data["file"])
+            job = services.create_upload(
+                request, request.user, data["engagement"], data["file"], data["include_info"]
+            )
         return Response(self._detail(job), status=status.HTTP_201_CREATED)
 
     def destroy(self, request, *args, **kwargs):
@@ -272,13 +274,14 @@ class ImportJobViewSet(ScopedModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="asset-template.csv", url_name="asset-template")
     def asset_template(self, request):
-        # Five plain columns. Identifiers holds IPs, hostnames, URLs and so on, several per cell separated by
-        # semicolons; the kind of each is detected. Other asset columns exist but the template does not need them.
-        header = ["Name", "Asset type", "Environment", "Criticality", "Identifiers"]
+        # Six plain columns. Identifiers holds IPs, hostnames, URLs and so on, several per cell separated by
+        # semicolons; the kind of each is detected. Tags (for example the owning department) are also
+        # separated by semicolons and may be left empty. Other asset columns exist but the template does not need them.
+        header = ["Name", "Asset type", "Environment", "Criticality", "Identifiers", "Tags"]
         examples = [
-            ["Acme shop", "Web application", "prod", "high", "https://shop.acme.test"],
-            ["Web 01", "Host", "prod", "medium", "10.0.0.5; web01.acme.test"],
-            ["Acme API", "Web application", "staging", "", "https://api.staging.acme.test"],
+            ["Acme shop", "Web application", "prod", "high", "https://shop.acme.test", "IT Help Desk; Security"],
+            ["Web 01", "Host", "prod", "medium", "10.0.0.5; web01.acme.test", "Network Engineering"],
+            ["Acme API", "Web application", "staging", "", "https://api.staging.acme.test", ""],
         ]
         handle, _, _ = write_csv(header, examples)
         response = FileResponse(

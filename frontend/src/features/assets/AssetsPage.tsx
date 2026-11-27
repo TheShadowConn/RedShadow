@@ -6,7 +6,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../api/auth";
 import { api } from "../../api/client";
 import {
-  ASSET_TYPES, ENVIRONMENTS, type Asset, type AssetSummary, type AssetTag, type AssetUsage, type Organisation, type Page,
+  ASSET_TYPES, ENVIRONMENTS, type Asset, type AssetSummary, type AssetTag, type AssetUsage, type Organisation, type Page, type TagResult,
 } from "../../api/types";
 import {
   Alert, Badge, Button, ConfirmDialog, EmptyState, ErrorNote, ErrorState, formatDate, label, LoadingRows, Modal, PageHeader, Pager, Select,
@@ -14,6 +14,7 @@ import {
 } from "../../design/ui";
 import { AssetEditor, IdentifierManager, invalidateAssets } from "./AssetEditor";
 import { ManageTagsDialog, TagSelectedDialog } from "./TagDialogs";
+import { TagList, TagPicker, withDraft } from "./Tags";
 
 const PAGE_SIZE = 25;
 type Scope = "live" | "pending" | "onboarded" | "archived";
@@ -47,7 +48,7 @@ export function AssetsPage() {
   const [scope, setScope] = useState<Scope>(() => (["pending", "onboarded", "archived"].includes(params.get("scope") ?? "") ? (params.get("scope") as Scope) : "live"));
   const [search, setSearch] = useState("");
   const [term, setTerm] = useState("");
-  const [filters, setFilters] = useState({ organisation: "", type: "", environment: "", criticality: "", tag: "" });
+  const [filters, setFilters] = useState({ organisation: "", type: "", environment: "", criticality: "", tag: params.get("tag") ?? "", untagged: params.get("untagged") === "true" ? "true" : "" });
   const [tagging, setTagging] = useState(false);
   const [managing, setManaging] = useState(false);
   const [page, setPage] = useState(1);
@@ -68,11 +69,13 @@ export function AssetsPage() {
   const summaryQuery = new URLSearchParams();
   if (filters.organisation) summaryQuery.set("organisation", filters.organisation);
   if (filters.tag) summaryQuery.set("tag", filters.tag);
+  if (filters.untagged) summaryQuery.set("untagged", filters.untagged);
   const summary = useQuery({ queryKey: ["asset-summary", summaryQuery.toString()], queryFn: () => api<AssetSummary>("GET", `/assets/summary?${summaryQuery}`) });
   const tags = useQuery({ queryKey: ["asset-tags", filters.organisation], queryFn: () => api<AssetTag[]>("GET", `/assets/tags${filters.organisation ? `?organisation=${filters.organisation}` : ""}`) });
   const orgs = useQuery({ queryKey: ["organisations-pick"], queryFn: () => api<Page<Organisation>>("GET", "/organisations?page_size=100&archived=all") });
   const rows = list.data?.results ?? [];
   const setFilter = (k: keyof typeof filters) => (e: { target: { value: string } }) => { setFilters({ ...filters, [k]: e.target.value }); setPage(1); };
+  const pickTag = (tag: string, untagged = "") => { setFilters((f) => ({ ...f, tag, untagged })); setPage(1); setPicked(new Set()); };
   const filtered = !!(term || Object.values(filters).some(Boolean));
   const open = (id: string | null) => { setSelected(id); setParams(id ? { asset: id } : {}, { replace: true }); };
 
@@ -115,8 +118,8 @@ export function AssetsPage() {
             </Button>
           ))}
         </div>
-        <div className="grid grid-cols-2 gap-3 border-b border-line p-4 lg:grid-cols-5">
-          <div className="relative col-span-2 lg:col-span-5">
+        <div className="grid grid-cols-2 gap-3 border-b border-line p-4 lg:grid-cols-4">
+          <div className="relative col-span-2 lg:col-span-4">
             <Search size={18} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted" aria-hidden />
             <TextInput aria-label="Search assets" placeholder="Search name, IP, hostname, URL, tag" className="pl-11" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
@@ -126,12 +129,20 @@ export function AssetsPage() {
           <Select aria-label="Type" value={filters.type} onChange={setFilter("type")}><option value="">All types</option>{ASSET_TYPES.map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
           <Select aria-label="Environment" value={filters.environment} onChange={setFilter("environment")}><option value="">Any environment</option>{ENVIRONMENTS.map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
           <Select aria-label="Criticality" value={filters.criticality} onChange={setFilter("criticality")}><option value="">Any criticality</option>{[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} of 5</option>)}</Select>
-          <Select aria-label="Tag" value={filters.tag} onChange={(e) => { setFilter("tag")(e); setPicked(new Set()); }}>
-            <option value="">Any tag</option>
-            {filters.tag && !tags.data?.some((t) => t.tag === filters.tag) && <option value={filters.tag}>{filters.tag} (0)</option>}
-            {tags.data?.map((t) => <option key={t.tag} value={t.tag}>{t.tag} ({t.assets})</option>)}
-          </Select>
         </div>
+
+        {!!(tags.data?.length || filters.tag || filters.untagged) && (
+          <div className="flex flex-col gap-2 border-b border-line p-4">
+            <span className="label">Tags</span>
+            <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto" role="group" aria-label="Filter by tag">
+              <button type="button" className="tag tag-pick" aria-pressed={!filters.tag && !filters.untagged} onClick={() => pickTag("")}>All</button>
+              {tags.data?.filter((t) => t.assets > 0 || t.tag === filters.tag).map((t) => (
+                <button key={t.tag} type="button" className="tag tag-pick" aria-pressed={filters.tag === t.tag} onClick={() => pickTag(filters.tag === t.tag ? "" : t.tag)}>{t.tag} <span className="text-muted">{t.assets}</span></button>
+              ))}
+              <button type="button" className="tag tag-pick" aria-pressed={!!filters.untagged} onClick={() => pickTag("", filters.untagged ? "" : "true")}>Untagged</button>
+            </div>
+          </div>
+        )}
 
         {skipped.length > 0 && (
           <div className="border-b border-line p-4"><Alert tone="warn"><p className="m-0 font-medium">{skipped.length} asset{skipped.length === 1 ? " was" : "s were"} skipped.</p><ul className="m-0 mt-1 list-disc pl-5">{skipped.slice(0, 5).map((s) => <li key={s.name}>{s.name}: {s.reason}</li>)}</ul></Alert></div>
@@ -158,8 +169,8 @@ export function AssetsPage() {
         )}
         {rows.length > 0 && (
           <>
-            <div className="hidden overflow-x-auto md:block"><table className="data-table min-w-[760px]">
-              <thead><tr>{selectable && <th className="w-10"><span className="sr-only">Select</span></th>}<th>Asset</th><th>Identifiers</th><th>Organisation</th><th>Type</th><th className="hidden xl:table-cell">Env</th><th>Criticality</th><th>Engagements</th><th><span className="sr-only">Open</span></th></tr></thead>
+            <div className="hidden overflow-x-auto md:block"><table className="data-table min-w-[920px]">
+              <thead><tr>{selectable && <th className="w-10"><span className="sr-only">Select</span></th>}<th>Asset</th><th>Identifiers</th><th>Tags</th><th>Organisation</th><th>Type</th><th className="hidden xl:table-cell">Env</th><th>Criticality</th><th>Engagements</th><th><span className="sr-only">Open</span></th></tr></thead>
               <tbody>
                 {rows.map((a) => (
                   <tr key={a.id} onClick={() => open(a.id)}>
@@ -171,6 +182,7 @@ export function AssetsPage() {
                       </button>
                     </td>
                     <td className="max-w-72"><IdentifierChips a={a} /></td>
+                    <td className="min-w-40 max-w-64"><TagList tags={a.tags} empty="None" /></td>
                     <td className="whitespace-nowrap">{a.organisation_name}</td>
                     <td className="whitespace-nowrap">{label(ASSET_TYPES, a.type)}</td>
                     <td className="hidden xl:table-cell">{label(ENVIRONMENTS, a.environment)}</td>
@@ -187,6 +199,7 @@ export function AssetsPage() {
                   <button type="button" onClick={() => open(a.id)} className="block w-full flex flex-col gap-1.5 px-4 py-4 text-left">
                     <span className="flex flex-wrap items-center gap-2"><span className="font-medium">{a.name}</span><OnboardingBadge a={a} />{a.archived && <Badge tone="info">Archived</Badge>}</span>
                     <span className="block"><IdentifierChips a={a} /></span>
+                    <TagList tags={a.tags} />
                     <span className="block text-[14px] text-muted">{a.organisation_name} · {label(ASSET_TYPES, a.type)} · {label(ENVIRONMENTS, a.environment)} · {a.criticality} of 5</span>
                   </button>
                 </li>
@@ -226,6 +239,45 @@ export function AssetsPage() {
 
 function Item({ k, v }: { k: string; v: React.ReactNode }) {
   return <div><dt className="label">{k}</dt><dd className="m-0 mt-0.5">{v}</dd></div>;
+}
+
+/** Tags in the side panel: add from the existing tags or create one, remove with the cross. */
+function AssetTagsSection({ a, editable }: { a: Asset; editable: boolean }) {
+  const qc = useQueryClient();
+  const [adding, setAdding] = useState(false);
+  const [picked, setPicked] = useState<string[]>([]);
+  const [draft, setDraft] = useState("");
+  const catalogue = useQuery({ queryKey: ["asset-tags", a.organisation], queryFn: () => api<AssetTag[]>("GET", `/assets/tags?organisation=${a.organisation}`), enabled: editable });
+  const known = catalogue.data?.map((t) => t.tag) ?? [];
+  const available = known.filter((k) => !a.tags.some((t) => t.toLowerCase() === k.toLowerCase()));
+  const reset = () => { setAdding(false); setPicked([]); setDraft(""); };
+  const save = useMutation({
+    mutationFn: (change: { add?: string[]; remove?: string[] }) => api<TagResult>("POST", "/assets/tags/assign", { ids: [a.id], ...change }),
+    onSuccess: (r) => { invalidateAssets(qc, a.organisation); if (r.skipped.length === 0) reset(); },
+  });
+  const add = withDraft(picked, draft, known);
+  const skippedReason = save.data?.skipped[0]?.reason;
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="label m-0">Tags</h3>
+        {editable && !adding && <Button size="sm" onClick={() => { save.reset(); setAdding(true); }}><Plus size={16} aria-hidden /> Add tag</Button>}
+      </div>
+      <TagList tags={a.tags} empty="No tags yet." busy={save.isPending} onRemove={editable ? (t) => save.mutate({ remove: [t] }) : undefined} />
+      {adding && (
+        <form className="flex flex-col gap-4 rounded-md border border-line p-4" onSubmit={(e) => { e.preventDefault(); if (add.length) save.mutate({ add }); }}>
+          <TagPicker value={picked} onChange={setPicked} known={available} draft={draft} onDraft={setDraft} />
+          <div className="flex flex-wrap justify-end gap-3">
+            <Button size="sm" onClick={reset}>Cancel</Button>
+            <Button size="sm" type="submit" variant="primary" loading={save.isPending} disabled={add.length === 0}>Save tags</Button>
+          </div>
+        </form>
+      )}
+      <ErrorNote error={save.error} />
+      {skippedReason && <Alert tone="warn">{skippedReason}</Alert>}
+    </section>
+  );
 }
 
 type Pending = "archive" | "unarchive" | "delete" | "onboard" | null;
@@ -284,8 +336,9 @@ function AssetSheet({ assetId, onClose }: { assetId: string | null; onClose: () 
               <Item k="Engagements" v={a.engagement_count} />
               <Item k="Origin" v={a.origin === "import" ? "Imported from CSV" : "Added by hand"} />
               <Item k="Created" v={formatDate(a.created_at)} />
-              {a.tags.length > 0 && <Item k="Tags" v={a.tags.join(", ")} />}
             </dl>
+
+            <AssetTagsSection key={a.id} a={a} editable={!a.archived && can("assets.update")} />
 
             {a.archived || !can("assets.update") ? (
               <section className="flex flex-col gap-2"><h3 className="label m-0">Identifiers</h3>

@@ -22,6 +22,8 @@ from apps.engagements.selectors import scope_engagements
 from apps.files import services as file_services
 from apps.files.models import Attachment
 from apps.files.serializers import AttachmentSerializer, UploadSerializer
+from apps.organisations import tags as asset_tags
+from apps.organisations.models import Asset
 from apps.rbac.authz import engagement_permissions, has_engagement_perm
 from apps.rbac.viewsets import ActionPermission, ScopedModelViewSet
 
@@ -55,7 +57,9 @@ from .serializers import (
     VersionSerializer,
 )
 
-EXPORT_FILTERS = ("engagement", "status", "severity", "asset", "cwe", "assigned", "from", "to", "search")
+EXPORT_FILTERS = (
+    "engagement", "status", "severity", "asset", "cwe", "assigned", "from", "to", "search", "tag", "untagged",
+)  # fmt: skip
 ORDERING = {"ref", "title", "status", "discovered_at", "created_at", "updated_at", "cvss_score", "severity"}
 
 
@@ -141,6 +145,12 @@ class FindingViewSet(ScopedModelViewSet):
             qs = qs.filter(discovered_at__gte=p["from"]) if _is_date(p["from"]) else qs.none()
         if p.get("to"):
             qs = qs.filter(discovered_at__lte=p["to"]) if _is_date(p["to"]) else qs.none()
+        if p.get("tag", "").strip():
+            tagged = Asset.objects.filter(pk__in=qs.values("asset_id"))
+            qs = qs.filter(asset_id__in=asset_tags.ids_with_tag(tagged, p["tag"]))
+        if p.get("untagged") == "true":
+            tagged = Asset.objects.filter(pk__in=qs.values("asset_id")).exclude(tags=[])
+            qs = qs.exclude(asset_id__in=tagged.values("pk"))
         term = p.get("search", "").strip()
         if term:
             vector = SearchVector("title", "description", config="english")

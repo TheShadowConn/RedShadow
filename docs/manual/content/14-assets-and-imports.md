@@ -19,30 +19,46 @@ One asset can have several **identifiers**: an IP address, a hostname, a domain,
 | Bulk | Tick assets in the list and choose *Archive selected*, *Unarchive selected* or *Onboard selected*. Assets that cannot be changed are reported. |
 | Delete | Allowed only when no engagement and no finding uses the asset. Otherwise archive it or merge it. |
 
-## Tags
+## Tags and departments
 
-Tags group assets, for example by department: `service-delivery`, `netops`. Capital and small letters count as the same tag. A tag exists as long as one asset carries it.
+A tag groups assets. Use one tag per department or team, such as `IT Help Desk` or `Network Engineering`. An asset can carry several tags. Capital and small letters count as the same tag, and the spelling already in use is kept. A tag exists as long as one asset carries it.
+
+Wherever you add a tag, RedShadow asks **Add to an existing tag?** Answer *Yes* to pick from the tags in use, or *No* to type a new one.
 
 | To do this | Steps |
 |---|---|
-| Add tags to many assets | Tick the assets, choose **Tag selected**, type the tags separated by commas, **Save tags**. |
-| Add or change on one asset | Open the asset and choose **Edit details**, or fill the *Tags* column of an asset import (semicolons). |
-| Remove from some assets | Tick them, choose **Tag selected**, tick the tags under *Remove tags*, **Save tags**. |
+| Tag a new asset | **New asset**, then the *Tags* part of the form. |
+| Tag one asset | Open the asset and choose **Add tag**. Remove a tag with the cross beside it. **Edit details** works too. |
+| Tag many assets | Tick them, choose **Tag selected**, pick or create tags, **Save tags**. |
+| Tag by import | Fill the *Tags* column of the asset file, several tags separated by semicolons. |
+| Find a department's assets | Click its tag above the list. *Untagged* shows assets with no tag. |
 | Rename or merge everywhere | **Manage tags**, then **Rename**. Typing the name of another tag merges the two. |
 | Delete everywhere | **Manage tags**, then **Delete**. The assets stay. |
-| Count a team's assets | Pick the tag in the **Any tag** filter and read the numbers on the *All assets* and *Onboarded* tabs. |
 
-*Manage tags* works on the organisation chosen in the filter, or on all organisations. Archived assets are never changed and are reported as skipped. An asset holds up to 20 tags of 40 characters. Tag changes need the *Edit assets* permission and are written to the audit log.
+Tags are shown in the asset list, the asset panel, the engagement's *Scope and assets* tab and the import preview. Archived assets are never changed and are reported as skipped. An asset holds up to 20 tags of 40 characters. Tag changes need the *Edit assets* permission and are written to the audit log.
+
+## The Departments page
+
+**Departments** in the menu shows one row per tag: assets, open findings by severity, overdue, due in 7 days and risk accepted. An asset with two tags counts in both rows; the *Total* row counts it once. Each person sees only the assets and findings they are already allowed to see. While *All organisations* is selected, the numbers for open and risk accepted findings link to the findings list, filtered to that department.
 
 ## Importing assets
 
-Choose **Imports**, then **Import assets**, pick the organisation and the CSV file. A template is available for download. It has five plain columns: **Name**, **Asset type**, **Environment**, **Criticality** and **Identifiers**. Put every address of an asset in the Identifiers cell, separated by semicolons (for example `10.0.0.5; web01.acme.test`); RedShadow works out what each one is.
+Choose **Imports**, then **Import assets**, pick the organisation and the CSV file. A template is available for download. It has six plain columns: **Name**, **Asset type**, **Environment**, **Criticality**, **Identifiers** and **Tags**. Put every address of an asset in the Identifiers cell, separated by semicolons (for example `10.0.0.5; web01.acme.test`); RedShadow works out what each one is.
 
 1. **Match the columns.** Map at least one identifier column. A cell can hold several values separated by semicolons. Name and type are optional.
 2. **Check.** Each row is matched against the organisation's assets by identifier, never by name: *New asset* (will be created, not onboarded), *Add identifiers* (an existing asset gains identifiers it lacks; nothing else about it changes), *Already known* (skipped) or *Error* (invalid value, archived asset, or identifiers of two different assets). Rows of one file that share an identifier join the same asset.
 3. **Import.** *All or nothing*, or *import the valid rows and leave the rest*.
 
 Imported assets are **not onboarded**: they cannot join an engagement and pentesters cannot see them until a Super Admin opens the asset, checks the details and chooses **Onboard asset** (or ticks several on the *Not onboarded* tab and chooses **Onboard selected**).
+
+## Scanner files
+
+**Imports** also reads scanner results up to 50 MB: Nessus (`.nessus`), Burp (*XML issues* export) and Nmap (`-oX`). The same matching, check, preview and duplicate rules apply as for a CSV.
+
+1. If the hosts are not assets yet, choose **Import assets** and upload the scan. Then onboard the new assets and add them to the engagement's scope.
+2. Choose **Import findings**, pick the engagement and upload the Nessus or Burp file. Confirm the suggested columns, check the preview and import.
+
+Findings arrive as **drafts** for review. Informational results are left out unless you tick *Include informational results*. A host that is not an in-scope asset is reported on its row. Nmap files list hosts and ports only, so they can be imported as assets but not as findings. Open ports appear in the preview and are not saved.
 
 ## When an import has problems
 

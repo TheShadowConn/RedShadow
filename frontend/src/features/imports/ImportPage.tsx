@@ -13,6 +13,7 @@ import {
 import { SeverityScale, isConflict } from "../findings/shared";
 import { ImportStatus, KindBadge, ReuploadPanel, targetName } from "./ImportsPage";
 import { ImportKindChip, ImportKindToast } from "./ImportNotice";
+import { TagList } from "../assets/Tags";
 
 const STEPS = ["File", "Columns", "Check", "Import", "Done"];
 const WORKING = ["uploaded", "parsing", "validating", "importing"];
@@ -126,7 +127,7 @@ function MapStep({ job, initial, onDone, onBack }: { job: ImportJob; initial: Re
     <div className="flex flex-col gap-6">
       <section className="card card-pad flex flex-col gap-4">
         <h2 className="text-xl">Step 2: match the columns</h2>
-        <p className="m-0 text-muted">{job.counts.total?.toLocaleString()} rows found ({job.encoding}, {job.delimiter === "\t" ? "tab" : job.delimiter === ";" ? "semicolon" : "comma"} separated). {isAssets ? "Choose which column fills each asset field. Map at least one identifier column (IP address, hostname, domain, URL ...): assets are matched by identifier, never by name. A cell can hold several values separated by semicolons." : "Choose which column fills each finding field. Title is required, and so is either a severity or a CVSS vector."}</p>
+        <p className="m-0 text-muted">{job.counts.total?.toLocaleString()} rows found ({job.encoding === "xml" ? "scanner file" : `${job.encoding}, ${job.delimiter === "\t" ? "tab" : job.delimiter === ";" ? "semicolon" : "comma"} separated`}). {isAssets ? "Choose which column fills each asset field. Map at least one identifier column (IP address, hostname, domain, URL ...): assets are matched by identifier, never by name. A cell can hold several values separated by semicolons." : "Choose which column fills each finding field. Title is required, and so is either a severity or a CVSS vector."}</p>
         {saved.data && saved.data.length > 0 && (
           <label className="flex flex-wrap items-center gap-3"><span className="label">Use a saved mapping</span>
             <Select aria-label="Saved mapping" className="max-w-xs" value="" onChange={(e) => { const m = saved.data!.find((s) => s.id === e.target.value); if (m) apply(m); }}>
@@ -234,6 +235,7 @@ function PreviewStep({ job, onDone, onChangeColumns }: { job: ImportJob; onDone:
                   <div className="flex flex-col gap-1 text-[15px]">
                     <p className="m-0 text-muted">{ACTION_TEXT[r.asset.action] ?? r.asset.action}{r.asset.asset && <> <Link to={`/assets?asset=${r.asset.asset.id}`} className="text-accent hover:underline">{r.asset.asset.name}</Link></>}{r.asset.target_line ? ` (line ${r.asset.target_line})` : ""}</p>
                     <p className="m-0 flex flex-wrap gap-x-3 gap-y-1">{r.asset.identifiers.map((i) => <span key={i.value} className="mono text-[13px] break-all">{i.value}</span>)}</p>
+                    {!!r.asset.tags?.length && <div className="flex flex-wrap items-center gap-2"><span className="label">Tags</span><TagList tags={r.asset.tags} /></div>}
                   </div>
                 )}
                 <RowDetails row={r} headers={job.headers} />
