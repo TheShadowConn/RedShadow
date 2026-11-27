@@ -59,7 +59,9 @@ The comparison is general. Check any tool against your own needs.
 - **Engagements and scope**: organisations, assets, teams, rules of engagement, status machine and a calendar with drag-to-reschedule.
 - **Findings**: CVSS 3.1 and 4.0 scoring, CWE picker, templates, evidence upload with safe file handling, notes and a full timeline.
 - **Remediation and verification**: assignment, SLA due dates, remediation queue, retest rounds, verification with required notes, risk acceptance, automatic reopen on expiry.
-- **Import and export**: CSV import with column mapping, validation, duplicate detection and safe transactions; CSV export.
+- **Import and export**: CSV import with column mapping, validation, duplicate detection and safe transactions; Nessus, Burp and Nmap import; CSV export of findings and assets.
+- **Departments**: tag assets by team and see open, overdue and risk-accepted findings per department.
+- **Backup and restore**: one encrypted file from the app, restored into a fresh installation.
 - **Reports**: client-facing and internal PDFs with covers, document control, charts and a styled template editor.
 - **Access control**: four roles (Super Admin, Pentester, Remediation Owner, External Vendor), custom roles, and object-level scoping enforced on the server.
 - **Audit**: hash-chained, append-only log enforced by the database, verified nightly and on demand.
@@ -75,7 +77,17 @@ Assets can have several identifiers (IP address, hostname, domain, URL ...). Eac
 
 Engagements have a required lead that a Super Admin can change at any time, can be cloned, archived (read-only, reversible) or deleted (separate Super Admin action, soft delete, audited, restorable from the Deleted view). A bell in the header lists assignments, status changes, due dates and overdue findings; users choose what they receive, and email is opt-in and off unless the server sets `EMAIL_HOST`. Users can sign out everywhere and are warned before an idle session ends. The severity scale (Critical 9.0 to 10.0, High 7.0 to 8.9, Medium 4.0 to 6.9, Low 0.1 to 3.9, Info 0.0) is shown where severity is chosen. The user manual has a chapter on the whole workflow from organisation to closed engagement.
 
-## Departments and scanner import (1.5.0)
+## New in 1.5
+
+### Backup and restore (1.5.2)
+
+A Super Admin downloads the whole installation (data, uploads, audit log) as one passphrase-encrypted file from **Backup and restore**, and restores it into a new, empty installation of the same version. Two-step sign-in keeps working after the move.
+
+### Asset export and fixes (1.5.1)
+
+Export the asset list as CSV, following your filters, in a form that can be imported again. Notification email can be enabled with `docker-compose.email.yml`.
+
+### Departments and scanner import (1.5.0)
 
 - **Asset tags as departments**: choose an existing tag or create one; tags show in the asset list, the engagement scope and the import preview, and the CSV template has a `Tags` column.
 - **Departments page**: open, overdue and risk-accepted findings per tag, with a matching report filter.
@@ -98,7 +110,7 @@ Open https://localhost (self-signed certificate) and sign in as `admin@redshadow
 
 ## How it works
 
-Nginx in front, a Django REST API behind it, PostgreSQL for data, Redis and Celery for background jobs, a React app for the interface. Nine containers start in a safe order and only Nginx is exposed. Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the [ADRs](docs/adr).
+Nginx in front, a Django REST API behind it, PostgreSQL for data, Redis and Celery for background jobs, a React app for the interface. The containers start in a safe order and only Nginx is exposed. Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the [ADRs](docs/adr).
 
 ## Documentation
 
@@ -113,7 +125,7 @@ Nginx in front, a Django REST API behind it, PostgreSQL for data, Redis and Cele
 
 ## Status
 
-Version 1.0. The backend has about 780 automated tests, the stack has a 34-check smoke test and a backup and restore drill. An OWASP ZAP scan has not been run yet. Please report vulnerabilities privately: see [SECURITY.md](SECURITY.md).
+Version 1.5.2. The backend has more than 1,100 automated tests, and the stack has a smoke test and a backup and restore drill. Scanner import is tested with sample files, not with exports from every scanner version. An OWASP ZAP scan has not been run yet. Please report vulnerabilities privately: see [SECURITY.md](SECURITY.md).
 
 ## Contribute
 

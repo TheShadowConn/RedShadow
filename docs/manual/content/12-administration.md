@@ -52,11 +52,32 @@ Settings are environment variables in `.env` (see `.env.example`). The most usef
 | `REPORT_RETENTION_DAYS` | How long report files are kept | 90 |
 | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_USE_TLS`, `EMAIL_FROM` | Optional email for notifications. Email stays off while `EMAIL_HOST` is empty. The SMTP password is read from the file named in `EMAIL_HOST_PASSWORD_FILE` and never from `.env` | off |
 | `APP_BASE_URL` | Public address used for links in emails, for example `https://redshadow.lan` | empty |
-| `APP_VERSION` | Version shown on the About page | 1.5.1 |
+| `APP_VERSION` | Version shown on the About page | 1.5.2 |
 
 > **Important:** The application containers have no route out of the Docker host by default, so email needs the extra compose file: `docker compose -f docker-compose.yml -f docker-compose.email.yml up -d --wait`. Without it, notifications still appear in the app but no email is delivered.
 
 After changing a value run `make up` to apply it.
+
+## Backup and restore in the app
+
+A Super Admin opens **Backup and restore** in the menu.
+
+**Take a backup**
+
+1. Type a passphrase of at least 12 characters, twice. Write it down somewhere safe: without it the file cannot be opened.
+2. Type your password, and a new two-step code if you use two-step sign-in.
+3. Choose **Create and download**. You get one `.rsbk` file.
+
+The file holds every organisation, asset, engagement, finding, user, uploaded file, report and the audit log, encrypted. Sessions are not included, so everyone signs in again after a restore.
+
+**Restore into a new installation**
+
+1. Install the **same RedShadow version** as the one that made the backup, and sign in with its first administrator account.
+2. Before creating anything, open **Backup and restore**, choose the file, type the passphrase and your password, then **Restore**.
+3. Wait. You are signed out when it finishes. Sign in with an account from the backup; two-step codes keep working.
+4. Upgrade afterwards if you want a newer version.
+
+Restore is refused once the installation has an organisation or engagement, so working data cannot be overwritten. It either completes entirely or changes nothing. The in-app restore accepts files up to 2 GB; use the command line for larger installations. Backups taken and restores are written to the audit log.
 
 ## Security features at a glance
 

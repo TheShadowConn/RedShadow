@@ -34,7 +34,7 @@ x-backend-env: &backend-env
   CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}
   ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
   LOG_LEVEL: ${LOG_LEVEL:-INFO}
-  APP_VERSION: ${APP_VERSION:-1.5.1}
+  APP_VERSION: ${APP_VERSION:-1.5.2}
   BUILD_ID: ${BUILD_ID:-dev}
   BUILD_DATE: ${BUILD_DATE:-}
   EMAIL_HOST: ${EMAIL_HOST:-}
@@ -132,13 +132,16 @@ services:
 
   backend:
     <<: *backend
-    environment: *backend-env
+    environment:
+      <<: *backend-env
+      FILE_UPLOAD_TEMP_DIR: /data/staging
     depends_on:
       <<: *backend-deps
       migrate: {condition: service_completed_successfully}
     volumes:
       - secrets:/run/secrets:ro
       - media:/data/media
+      - staging:/data/staging
     healthcheck:
       test:
         - CMD
@@ -149,6 +152,28 @@ services:
       timeout: 6s
       retries: 6
       start_period: 15s
+
+  # The only service that connects as the database administrator. It does one thing: carry out a restore that a
+  # Super Admin asked for on an installation that holds no data yet.
+  maintenance:
+    <<: *backend
+    environment:
+      <<: *backend-env
+      DB_USER: redshadow_admin
+      DB_PASSWORD_FILE: /run/secrets/db_admin_password
+    depends_on:
+      <<: *backend-deps
+      migrate: {condition: service_completed_successfully}
+    volumes:
+      - secrets:/run/secrets:ro
+      - media:/data/media
+      - staging:/data/staging
+    command: ["python", "manage.py", "restore_agent"]
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "manage.py restore_agent"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   worker:
     <<: *backend
@@ -262,5 +287,6 @@ networks:
 volumes:
   pgdata: {}
   media: {}
+  staging: {}
   beat: {}
   secrets: {}

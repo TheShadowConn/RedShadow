@@ -308,3 +308,7 @@ Asset tags as departments (picker, column, filter bar, engagement scope, import 
 ## Release 1.5.1 (2026-11-27)
 
 Asset CSV export. Fixed: non-object import body 500; IP address read as hostname in scans; email could not leave the internal network (new opt-in `docker-compose.email.yml`); backup drill outdated and could write to the real media volume when run for another project; Add member and Remove offered your own account; Publish did not say which fields were missing. Checked: MFA and recovery codes, notification email to a local sink, backup drill on a test stack, destructive buttons and main forms. Not checked: real scanner exports, Safari and Firefox, a real mail server.
+
+## Release 1.5.2 (2026-11-27)
+
+Backup and restore in the app. Buttons not pressed before were pressed on a test stack. Fixed: Add or Enter on an identifier in Edit asset reloaded the page; saving a report style after a logo change was refused; deleting an asset asked for it again; `restore.sh` did not stop the report and maintenance services. Paused by the user: real scanner exports, Safari, Firefox, a real mail server.

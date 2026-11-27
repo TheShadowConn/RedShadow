@@ -10,7 +10,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd -g 10001 app \
     && useradd -u 10001 -g app -M -s /usr/sbin/nologin app \
-    && mkdir -p /data/media /data/beat \
+    && mkdir -p /data/media /data/beat /data/staging \
     && chown -R app:app /data
 WORKDIR /app
 COPY requirements.txt requirements-dev.txt ./
@@ -26,4 +26,4 @@ RUN pip install -r requirements.txt
 COPY . .
 USER app
 EXPOSE 8000
-CMD ["sh", "-c", "exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-3} --worker-tmp-dir /dev/shm --timeout 60 --access-logfile -"]
+CMD ["sh", "-c", "exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-3} --worker-tmp-dir /dev/shm --timeout ${GUNICORN_TIMEOUT:-600} --access-logfile -"]

@@ -1,5 +1,11 @@
 # Backup and restore
 
+## In the app (1.5.2)
+
+A Super Admin opens **Backup and restore**. **Create and download** gives one passphrase-encrypted `.rsbk` file with all data, uploads and the two-step sign-in key. Restore it on a new, empty installation of the same version; it is refused once an organisation or engagement exists. See ADR-0025 and the user manual. The in-app restore accepts up to 2 GB and is carried out by the `maintenance` service.
+
+The command-line tools below remain: they also keep the TLS certificate and database passwords, and have no size limit.
+
 ## Backup
 
 After a successful run the script records the backup in the app (`manage.py record_backup`, one audit event named `system.backup_completed`). Super Admins see the newest one on the About page, with a warning when it is older than `BACKUP_WARN_DAYS` (default 7). If recording fails, the backup itself is still fine and the script prints a note.

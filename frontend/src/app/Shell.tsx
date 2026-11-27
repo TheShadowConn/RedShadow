@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { Bug, Building2, Coins, Info, Server, CalendarDays, ClipboardCheck, FileUp, FileText, Palette, Crosshair, FileStack, ScrollText, LayoutDashboard, MoreHorizontal, LogOut, Moon, Repeat2, ShieldCheck, Sun, UserCircle, Users, Wrench, type LucideIcon, Network } from "lucide-react";
+import { Bug, Building2, Coins, Info, Server, CalendarDays, ClipboardCheck, FileUp, FileText, Palette, Crosshair, FileStack, ScrollText, LayoutDashboard, MoreHorizontal, LogOut, Moon, Repeat2, ShieldCheck, Sun, UserCircle, Users, Wrench, type LucideIcon, Network, DatabaseBackup } from "lucide-react";
 
 import { useAuth } from "../api/auth";
 import { Credit } from "../design/Credit";
@@ -36,6 +36,7 @@ const ITEMS: Item[] = [
   { to: "/audit", label: "Audit", icon: ScrollText, perm: "audit.view_engagement" },
   { to: "/users", label: "Users", icon: Users, perm: "users.view" },
   { to: "/roles", label: "Roles", icon: ShieldCheck, perm: "roles.view" },
+  { to: "/backup", label: "Backup and restore", icon: DatabaseBackup, perm: "settings.manage" },
   { to: "/account", label: "Account", icon: UserCircle },
   { to: "/about", label: "About", icon: Info },
 ];

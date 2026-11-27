@@ -21,6 +21,24 @@ location ~ ^/api/v1/auth/(login|mfa/|password) {
     proxy_read_timeout 60s;
 }
 
+# Backup download and restore upload: large bodies and slow answers.
+location /api/v1/system/ {
+    limit_req zone=authlimit burst=15 nodelay;
+    limit_req_status 429;
+    client_max_body_size 2100m;
+    proxy_request_buffering off;
+    proxy_buffering off;
+    set $upstream http://backend:8000;
+    proxy_pass $upstream;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Request-ID $request_id;
+    proxy_read_timeout 600s;
+    proxy_send_timeout 600s;
+}
+
 location /api/ {
     set $upstream http://backend:8000;
     proxy_pass $upstream;

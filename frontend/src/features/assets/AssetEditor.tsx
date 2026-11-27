@@ -174,6 +174,7 @@ export function IdentifierManager({ asset }: { asset: Asset }) {
   const remove = useMutation({ mutationFn: (i: AssetIdentifier) => api("DELETE", `/assets/${asset.id}/identifiers/${i.id}`), onSuccess: refresh });
   const err = add.error ?? primary.error ?? remove.error;
   const check = checks.get(0);
+  const canAdd = !!draft.value.trim() && !add.isPending && !(check && check.status !== "free");
 
   return (
     <section className="flex flex-col gap-3" aria-labelledby={`idents-${asset.id}`}>
@@ -191,14 +192,15 @@ export function IdentifierManager({ asset }: { asset: Asset }) {
           </li>
         ))}
       </ul>
-      <form className="flex flex-col gap-1" onSubmit={(e) => { e.preventDefault(); if (draft.value.trim()) add.mutate(); }}>
+      {/* Not a <form>: this sits inside the edit dialog's form, and a form inside a form reloads the page. */}
+      <div className="flex flex-col gap-1">
         <div className="flex flex-col gap-2 sm:flex-row">
           <KindSelect label="New identifier type" value={draft.kind} onChange={(v) => setDraft({ ...draft, kind: v })} />
-          <TextInput aria-label="New identifier" placeholder="Add an identifier" maxLength={500} value={draft.value} onChange={(e) => setDraft({ ...draft, value: e.target.value })} />
-          <Button type="submit" loading={add.isPending} disabled={!draft.value.trim() || (!!check && check.status !== "free")}><Plus size={16} aria-hidden /> Add</Button>
+          <TextInput aria-label="New identifier" placeholder="Add an identifier" maxLength={500} value={draft.value} onChange={(e) => setDraft({ ...draft, value: e.target.value })} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (canAdd) add.mutate(); } }} />
+          <Button onClick={() => add.mutate()} loading={add.isPending} disabled={!canAdd}><Plus size={16} aria-hidden /> Add</Button>
         </div>
         <CheckLine res={check} typed={!!draft.value.trim()} />
-      </form>
+      </div>
     </section>
   );
 }

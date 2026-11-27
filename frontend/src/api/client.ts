@@ -130,3 +130,19 @@ export async function downloadFile(path: string, fallbackName = "download.csv"):
   a.click();
   URL.revokeObjectURL(url);
 }
+
+/** Like downloadFile, for a file the server builds from a POSTed form (the backup). */
+export async function downloadPost(path: string, body: Record<string, unknown>, fallbackName: string): Promise<void> {
+  const res = await send("POST", path, body);
+  if (!res.ok) {
+    if (res.status === 401) window.dispatchEvent(new Event("rs:unauthenticated"));
+    const data = (await res.json().catch(() => null)) as { error?: { message?: string; code?: string; fields?: Record<string, string[]> } } | null;
+    throw new ApiError(data?.error?.message ?? `Request failed (${res.status}).`, res.status, data?.error?.code ?? "error", data?.error?.fields, res.headers.get("X-Request-ID"));
+  }
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = /filename="?([^";]+)"?/.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? fallbackName;
+  a.click();
+  URL.revokeObjectURL(url);
+}

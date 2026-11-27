@@ -69,6 +69,9 @@ REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
 REDIS_URL = f"redis://:{quote(secret('REDIS_PASSWORD'), safe='')}@{REDIS_HOST}:6379/0"
 
 MEDIA_ROOT = os.environ.get("MEDIA_ROOT", "/data/media")
+# Working space for backup and restore, shared with the maintenance service. Large uploads are spooled here too.
+BACKUP_STAGING_DIR = os.environ.get("BACKUP_STAGING_DIR", "/data/staging")
+FILE_UPLOAD_TEMP_DIR = os.environ.get("FILE_UPLOAD_TEMP_DIR") or None
 # Remediation SLA: days from publication to due date, per severity. "info" has no SLA.
 SLA_DAYS = {
     "critical": int(os.environ.get("SLA_DAYS_CRITICAL", "7")),
@@ -77,7 +80,7 @@ SLA_DAYS = {
     "low": int(os.environ.get("SLA_DAYS_LOW", "180")),
 }
 # Shown on the About page. Set through compose env (APP_VERSION, BUILD_ID, BUILD_DATE).
-APP_VERSION = os.environ.get("APP_VERSION", "1.5.1")
+APP_VERSION = os.environ.get("APP_VERSION", "1.5.2")
 # The About page warns Super Admins when the newest recorded backup is older than this many days.
 BACKUP_WARN_DAYS = int(os.environ.get("BACKUP_WARN_DAYS", "7"))
 BUILD_ID = os.environ.get("BUILD_ID", "dev")
