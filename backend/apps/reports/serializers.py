@@ -40,6 +40,7 @@ class ReportJobSerializer(serializers.ModelSerializer):
 
 
 class FiltersSerializer(StrictSerializer):
+    tags = serializers.ListField(child=serializers.CharField(max_length=40), required=False, max_length=20)
     severities = serializers.ListField(child=serializers.ChoiceField(choices=SEVERITIES), required=False, max_length=5)
     statuses = serializers.ListField(
         child=serializers.ChoiceField(choices=[(s, s) for s in REPORTABLE_STATUSES]), required=False, max_length=10

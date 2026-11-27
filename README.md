@@ -75,6 +75,12 @@ Assets can have several identifiers (IP address, hostname, domain, URL ...). Eac
 
 Engagements have a required lead that a Super Admin can change at any time, can be cloned, archived (read-only, reversible) or deleted (separate Super Admin action, soft delete, audited, restorable from the Deleted view). A bell in the header lists assignments, status changes, due dates and overdue findings; users choose what they receive, and email is opt-in and off unless the server sets `EMAIL_HOST`. Users can sign out everywhere and are warned before an idle session ends. The severity scale (Critical 9.0 to 10.0, High 7.0 to 8.9, Medium 4.0 to 6.9, Low 0.1 to 3.9, Info 0.0) is shown where severity is chosen. The user manual has a chapter on the whole workflow from organisation to closed engagement.
 
+## Departments and scanner import (1.5.0)
+
+- **Asset tags as departments**: choose an existing tag or create one; tags show in the asset list, the engagement scope and the import preview, and the CSV template has a `Tags` column.
+- **Departments page**: open, overdue and risk-accepted findings per tag, with a matching report filter.
+- **Scanner import**: Nessus and Burp results become draft findings; Nmap, Nessus and Burp hosts can be imported as assets.
+
 ## Quick start
 
 Requirements: Docker with Compose v2.

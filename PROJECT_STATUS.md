@@ -300,3 +300,7 @@ Done on a throwaway `rs_qa` stack (removed with its own volumes only; real `reds
 - Verified: backend 1085 passed, 1 skipped; ruff, `tsc`, build clean; end-to-end sweep of write routes on a throwaway stack (257 requests, no unexpected failures); tag screens and main pages checked in the browser.
 - Fixed: cloning, deleting or restoring an engagement, or naming yourself lead, no longer signs the acting user out. Other affected users are still signed out (`_bump_sessions` in `engagements/services.py`).
 
+
+## Release 1.5.0 (2026-11-27)
+
+Asset tags as departments (picker, column, filter bar, engagement scope, import template), Departments page, `tag` filters on findings and reports, Nessus/Burp/Nmap import (ADR-0024). New dependency `defusedxml`. No migration. Not done: manual PDF chapters for these features; verification against real scanner exports.

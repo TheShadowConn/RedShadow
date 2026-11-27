@@ -130,7 +130,7 @@ class AssetRowValidator:
         if len(tags) > MAX_TAGS or any(len(t) > 40 for t in tags):
             _err(errors, "tags", "invalid_tags", f"Use at most {MAX_TAGS} tags of 40 characters.")
             tags = []
-        out["tags"] = list(dict.fromkeys(tags))
+        out["tags"] = list({t.casefold(): t for t in reversed(tags)}.values())[::-1]
         return out, errors
 
 

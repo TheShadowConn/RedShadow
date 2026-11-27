@@ -29,6 +29,21 @@ def ids_with_tag(qs, tag: str) -> list:
     return [pk for pk, tags in rows if any(_key(t) == wanted for t in tags)]
 
 
+def spellings(qs) -> dict[str, str]:
+    """Casefolded tag -> the spelling in use among the assets of `qs`."""
+    return {_key(row["tag"]): row["tag"] for row in catalogue(qs)}
+
+
+def canonical(known: dict[str, str], tags) -> list[str]:
+    """Trim, drop repeats and reuse the spelling already in `known`. New tags are remembered in `known`."""
+    cleaned = [t.strip() for t in tags if t.strip()]
+    return [known.setdefault(_key(t), t) for t in _unique(cleaned)]
+
+
+def ids_without_tags(qs) -> list:
+    return [pk for pk, tags in qs.values_list("pk", "tags") if not tags]
+
+
 def catalogue(qs) -> list[dict]:
     """Every tag in use, with how many live (and onboarded) and archived assets carry it."""
     found: dict[str, dict] = {}

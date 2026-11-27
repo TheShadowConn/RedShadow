@@ -10,7 +10,7 @@ from apps.core.changes import apply_changes
 from apps.core.errors import Conflict
 from apps.engagements.models import OPEN_STATUSES, Engagement
 
-from . import assets
+from . import assets, tags
 from .models import Asset, Contact, Organisation
 
 ORG_FIELDS = ("name", "industry", "notes")
@@ -139,6 +139,10 @@ def update_asset(request, actor, asset: Asset, data: dict) -> Asset:
             _assert_org_writable(asset.organisation)
             if asset.is_archived:
                 raise Conflict("This asset is archived. Unarchive it to make changes.")
+            if data.get("tags"):
+                # Other assets only, so an edit of the sole holder can still change the spelling.
+                others = Asset.objects.filter(organisation_id=asset.organisation_id).exclude(pk=asset.pk)
+                data = {**data, "tags": tags.canonical(tags.spellings(others), data["tags"])}
             changes = apply_changes(asset, data, tuple(f for f in ASSET_FIELDS if f != "identifier"))
             if changes:
                 asset.save()

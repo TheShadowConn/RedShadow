@@ -13,8 +13,9 @@ Open **Assets** in the left menu. The list shows every asset you can see, with s
 
 Tags group assets, for example by department (`service-delivery`, `netops`). Tags are compared without regard to case. A tag exists while at least one asset has it; there is no separate tag list to fill in first.
 
-- **Add:** tick assets, choose **Tag selected**, type one or more tags (comma separated). Also possible in the asset's **Edit details** form and in the `Tags` column of an asset CSV (semicolons).
-- **Count:** pick a tag in the **Any tag** filter. The numbers on All, Onboarded, Not onboarded and Archived then count that tag only (within the chosen organisation).
+- **Add:** in **New asset**, **Edit details**, the asset side panel (**Add tag**) or **Tag selected** on ticked assets. Answer **Add to an existing tag?**: Yes shows the tags in use, No lets you type a new one. A CSV import takes them from the `Tags` column (semicolon separated), which the template includes.
+- **See:** the **Tags** column of the list, the side panel, an engagement's **Scope & assets** tab and the import preview.
+- **Filter and count:** click a tag (or **Untagged**) above the list. The numbers on All, Onboarded, Not onboarded and Archived then count that group only (within the chosen organisation).
 - **Remove from some assets:** tick them, choose **Tag selected**, tick the tags under *Remove tags*.
 - **Rename or delete everywhere:** **Manage tags**. It applies to the organisation chosen in the filter, or to all organisations. Renaming onto an existing tag merges the two. Deleting a tag keeps the assets.
 
@@ -60,3 +61,17 @@ Super Admin only. Open the user, **Deactivate** the account first, then **Delete
 - Memberships and saved import mappings are removed, and the user is unassigned from engagements they lead and from open findings.
 - If nothing else refers to the account, it is removed. If findings, notes, evidence or reports still refer to it, the account stays as an anonymous "Deleted user" (no name, email or sign-in) so the history keeps its shape. The email can be used again.
 - You cannot delete yourself, a user with more access than you, or an account that has an active retest round or a running import. The audit log keeps the original email.
+
+## Departments
+
+Open **Departments** for open findings, overdue and risk accepted per tag. Numbers link to the findings list while all organisations are shown. A report can be limited to departments.
+
+## Scanner files
+
+On **Imports**, upload a Nessus (`.nessus`), Burp (XML issues) or Nmap (`-oX`) file, up to 50 MB.
+
+1. If the hosts are not assets yet, import the file as **assets**, onboard them and add them to the engagement scope.
+2. Import the Nessus or Burp file as **findings** into the engagement. Check the suggested columns and the preview, then import. Findings are drafts.
+
+Nmap files can only be imported as assets.
+

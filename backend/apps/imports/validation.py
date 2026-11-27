@@ -128,6 +128,9 @@ class RowValidator:
         out["asset_id"] = None
         if asset_text:
             found = self.assets.get(asset_key(asset_text))
+            if found is None and ";" in asset_text:  # several identifiers of one host, as scanner files give
+                hits = {self.assets.get(asset_key(part)) for part in asset_text.split(";")} - {None}
+                found = hits.pop() if len(hits) == 1 else None
             if found is None:
                 _err(
                     errors,

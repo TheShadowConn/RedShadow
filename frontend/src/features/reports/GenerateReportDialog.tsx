@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "../../api/auth";
 import { api } from "../../api/client";
-import { FINDING_STATUSES, SEVERITIES, type EngagementRow, type Page, type ReportJob, type ReportTemplate } from "../../api/types";
+import { type ScopeLink, FINDING_STATUSES, SEVERITIES, type EngagementRow, type Page, type ReportJob, type ReportTemplate } from "../../api/types";
 import { Button, ErrorNote, Field, Modal, Select, TextInput, fieldError } from "../../design/ui";
 
 const DEFAULT_STATUSES = ["open", "in_progress", "pending_verification", "reopened", "closed", "risk_accepted"];
@@ -40,16 +40,19 @@ export function GenerateReportDialog({ engagement, open, onClose, onCreated }: {
   const [classification, setClassification] = useState("Confidential");
   const [severities, setSeverities] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<string[]>(DEFAULT_STATUSES);
+  const [departments, setDepartments] = useState<string[]>([]);
 
   const engagements = useQuery({ queryKey: ["engagements-pick"], queryFn: () => api<Page<EngagementRow>>("GET", "/engagements?page_size=100&archived=all"), enabled: open && !engagement });
   const templates = useQuery({ queryKey: ["report-templates"], queryFn: () => api<Page<ReportTemplate>>("GET", "/report-templates?page_size=100"), enabled: open });
+  const scope = useQuery({ queryKey: ["eng-assets", eng], queryFn: () => api<ScopeLink[]>("GET", `/engagements/${eng}/assets`), enabled: open && !!eng });
+  const known = [...new Set(scope.data?.flatMap((l) => l.asset.tags) ?? [])].sort((a, b) => a.localeCompare(b));
   const options = engagements.data?.results.filter((e) => !e.archived_at) ?? [];
   const canInternal = engagement ? engagement.permissions.includes("finding_notes.technical") : can("finding_notes.technical");
   const toggle = (list: string[], set: (v: string[]) => void, key: string, on: boolean) => set(on ? [...list, key] : list.filter((k) => k !== key));
 
   const create = useMutation({
     mutationFn: () => {
-      const body: Record<string, unknown> = { engagement: eng, format, audience, title, version_label: version, classification, filters: { severities, statuses } };
+      const body: Record<string, unknown> = { engagement: eng, format, audience, title, version_label: version, classification, filters: { severities, statuses, ...(departments.length ? { tags: departments.filter((t) => known.includes(t)) } : {}) } };
       if (format === "pdf" && template) body.template = template;
       return api<ReportJob>("POST", "/reports", body);
     },
@@ -104,6 +107,12 @@ export function GenerateReportDialog({ engagement, open, onClose, onCreated }: {
           <div className="flex flex-wrap gap-2">{SELECTABLE.map(([k, l]) => <Check key={k} checked={statuses.includes(k)} onChange={(on) => toggle(statuses, setStatuses, k, on)}>{l}</Check>)}</div>
           {statuses.length === 0 && <p className="field-error mt-2" role="alert">Choose at least one status.</p>}
         </fieldset>
+        {known.length > 0 && (
+          <fieldset className="m-0 border-0 p-0">
+            <legend className="label mb-2 p-0">Departments <span className="font-normal text-muted">(none ticked means all)</span></legend>
+            <div className="flex flex-wrap gap-2">{known.map((t) => <Check key={t} checked={departments.includes(t)} onChange={(on) => toggle(departments, setDepartments, t, on)}>{t}</Check>)}</div>
+          </fieldset>
+        )}
         <div className="flex flex-wrap justify-end gap-3">
           <Button onClick={onClose}>Cancel</Button>
           <Button type="submit" variant="primary" loading={create.isPending} disabled={!eng || statuses.length === 0}>Create report</Button>

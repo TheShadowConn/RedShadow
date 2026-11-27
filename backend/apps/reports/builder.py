@@ -19,6 +19,8 @@ from apps.files.models import Attachment
 from apps.findings import lifecycle
 from apps.findings.models import SEVERITIES, STATUSES, FindingNote, RemediationActivity, RetestRound
 from apps.findings.selectors import scope_findings, with_severity_rank
+from apps.organisations import tags as asset_tags
+from apps.organisations.models import Asset
 from apps.rbac.authz import engagement_permissions
 
 from . import charts
@@ -46,7 +48,9 @@ def normalise_filters(raw: dict | None) -> dict:
     raw = raw or {}
     severities = [s for s in raw.get("severities") or [] if s in SEVERITY_KEYS]
     statuses = [s for s in raw.get("statuses") or [] if s in REPORTABLE_STATUSES]
-    return {"severities": severities, "statuses": statuses or list(DEFAULT_STATUSES)}
+    clean = {"severities": severities, "statuses": statuses or list(DEFAULT_STATUSES)}
+    wanted = [t.strip() for t in raw.get("tags") or [] if isinstance(t, str) and t.strip()]
+    return {**clean, "tags": wanted} if wanted else clean
 
 
 def _image_data_uri(key: str) -> str | None:
@@ -155,6 +159,9 @@ def collect(job, actor) -> dict:
     qs = scope_findings(actor).filter(engagement=eng).exclude(status="draft").filter(status__in=filters["statuses"])
     if filters["severities"]:
         qs = qs.filter(severity__in=filters["severities"])
+    if filters.get("tags"):
+        on = Asset.objects.filter(pk__in=qs.values("asset_id"))
+        qs = qs.filter(asset_id__in={pk for tag in filters["tags"] for pk in asset_tags.ids_with_tag(on, tag)})
     total = qs.count()
     if total > MAX_FINDINGS:
         raise ReportRefused(f"{total} findings match. Narrow the filters to {MAX_FINDINGS} or fewer.")
@@ -196,6 +203,7 @@ def collect(job, actor) -> dict:
             "status": f.status,
             "status_label": STATUS_LABELS[f.status],
             "asset": f.asset.name if f.asset_id else "",
+            "asset_tags": "; ".join(f.asset.tags) if f.asset_id else "",
             "endpoint": f.endpoint,
             "discovered_at": f.discovered_at,
             "due_date": f.due_date,
@@ -323,6 +331,7 @@ def collect(job, actor) -> dict:
                 if filters["severities"]
                 else "",
                 "status " + ", ".join(STATUS_LABELS[x] for x in filters["statuses"]),
+                "department " + ", ".join(filters["tags"]) if filters.get("tags") else "",
             )
             if part
         ),

@@ -5,17 +5,19 @@ import { api } from "../../api/client";
 import type { Asset, AssetTag, TagResult } from "../../api/types";
 import { Alert, Button, ConfirmDialog, ErrorNote, Field, fieldError, Modal, TextInput } from "../../design/ui";
 import { invalidateAssets } from "./AssetEditor";
+import { TagPicker, withDraft } from "./Tags";
 
-const split = (text: string) => text.split(/[,;]/).map((t) => t.trim()).filter(Boolean);
 const plural = (n: number) => `${n} asset${n === 1 ? "" : "s"}`;
 
 /** Add tags to, or remove tags from, the assets ticked in the list. */
 export function TagSelectedDialog({ assets, known, onClose, onDone }: { assets: Asset[]; known: AssetTag[]; onClose: () => void; onDone: (r: TagResult) => void }) {
   const qc = useQueryClient();
-  const [text, setText] = useState("");
+  const [picked, setPicked] = useState<string[]>([]);
+  const [draft, setDraft] = useState("");
   const [remove, setRemove] = useState<Set<string>>(new Set());
   const present = [...new Set(assets.flatMap((a) => a.tags))].sort((a, b) => a.localeCompare(b));
-  const add = split(text);
+  const names = known.map((t) => t.tag);
+  const add = withDraft(picked, draft, names);
   const save = useMutation({
     mutationFn: () => api<TagResult>("POST", "/assets/tags/assign", { ids: assets.map((a) => a.id), add, remove: [...remove] }),
     onSuccess: (r) => { invalidateAssets(qc); onDone(r); onClose(); },
@@ -26,10 +28,8 @@ export function TagSelectedDialog({ assets, known, onClose, onDone }: { assets: 
   return (
     <Modal open onClose={onClose} title={`Tag ${plural(assets.length)}`}>
       <form className="space-y-5 p-6" onSubmit={submit}>
-        <Field label="Add tags" hint="Comma separated, for example service-delivery" error={fieldError(save.error, "add")}>
-          {(p) => <TextInput {...p} list="known-tags" value={text} onChange={(e) => setText(e.target.value)} />}
-        </Field>
-        <datalist id="known-tags">{known.map((t) => <option key={t.tag} value={t.tag} />)}</datalist>
+        <TagPicker value={picked} onChange={setPicked} known={names} draft={draft} onDraft={setDraft} />
+        {fieldError(save.error, "add") && <p className="field-error m-0" role="alert">{fieldError(save.error, "add")}</p>}
         {present.length > 0 && (
           <fieldset className="m-0 border-0 p-0">
             <legend className="mb-2 font-medium">Remove tags</legend>

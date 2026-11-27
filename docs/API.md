@@ -6,8 +6,8 @@ Base path `/api/v1`. Session cookie plus CSRF header, error envelope `{"error": 
 
 | Method and path | Permission | Purpose |
 |---|---|---|
-| `GET /assets` | `assets.view` (engagement scope) | Paged list. Query: `search` (name, identifier, any identifier, tag), `organisation`, `type`, `environment`, `criticality` (1 to 5), `onboarding_status` (`onboarded`, `pending`), `origin`, `archived` (`true` or `all`), `ordering` (`name`, `type`, `criticality`, `created`), `tag` (exact tag, any case), `page`, `page_size`. |
-| `GET /assets/summary` | `assets.view` | `{total, onboarded, pending, archived}` for the filter tabs. Optional `organisation`, `tag`. |
+| `GET /assets` | `assets.view` (engagement scope) | Paged list. Query: `untagged=true` (assets without any tag), `search` (name, identifier, any identifier, tag), `organisation`, `type`, `environment`, `criticality` (1 to 5), `onboarding_status` (`onboarded`, `pending`), `origin`, `archived` (`true` or `all`), `ordering` (`name`, `type`, `criticality`, `created`), `tag` (exact tag, any case), `page`, `page_size`. |
+| `GET /assets/summary` | `assets.view` | `{total, onboarded, pending, archived}` for the filter tabs. Optional `organisation`, `tag`, `untagged`. |
 | `GET /assets/tags` | `assets.view` (engagement scope) | Tags in use: `[{tag, assets, onboarded, archived}]`, only from assets the caller can see. `assets` and `onboarded` count live assets. Optional `organisation`. |
 | `POST /assets/tags/assign` | `assets.update` | `{ids, add?: [...], remove?: [...]}` returns `{updated, skipped: [{id, name, reason}], not_found}`. An added tag takes the spelling already in use. No commas or semicolons, 40 characters, 20 tags per asset. |
 | `POST /assets/tags/rename` | `assets.update` | `{tag, new_name, organisation?}` returns `{updated, skipped}`. Renaming onto an existing tag merges them. 404 for an unknown tag. |
@@ -134,3 +134,17 @@ Workflow additions (1.4.0):
 | `POST /engagements/{id}/scenario-templates/apply` | `engagement_scenarios.manage` | `{template, items?: [index]}`. Creates the chosen items (all when `items` is omitted) as planned scenarios. Names already present are skipped and returned in `skipped`. 201 `{created, skipped}`. Audit `engagement.scenarios_added` with the template key. |
 
 The hourly reminder task also sends `scenario.deferred_due` (group "Due dates and overdue") to the lead and the members who hold `engagement_scenarios.manage` when a deferred scenario's new start date has arrived; once per scenario and date. The scenario stays deferred until someone plans it again. The Pentester dashboard's `scenarios` block adds `this_week: {from, to, items}` (Monday to Sunday, planned, in-progress and deferred scenarios with dates); it is `null` on the other dashboards.
+
+## Asset tags elsewhere
+
+Tags keep one spelling per organisation: create, edit and import reuse the spelling already in use. `GET /engagements/{id}/assets` returns each asset's `tags`, asset import rows return `asset.tags`, and the asset CSV template has a `Tags` column (semicolon separated).
+
+## Release 1.5.0 additions (2026-11-27)
+
+| Endpoint | Permission | Notes |
+|---|---|---|
+| `GET /assets/departments` | `assets.view` | `{rows, total, open_statuses}` per tag (`tag: null` is untagged). Optional `organisation`. |
+| `GET /findings`, `/findings/export.csv` | as before | New filters `tag` and `untagged=true` (by the asset's tags). |
+| `POST /reports` | as before | `filters.tags` limits the report to assets with any of those tags. The CSV has an `asset_tags` column. |
+| `POST /imports` | `imports.create` | Also accepts `.nessus` and `.xml` (Nessus, Burp, Nmap), 50 MB. `include_info` keeps informational results. |
+

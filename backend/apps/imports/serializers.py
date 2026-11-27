@@ -132,6 +132,7 @@ class ImportRowSerializer(serializers.ModelSerializer):
             "identifiers": [{"kind": i["kind"], "value": i["value"]} for i in m["identifiers"]],
             "new_identifiers": m.get("new_identifiers", 0),
             "type": m.get("type"),
+            "tags": m.get("tags", []),
             "asset": {"id": asset_id, "name": m.get("asset_name") or m.get("name", "")} if asset_id else None,
             "target_line": m.get("target_line"),
         }
@@ -158,6 +159,7 @@ class UploadSerializer(StrictSerializer):
     kind = serializers.ChoiceField(choices=["findings"], required=False)
     engagement = ScopedPrimaryKeyField(scope=lambda user: scope_engagements(user, "imports.create"), model=Engagement)
     file = serializers.FileField(allow_empty_file=False)
+    include_info = serializers.BooleanField(required=False, default=False)  # scanner files only
 
 
 class AssetUploadSerializer(StrictSerializer):

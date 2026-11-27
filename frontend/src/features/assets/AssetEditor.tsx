@@ -3,10 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Star, Trash2 } from "lucide-react";
 
 import { api, ApiError } from "../../api/client";
-import {
+import { type AssetTag,
   ASSET_TYPES, ENVIRONMENTS, IDENTIFIER_KINDS, type Asset, type AssetIdentifier, type IdentifierCheck, type Organisation, type Page,
 } from "../../api/types";
 import { Badge, Button, ErrorNote, Field, fieldError, Modal, Select, TextInput } from "../../design/ui";
+import { TagPicker, withDraft } from "./Tags";
 
 export const noFieldErrors = (e: unknown) => (e && !Object.keys((e as { fields?: object }).fields ?? {}).length ? e : null);
 
@@ -75,13 +76,17 @@ export function AssetEditor({ asset, org, onClose, onSaved }: { asset?: Asset; o
   const qc = useQueryClient();
   const orgs = useQuery({ queryKey: ["organisations-pick"], queryFn: () => api<Page<Organisation>>("GET", "/organisations?page_size=100"), enabled: !asset && !org });
   const [orgId, setOrgId] = useState(asset?.organisation ?? org?.id ?? "");
-  const [f, setF] = useState({ name: asset?.name ?? "", type: asset?.type ?? "host", environment: asset?.environment ?? "prod", criticality: asset?.criticality ?? 3, tags: (asset?.tags ?? []).join(", ") });
+  const [f, setF] = useState({ name: asset?.name ?? "", type: asset?.type ?? "host", environment: asset?.environment ?? "prod", criticality: asset?.criticality ?? 3 });
+  const [tags, setTags] = useState<string[]>(asset?.tags ?? []);
+  const [tagDraft, setTagDraft] = useState("");
+  const catalogue = useQuery({ queryKey: ["asset-tags", orgId], queryFn: () => api<AssetTag[]>("GET", `/assets/tags?organisation=${orgId}`), enabled: !!orgId });
+  const known = catalogue.data?.map((t) => t.tag) ?? [];
   const [drafts, setDrafts] = useState<Draft[]>([blank(true)]);
   const checks = useIdentifierCheck(orgId, asset?.id, drafts);
 
   const save = useMutation({
     mutationFn: () => {
-      const body = { ...f, criticality: Number(f.criticality), tags: f.tags.split(",").map((t) => t.trim()).filter(Boolean) };
+      const body = { ...f, criticality: Number(f.criticality), tags: withDraft(tags, tagDraft, known) };
       if (asset) return api<Asset>("PATCH", `/assets/${asset.id}`, body);
       const identifiers = drafts.filter((d) => d.value.trim()).map((d) => ({ ...(d.kind ? { kind: d.kind } : {}), value: d.value.trim(), is_primary: d.primary }));
       return api<Asset>("POST", "/assets", { ...body, organisation: orgId, identifiers });
@@ -114,8 +119,13 @@ export function AssetEditor({ asset, org, onClose, onSaved }: { asset?: Asset; o
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Criticality" hint="1 is lowest, 5 is business critical." error={fieldError(save.error, "criticality")}>{(p) => <Select {...p} value={f.criticality} onChange={set("criticality")}>{[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}</Select>}</Field>
-          <Field label="Tags" hint="Comma separated" error={fieldError(save.error, "tags")}>{(p) => <TextInput {...p} value={f.tags} onChange={set("tags")} />}</Field>
         </div>
+        <fieldset className="m-0 flex flex-col gap-3 border-0 p-0">
+          <legend className="label mb-1">Tags</legend>
+          <p className="m-0 text-[14px] text-muted">Group assets by the department or team that owns them.</p>
+          {fieldError(save.error, "tags") && <p className="field-error m-0" role="alert">{fieldError(save.error, "tags")}</p>}
+          <TagPicker value={tags} onChange={setTags} known={known} draft={tagDraft} onDraft={setTagDraft} />
+        </fieldset>
 
         {asset ? (
           <IdentifierManager asset={asset} />

@@ -308,7 +308,7 @@ COVERED_ROUTES = {
     "asset-onboard", "asset-onboard-many", "asset-archive-many", "asset-merge", "import-reupload", "import-retry", "import-history",
     "import-asset-template", "user-deletion-impact",
     # Asset tags: covered by tests/test_asset_tags.py
-    "asset-tags", "asset-assign-tags", "asset-rename-tag", "asset-delete-tag",
+    "asset-tags", "asset-departments", "asset-assign-tags", "asset-rename-tag", "asset-delete-tag",
     "finding-notes", "finding-evidence", "finding-remove-evidence", "finding-template-list", "finding-template-detail",
 }  # fmt: skip
 
