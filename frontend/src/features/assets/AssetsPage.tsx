@@ -310,7 +310,11 @@ function AssetSheet({ assetId, onClose }: { assetId: string | null; onClose: () 
   const act = useMutation({
     mutationFn: (kind: Exclude<Pending, null>) =>
       kind === "delete" ? api("DELETE", `/assets/${assetId}`) : api("POST", `/assets/${assetId}/${kind}`, kind === "onboard" ? {} : undefined),
-    onSuccess: (_r, kind) => { done(); if (kind === "delete") onClose(); },
+    onSuccess: (_r, kind) => {
+      // A deleted asset must not be asked for again by the refresh that follows.
+      if (kind === "delete") { setPending(null); onClose(); qc.removeQueries({ queryKey: ["assets", "one", assetId] }); qc.removeQueries({ queryKey: ["asset-usage", assetId] }); invalidateAssets(qc, a?.organisation); }
+      else done();
+    },
   });
 
   const copy: Record<Exclude<Pending, null>, { title: string; body: string; label: string; danger?: boolean }> = {

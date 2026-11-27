@@ -75,6 +75,8 @@ function TemplateForm({ template, onClose }: { template?: ReportTemplate; onClos
   const [logoError, setLogoError] = useState<unknown>(null);
   const [hasLogo, setHasLogo] = useState(template?.has_logo ?? false);
   const input = useRef<HTMLInputElement>(null);
+  // Uploading or removing the logo saves the template at once, so the form must carry the newer version.
+  const [version, setVersion] = useState(template?.version);
 
   const move = (i: number, d: -1 | 1) => setItems((cur) => { const next = [...cur]; const j = i + d; if (j < 0 || j >= next.length) return cur; [next[i], next[j]] = [next[j], next[i]]; return next; });
   const flip = (i: number) => setItems((cur) => cur.map((it, n) => (n === i ? { ...it, on: !it.on } : it)));
@@ -83,18 +85,18 @@ function TemplateForm({ template, onClose }: { template?: ReportTemplate; onClos
     mutationFn: () => {
       const body: Record<string, unknown> = { name, accent, font, footer_text: footer, sections: items.filter((i) => i.on).map((i) => i.key) };
       if (isDefault) body.is_default = true;
-      return template ? api<ReportTemplate>("PATCH", `/report-templates/${template.id}`, { ...body, version: template.version }) : api<ReportTemplate>("POST", "/report-templates", body);
+      return template ? api<ReportTemplate>("PATCH", `/report-templates/${template.id}`, { ...body, version }) : api<ReportTemplate>("POST", "/report-templates", body);
     },
     onSuccess: () => { void qc.invalidateQueries({ queryKey: ["report-templates"] }); onClose(); },
   });
   const setLogo = useMutation({
     mutationFn: (file: File) => upload<ReportTemplate>("POST", `/report-templates/${template!.id}/logo`, file, undefined, {}, "logo"),
-    onSuccess: () => { setHasLogo(true); setLogoKey((k) => k + 1); setLogoError(null); void qc.invalidateQueries({ queryKey: ["report-templates"] }); },
+    onSuccess: (t) => { setVersion(t.version); setHasLogo(true); setLogoKey((k) => k + 1); setLogoError(null); void qc.invalidateQueries({ queryKey: ["report-templates"] }); },
     onError: setLogoError,
   });
   const clearLogo = useMutation({
     mutationFn: () => api<ReportTemplate>("DELETE", `/report-templates/${template!.id}/logo`),
-    onSuccess: () => { setHasLogo(false); setLogoError(null); void qc.invalidateQueries({ queryKey: ["report-templates"] }); },
+    onSuccess: (t) => { setVersion(t.version); setHasLogo(false); setLogoError(null); void qc.invalidateQueries({ queryKey: ["report-templates"] }); },
     onError: setLogoError,
   });
 

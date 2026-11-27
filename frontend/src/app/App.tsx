@@ -13,6 +13,7 @@ import { Shell } from "./Shell";
 
 const AboutPage = lazy(() => import("../features/about/AboutPage").then((m) => ({ default: m.AboutPage })));
 const CostsPage = lazy(() => import("../features/costs/CostsPage").then((m) => ({ default: m.CostsPage })));
+const BackupPage = lazy(() => import("../features/system/BackupPage").then((m) => ({ default: m.BackupPage })));
 const DepartmentsPage = lazy(() => import("../features/assets/DepartmentsPage").then((m) => ({ default: m.DepartmentsPage })));
 const AssetsPage = lazy(() => import("../features/assets/AssetsPage").then((m) => ({ default: m.AssetsPage })));
 const AccountPage = lazy(() => import("../features/account/AccountPage").then((m) => ({ default: m.AccountPage })));
@@ -86,6 +87,7 @@ function Gate() {
         <Route path="engagements/:id" element={<EngagementPage />} />
         <Route path="assets" element={<AssetsPage />} />
         <Route path="departments" element={<DepartmentsPage />} />
+        <Route path="backup" element={<BackupPage />} />
         <Route path="costs" element={<CostsPage />} />
         <Route path="organisations" element={<OrganisationsPage />} />
         <Route path="organisations/:id" element={<OrganisationPage />} />

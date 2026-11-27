@@ -27,7 +27,7 @@ else
 fi
 
 echo "==> stopping application services"
-docker compose stop nginx backend worker beat >/dev/null 2>&1 || true
+docker compose stop nginx backend worker reports-worker maintenance beat >/dev/null 2>&1 || true
 docker compose up -d --wait db
 
 echo "==> recreating database"
