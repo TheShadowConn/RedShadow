@@ -52,7 +52,9 @@ Settings are environment variables in `.env` (see `.env.example`). The most usef
 | `REPORT_RETENTION_DAYS` | How long report files are kept | 90 |
 | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_USE_TLS`, `EMAIL_FROM` | Optional email for notifications. Email stays off while `EMAIL_HOST` is empty. The SMTP password is read from the file named in `EMAIL_HOST_PASSWORD_FILE` and never from `.env` | off |
 | `APP_BASE_URL` | Public address used for links in emails, for example `https://redshadow.lan` | empty |
-| `APP_VERSION` | Version shown on the About page | 1.4.0 |
+| `APP_VERSION` | Version shown on the About page | 1.5.1 |
+
+> **Important:** The application containers have no route out of the Docker host by default, so email needs the extra compose file: `docker compose -f docker-compose.yml -f docker-compose.email.yml up -d --wait`. Without it, notifications still appear in the app but no email is delivered.
 
 After changing a value run `make up` to apply it.
 

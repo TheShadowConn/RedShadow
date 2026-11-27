@@ -7,6 +7,7 @@ The XML is untrusted: it is read with defusedxml, which refuses entity expansion
 import base64
 import binascii
 import io
+import ipaddress
 import re
 from dataclasses import dataclass
 from html import unescape
@@ -111,6 +112,14 @@ def _elements(data: bytes, tag: str):
             element.clear()
 
 
+def _is_ip(text: str) -> bool:
+    try:
+        ipaddress.ip_address(text)
+    except ValueError:
+        return False
+    return True
+
+
 def _text(element, name: str) -> str:
     return (element.findtext(name) or "").strip()
 
@@ -144,8 +153,9 @@ def _nessus(data: bytes):
         props = {t.get("name"): (t.text or "").strip() for t in report_host.iterfind("HostProperties/tag")}
         name = (report_host.get("name") or "").strip()
         ip = props.get("host-ip", "")
-        fqdn = props.get("host-fqdn", "") or (name if name != ip else "")
-        host = Host(ip=ip or (name if not fqdn else ""), name=fqdn)
+        if _is_ip(name):  # an address is never a hostname, or one machine could become two assets
+            ip, name = ip or name, ""
+        host = Host(ip=ip, name=props.get("host-fqdn", "") or name)
         yield host, None
         for item in report_host.iterfind("ReportItem"):
             port, protocol = item.get("port", "0"), item.get("protocol", "")
@@ -175,8 +185,8 @@ def _burp(data: bytes):
         url = (host_el.text or "").strip() if host_el is not None else ""
         ip = (host_el.get("ip", "") if host_el is not None else "").strip()
         host = Host(ip=ip, name=urlsplit(url).hostname or "", url=url)
-        if host.name == host.ip:
-            host.name = ""
+        if _is_ip(host.name):
+            host.ip, host.name = host.ip or host.name, ""
         request = ""
         sent = item.find("requestresponse/request")
         if sent is not None and sent.text:

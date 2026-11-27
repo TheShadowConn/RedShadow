@@ -1,0 +1,12 @@
+# Opt-in outbound email. The application containers normally have no route out of the Docker host, so
+# notification email needs this file as well:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.email.yml up -d --wait
+#
+# Set EMAIL_HOST (and EMAIL_PORT, EMAIL_HOST_USER, EMAIL_FROM, APP_BASE_URL) in .env first. Using this file
+# lets the backend and worker containers reach the network; leave it out if you do not send email.
+services:
+  backend:
+    networks: [internal, edge]
+  worker:
+    networks: [internal, edge]

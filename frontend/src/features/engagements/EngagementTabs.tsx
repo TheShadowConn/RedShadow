@@ -127,7 +127,7 @@ export function TeamTab({ eng }: { eng: Engagement }) {
                   <p className="m-0 font-medium">{m.user.display_name}{eng.lead?.id === m.user.id && <span className="ml-2"><Badge tone="info">Lead</Badge></span>}</p>
                   <p className="m-0 break-all text-[14px] text-muted">{m.user.email} · {m.role.name}{m.role_override ? " (override)" : ""}{m.finding_scope && ` · findings: ${m.finding_scope}`}</p>
                 </div>
-                {writable && <Button size="sm" variant="danger" onClick={() => { remove.reset(); setRemoving(m); }}>Remove</Button>}
+                {writable && m.user.id !== me?.id && <Button size="sm" variant="danger" onClick={() => { remove.reset(); setRemoving(m); }}>Remove</Button>}
               </li>
             ))}
           </ul>
@@ -140,7 +140,7 @@ export function TeamTab({ eng }: { eng: Engagement }) {
 }
 
 function AddMember({ eng, existing, onClose, onDone }: { eng: Engagement; existing: Set<string>; onClose: () => void; onDone: () => void }) {
-  const { can } = useAuth();
+  const { can, me } = useAuth();
   const [userId, setUserId] = useState("");
   const [roleId, setRoleId] = useState("");
   const [scope, setScope] = useState("");
@@ -150,7 +150,7 @@ function AddMember({ eng, existing, onClose, onDone }: { eng: Engagement; existi
     mutationFn: () => api("POST", `/engagements/${eng.id}/members`, { user: userId, role_override: roleId || null, finding_scope: scope }),
     onSuccess: () => { onDone(); onClose(); },
   });
-  const candidates = users.data?.results.filter((u) => u.is_active && !existing.has(u.id)) ?? [];
+  const candidates = users.data?.results.filter((u) => u.is_active && u.id !== me?.id && !existing.has(u.id)) ?? []; // you add yourself with "Add myself"
   return (
     <Modal open onClose={onClose} title="Add team member">
       <form className="space-y-5 p-6" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate(); }}>
