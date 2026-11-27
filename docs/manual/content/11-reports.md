@@ -20,6 +20,8 @@ Download it from the list. Files are kept for a limited time (90 days by default
 
 > **Note:** Who may create which report depends on the role. {SA} and {PT} can create PDF and CSV reports. {RO} can export CSV of their findings. {EV} can export CSV of their own findings but cannot create PDF reports by default.
 
+When the engagement's assets have tags, the new report form also offers **Departments**. Tick one or more to report only the findings on their assets; none ticked means all. The CSV export has an `asset_tags` column.
+
 ## What the PDF contains
 
 A report is assembled from sections. The default template includes all of them, in this order:

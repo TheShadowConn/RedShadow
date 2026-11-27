@@ -31,6 +31,14 @@ A Super Admin creates the organisation (name, industry, contacts, logo). Everyth
 
 Add assets one by one or import a CSV (Chapter 14). An asset has one or more identifiers (URL, IP address, hostname and so on). Imported assets are **not onboarded** until a Super Admin onboards them. Only onboarded assets can join an engagement.
 
+Tag each asset with the department that owns it (Chapter 14). The Departments page then shows who has open findings.
+
+```
+Organisation -> Assets (tagged by department) -> Engagement -> Findings
+```
+
+A department is not a separate level inside the organisation. It is a tag on the asset, so one asset can belong to two departments. An engagement belongs to the organisation and can include assets of any department.
+
 ## 3. Engagement
 
 Create the engagement under the organisation. Choose a **lead**: this is required, and the lead joins the team automatically. A Super Admin can change the lead later at any time with **Change lead** (the previous lead stays on the team until removed). Then:

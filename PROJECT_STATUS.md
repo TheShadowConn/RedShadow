@@ -303,4 +303,4 @@ Done on a throwaway `rs_qa` stack (removed with its own volumes only; real `reds
 
 ## Release 1.5.0 (2026-11-27)
 
-Asset tags as departments (picker, column, filter bar, engagement scope, import template), Departments page, `tag` filters on findings and reports, Nessus/Burp/Nmap import (ADR-0024). New dependency `defusedxml`. No migration. Not done: manual PDF chapters for these features; verification against real scanner exports.
+Asset tags as departments (picker, column, filter bar, engagement scope, import template), Departments page, `tag` filters on findings and reports, Nessus/Burp/Nmap import (ADR-0024). New dependency `defusedxml`. No migration. Manual updated. Not done: verification against real scanner exports.
